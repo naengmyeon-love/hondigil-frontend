@@ -1,0 +1,57 @@
+:root {
+  --color-primary:#e85d24;
+  --color-primary-hover:#bb3f13;
+  --color-primary-soft:#fff0df;
+  --color-secondary:#187a95;
+  --color-success:#377a4f;
+  --color-warning:#8a4b08;
+  --color-danger:#b42318;
+  --color-text-primary:#25302c;
+  --color-text-secondary:#66736d;
+  --color-background:#fff9ed;
+  --color-surface:#fff;
+  --color-border:#ddd8ca;
+  --color-leaf:#3e7751;
+  --color-sea-soft:#e6f6f8;
+  --color-leaf-soft:#e9f4e8;
+
+  --radius-small:12px;
+  --radius-medium:16px;
+  --radius-large:24px;
+  --radius-round:999px;
+
+  --shadow-small:0 5px 16px rgba(50,54,47,.08);
+  --shadow-medium:0 14px 34px rgba(50,54,47,.1);
+  --shadow-large:0 26px 70px rgba(0,0,0,.25);
+
+  --space-1:4px;
+  --space-2:8px;
+  --space-3:12px;
+  --space-4:16px;
+  --space-5:24px;
+  --space-6:32px;
+
+  --font-sans:"Pretendard Variable",Pretendard,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
+  --content-width:1180px;
+  --nav-height:76px;
+  --layer-header:900;
+  --layer-nav:1000;
+  --layer-modal:3000;
+  --layer-toast:4000;
+
+  /* 이전 스타일 이름과의 호환 별칭 */
+  --primary:var(--color-primary);
+  --primary-hover:var(--color-primary-hover);
+  --primary-light:var(--color-primary-soft);
+  --secondary:var(--color-secondary);
+  --background:var(--color-background);
+  --surface:var(--color-surface);
+  --border:var(--color-border);
+  --text-primary:var(--color-text-primary);
+  --text-secondary:var(--color-text-secondary);
+  --success:var(--color-success);
+  --warning:var(--color-warning);
+  --error:var(--color-danger);
+  --radius:var(--radius-large);
+  --shadow:var(--shadow-medium);
+}

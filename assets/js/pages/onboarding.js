@@ -1,0 +1,5 @@
+import { ART_ASSETS } from '../data/courses.js';
+
+export function renderOnboarding() {
+  return `<main class="onboarding" id="main-content"><section class="onboarding-card" aria-labelledby="onboarding-title"><div class="onboarding-image"><img src="${ART_ASSETS.HERO}" alt="오름과 바다가 보이는 제주 돌담길을 달리는 여행자 일러스트"></div><div class="onboarding-copy"><div class="brand"><span class="brand-mark" aria-hidden="true"></span><span>혼디길</span></div><p class="eyebrow">회원가입 없이 바로 시작</p><h1 id="onboarding-title">혼디길에서 사용할 이름을 정해 주세요</h1><p class="lead">닉네임은 완주 기록과 나의 제주방에 표시됩니다.</p><form id="nickname-form" novalidate><div class="field"><label for="nickname">닉네임</label><input class="input" id="nickname" name="nickname" type="text" maxlength="12" autocomplete="nickname" placeholder="닉네임을 입력해 주세요" aria-describedby="nickname-help nickname-error" required><p class="help" id="nickname-help">공백을 제외하고 2~12자로 입력해 주세요.</p><p class="form-message" id="nickname-error" role="alert"></p></div><button class="btn btn-primary btn-block" type="submit">혼디길 시작하기</button></form></div></section></main>`;
+}

@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#fff9ed">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="제주를 걷고 달리며 나만의 제주방을 키우는 혼디길 MVP">
+  <title>혼디길 | 제주 러닝·트래킹</title>
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous">
+  <style>
+    :root {
+      --paper:#fffaf0; --surface:#ffffff; --surface-2:#f7f3e8; --ink:#25302c;
+      --muted:#66736d; --line:#dedbd0; --orange:#e85d24; --orange-dark:#b83d0d;
+      --orange-soft:#fff0df; --sea:#187a95; --sea-soft:#e6f6f8; --leaf:#3e7751;
+      --leaf-soft:#e9f4e8; --basalt:#45524f; --danger:#b42318; --warning:#8a4b08;
+      --shadow:0 12px 32px rgba(50,54,47,.10); --shadow-soft:0 4px 14px rgba(50,54,47,.08);
+      --radius:22px; --radius-sm:14px; --nav-h:72px; --text-scale:1;
+      --font:"Pretendard","Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
+    }
+    *{box-sizing:border-box}
+    html{font-size:calc(16px * var(--text-scale));scroll-behavior:smooth;background:var(--paper)}
+    body{margin:0;color:var(--ink);font-family:var(--font);background:
+      radial-gradient(circle at 95% 0,rgba(243,141,60,.12),transparent 28rem),var(--paper);
+      line-height:1.55;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+    button,input,select{font:inherit;color:inherit}
+    button,a{touch-action:manipulation}
+    button{border:0;background:none;cursor:pointer}
+    button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid rgba(24,122,149,.45);outline-offset:2px}
+    a{color:inherit} img,svg{display:block;max-width:100%}
+    .skip-link{position:fixed;left:12px;top:-80px;z-index:9999;padding:12px 18px;border-radius:12px;background:var(--ink);color:#fff;text-decoration:none}
+    .skip-link:focus{top:12px}
+    .app-shell{min-height:100vh}
+    .desktop-rail{display:none}
+    .main{width:100%;max-width:1180px;margin:0 auto;padding:20px 16px calc(var(--nav-h) + 26px + env(safe-area-inset-bottom))}
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+    .brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-weight:900;font-size:1.28rem;letter-spacing:-.04em}
+    .brand-mark{display:grid;place-items:center;width:42px;height:42px;border-radius:14px;background:var(--orange);color:#fff;box-shadow:inset 0 -3px rgba(0,0,0,.1);font-size:1.25rem}
+    .top-actions{display:flex;gap:8px}
+    .icon-btn{min-width:44px;height:44px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.88);display:grid;place-items:center;box-shadow:var(--shadow-soft)}
+    .eyebrow{display:flex;align-items:center;gap:7px;margin:0 0 8px;color:var(--orange-dark);font-size:.82rem;font-weight:900;letter-spacing:.01em}
+    h1,h2,h3,p{margin-top:0} h1,h2,h3{line-height:1.25;letter-spacing:-.04em}
+    h1{font-size:clamp(1.7rem,6vw,3.2rem);margin-bottom:12px} h2{font-size:clamp(1.35rem,4vw,2rem);margin-bottom:8px} h3{font-size:1.05rem;margin-bottom:7px}
+    .muted{color:var(--muted)} .small{font-size:.82rem} .strong{font-weight:850}
+    .notice{display:flex;gap:10px;padding:13px 14px;border:1px solid #f1d0a5;border-radius:14px;background:#fff6e8;color:#754315;font-size:.82rem;margin:12px 0 18px}
+    .hero{position:relative;overflow:hidden;padding:25px 22px;border:1px solid #f0d7b8;border-radius:28px;background:linear-gradient(145deg,#fff7e7 0%,#fffbf3 52%,#e8f7f7 100%);box-shadow:var(--shadow);margin-bottom:24px}
+    .hero:after{content:"";position:absolute;width:160px;height:160px;right:-52px;top:-58px;border-radius:50%;background:rgba(232,93,36,.11)}
+    .hero-copy{position:relative;z-index:1;max-width:620px}
+    .hero p{color:#596761;margin-bottom:20px}
+    .hero-art{position:relative;height:142px;margin:18px -8px -12px;border-radius:22px;overflow:hidden;background:linear-gradient(#bde2ed 0 56%,#73a874 56%)}
+    .hero-art:before{content:"";position:absolute;left:-5%;right:-5%;top:54%;height:62%;border-radius:50% 50% 0 0;background:#477953;box-shadow:0 -16px 0 #79aa6c}
+    .hero-road{position:absolute;width:210px;height:80px;left:50%;bottom:-34px;transform:translateX(-50%) rotate(-4deg);border-radius:50%;border:12px solid #f4d6a2}
+    .hero-avatar{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);font-size:58px;filter:drop-shadow(0 5px 2px rgba(0,0,0,.15))}
+    .btn-row{display:flex;flex-wrap:wrap;gap:10px}
+    .btn{min-height:48px;padding:12px 17px;border-radius:15px;font-weight:850;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;border:1px solid transparent;transition:transform .15s ease,background .15s ease}
+    .btn:active{transform:translateY(1px)} .btn-primary{background:var(--orange);color:#fff;box-shadow:0 6px 14px rgba(232,93,36,.22)}
+    .btn-primary:hover{background:var(--orange-dark)} .btn-secondary{background:#fff;border-color:var(--line)} .btn-soft{background:var(--orange-soft);color:var(--orange-dark)}
+    .btn-sea{background:var(--sea);color:#fff} .btn-danger{background:#fff0ee;color:var(--danger);border-color:#f5b8b1}.btn-block{width:100%}
+    .section{margin:26px 0}.section-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:13px}.section-head p{margin:0}
+    .grid{display:grid;gap:14px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .card{background:rgba(255,255,255,.92);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-soft)}
+    .card-pad{padding:18px}.stat{padding:16px}.stat-icon{font-size:1.35rem;margin-bottom:8px}.stat-value{font-size:1.35rem;font-weight:900;letter-spacing:-.04em}.stat-label{font-size:.78rem;color:var(--muted)}
+    .profile-card{display:grid;grid-template-columns:78px 1fr;gap:14px;align-items:center;padding:16px;background:linear-gradient(135deg,#fff,#f4faf7)}
+    .avatar-orb{display:grid;place-items:center;width:74px;height:74px;border-radius:22px;background:var(--sea-soft);font-size:42px;border:1px solid #c8e6e9}
+    .level-bar,.progress-track{height:10px;background:#e8e6df;border-radius:99px;overflow:hidden}.level-fill,.progress-fill{height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--orange),#f5a03b);transition:width .4s ease}
+    .course-card{display:grid;grid-template-columns:1fr;overflow:hidden}.course-visual{position:relative;min-height:118px;padding:16px;background:linear-gradient(145deg,var(--sea-soft),#f3fbf6)}
+    .course-visual.coast{background:linear-gradient(145deg,#dff5fb,#f8fbef)}.course-visual.forest{background:linear-gradient(145deg,#e9f5e6,#f9f3df)}.course-visual.city{background:linear-gradient(145deg,#f0eeea,#fff7e7)}
+    .course-scene{position:absolute;right:16px;bottom:7px;font-size:56px;opacity:.9}.pills{display:flex;flex-wrap:wrap;gap:7px}.pill{display:inline-flex;align-items:center;gap:5px;min-height:29px;padding:4px 9px;border-radius:999px;background:var(--surface-2);color:#52605a;font-size:.75rem;font-weight:750;border:1px solid rgba(120,120,110,.12)}
+    .pill.orange{background:var(--orange-soft);color:var(--orange-dark)}.pill.sea{background:var(--sea-soft);color:#0c6279}.pill.green{background:var(--leaf-soft);color:#2f6541}.pill.selected{background:var(--ink);color:#fff}
+    .course-body{padding:17px}.course-meta{display:flex;flex-wrap:wrap;gap:8px 14px;color:var(--muted);font-size:.82rem;margin:10px 0}.course-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px}
+    .filter-panel{padding:15px;margin-bottom:15px}.filter-title{font-size:.82rem;font-weight:900;margin:14px 0 7px}.filter-title:first-child{margin-top:0}.filter-row{display:flex;gap:7px;overflow-x:auto;padding:2px 1px 5px;scrollbar-width:thin}.filter-btn{flex:0 0 auto;min-height:40px;padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:.82rem;font-weight:750}.filter-btn[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+    .results-line{display:flex;justify-content:space-between;align-items:center;margin:10px 2px 13px}.text-btn{color:var(--sea);font-weight:850;text-decoration:underline;text-underline-offset:3px;min-height:40px;padding:8px}
+    .back-row{display:flex;align-items:center;gap:10px;margin-bottom:14px}.back-btn{min-width:44px;height:44px;border-radius:14px;background:#fff;border:1px solid var(--line);font-size:1.2rem}.back-title{font-weight:900}
+    .map-shell{position:relative;overflow:hidden;border:1px solid #cadbd9;border-radius:24px;background:#dff1f2;box-shadow:var(--shadow);margin-bottom:18px}
+    .map-canvas{height:clamp(300px,48vh,510px);width:100%;z-index:1;background:#dceff0}.leaflet-container{font-family:var(--font)}
+    .map-topbar{position:absolute;z-index:500;left:10px;right:10px;top:10px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none}
+    .map-summary{max-width:min(72%,310px);padding:10px 12px;border:1px solid rgba(255,255,255,.8);border-radius:14px;background:rgba(255,255,255,.93);box-shadow:0 4px 16px rgba(31,55,57,.18);backdrop-filter:blur(9px);pointer-events:auto}
+    .map-summary strong{display:block;font-size:.88rem}.map-summary span{font-size:.73rem;color:var(--muted)}
+    .map-tools{display:grid;gap:7px;pointer-events:auto}.map-tool{width:44px;height:44px;border:1px solid rgba(50,70,70,.18);border-radius:13px;background:rgba(255,255,255,.95);box-shadow:0 4px 14px rgba(31,55,57,.16);font-size:1rem}
+    .map-legend{position:absolute;z-index:500;left:10px;bottom:10px;display:flex;gap:9px;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.94);font-size:.68rem;font-weight:800;box-shadow:0 3px 12px rgba(31,55,57,.15)}
+    .legend-item{display:flex;align-items:center;gap:4px}.legend-dot{width:9px;height:9px;border-radius:50%}.legend-line{width:17px;height:4px;border-radius:4px;background:var(--orange)}
+    .map-fallback{position:absolute;z-index:2;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;background:
+      linear-gradient(24deg,transparent 48%,rgba(255,255,255,.6) 49% 51%,transparent 52%),
+      linear-gradient(155deg,#dff1f2 0 45%,#b9d8c1 45% 65%,#9cc7a5 65%)}
+    .map-fallback svg{position:absolute;inset:15%;width:70%;height:70%}.fallback-note{position:absolute;left:12px;right:12px;bottom:58px;text-align:center;padding:9px 12px;border-radius:12px;background:rgba(255,255,255,.92);font-size:.77rem}.hidden{display:none!important}
+    .route-line{fill:none;stroke:var(--orange);stroke-width:7;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1 0;filter:drop-shadow(0 2px 1px rgba(0,0,0,.13))}
+    .detail-grid{display:grid;gap:14px}.info-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.info-item{padding:13px;border-radius:14px;background:var(--surface-2)}.info-item span{display:block;font-size:.72rem;color:var(--muted)}.info-item strong{display:block;margin-top:2px;font-size:.88rem}
+    .warning-box{padding:14px;border-radius:14px;background:#fff7e8;color:#6f4415;border:1px solid #efd3a8;font-size:.84rem;margin-top:10px}
+    .sticky-action{position:sticky;z-index:600;bottom:calc(var(--nav-h) + 10px + env(safe-area-inset-bottom));padding:10px;margin:18px -4px 0;border:1px solid rgba(225,220,205,.9);border-radius:19px;background:rgba(255,250,240,.94);box-shadow:0 -5px 20px rgba(55,55,45,.10);backdrop-filter:blur(12px)}
+    .sticky-action .btn-row{display:grid;grid-template-columns:1fr 1fr}
+    .activity-hero{text-align:center;padding:22px 18px}.activity-ring{--p:0;position:relative;width:160px;height:160px;margin:14px auto;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--orange) calc(var(--p)*1%),#ece8de 0)}
+    .activity-ring:after{content:"";position:absolute;inset:13px;border-radius:50%;background:#fff}.activity-ring-content{position:relative;z-index:1}.activity-ring strong{display:block;font-size:2rem;line-height:1}.activity-ring span{font-size:.78rem;color:var(--muted)}
+    .activity-stats{grid-template-columns:repeat(3,minmax(0,1fr));margin:16px 0}.activity-stats .stat{text-align:center;padding:12px 6px}.activity-stats .stat-value{font-size:1rem}
+    .gps-status{display:flex;align-items:center;justify-content:center;gap:8px;font-size:.8rem;color:var(--muted)}.pulse{width:9px;height:9px;border-radius:50%;background:#58a66c;box-shadow:0 0 0 5px rgba(88,166,108,.13)}
+    .completion{text-align:center;padding:28px 18px;overflow:hidden}.celebrate{font-size:66px;animation:float 1.8s ease-in-out infinite}.reward-card{margin:18px 0;padding:16px;border:1px solid #f0d5a8;border-radius:18px;background:linear-gradient(135deg,#fff7e7,#fff)}
+    @keyframes float{50%{transform:translateY(-7px) rotate(2deg)}}
+    .room{position:relative;min-height:360px;border:5px solid #fff;border-radius:26px;overflow:hidden;box-shadow:var(--shadow);background:linear-gradient(#bce2ef 0 57%,#87ae76 57%)}
+    .room[data-bg="귤밭"]{background:linear-gradient(#cde9f0 0 52%,#6f9d58 52%)}.room[data-bg="오름"]{background:linear-gradient(#c5e1ef 0 54%,#6f9f6a 54%)}.room[data-bg="돌담길"]{background:linear-gradient(#d8e9eb 0 54%,#b8ad92 54%)}
+    .room-sun{position:absolute;right:24px;top:25px;width:48px;height:48px;border-radius:50%;background:#ffd86b;box-shadow:0 0 0 9px rgba(255,216,107,.18)}
+    .room-wall{position:absolute;left:0;right:0;bottom:0;height:58px;background:repeating-linear-gradient(15deg,#4e5854 0 26px,#68736e 27px 49px);border-top:5px solid #77827d}
+    .room-avatar{position:absolute;left:18%;bottom:54px;font-size:78px;filter:drop-shadow(0 7px 2px rgba(0,0,0,.18))}.room-dol{position:absolute;left:48%;bottom:55px;font-size:65px;filter:grayscale(.5) drop-shadow(0 6px 2px rgba(0,0,0,.16))}.room-tree{position:absolute;right:10%;bottom:48px;font-size:88px;filter:drop-shadow(0 7px 2px rgba(0,0,0,.14))}
+    .room-label{position:absolute;left:13px;top:13px;padding:8px 11px;border-radius:12px;background:rgba(255,255,255,.9);font-weight:900;font-size:.8rem}.stickers{position:absolute;left:15px;right:15px;bottom:8px;display:flex;gap:6px;z-index:2}.sticker{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:#fff;border:2px solid #f1d18b;font-size:18px;transform:rotate(-5deg)}
+    .growth-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.growth-card{text-align:center;padding:17px}.growth-emoji{font-size:46px;margin-bottom:8px}
+    .restaurant-card{padding:17px}.restaurant-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.restaurant-score{display:grid;place-items:center;min-width:42px;height:42px;border-radius:13px;background:var(--leaf-soft);color:var(--leaf);font-weight:900}.restaurant-reason{margin:11px 0;padding:9px 11px;border-radius:12px;background:var(--sea-soft);color:#145e70;font-size:.78rem;font-weight:750}.restaurant-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+    .history-item{display:grid;grid-template-columns:48px 1fr auto;align-items:center;gap:11px;padding:14px 0;border-bottom:1px solid var(--line)}.history-item:last-child{border-bottom:0}.history-icon{display:grid;place-items:center;width:46px;height:46px;border-radius:14px;background:var(--orange-soft);font-size:22px}
+    .settings-group{padding:18px;margin-bottom:14px}.setting-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px 0;border-bottom:1px solid var(--line)}.setting-row:last-child{border-bottom:0}.setting-copy{min-width:0}.setting-copy strong{display:block}.setting-copy span{display:block;color:var(--muted);font-size:.76rem}.select{min-height:44px;max-width:145px;padding:8px 32px 8px 11px;border:1px solid var(--line);border-radius:12px;background:#fff}
+    .switch{position:relative;width:54px;height:32px;flex:0 0 auto}.switch input{position:absolute;opacity:0}.switch span{position:absolute;inset:0;border-radius:99px;background:#c8ccc8;transition:.2s}.switch span:after{content:"";position:absolute;width:24px;height:24px;left:4px;top:4px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.18);transition:.2s}.switch input:checked+span{background:var(--leaf)}.switch input:checked+span:after{transform:translateX(22px)}
+    .empty{text-align:center;padding:36px 20px}.empty-icon{font-size:54px;margin-bottom:10px}
+    .bottom-nav{position:fixed;z-index:900;left:0;right:0;bottom:0;height:calc(var(--nav-h) + env(safe-area-inset-bottom));padding:6px 8px env(safe-area-inset-bottom);display:grid;grid-template-columns:repeat(5,1fr);background:rgba(255,255,255,.95);border-top:1px solid var(--line);backdrop-filter:blur(18px);box-shadow:0 -5px 20px rgba(40,45,40,.08)}
+    .nav-btn{min-width:0;border-radius:14px;color:var(--muted);font-size:.69rem;font-weight:800;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}.nav-icon{font-size:1.25rem;line-height:1.1}.nav-btn[aria-current="page"]{color:var(--orange-dark);background:var(--orange-soft)}
+    .modal-backdrop{position:fixed;z-index:2000;inset:0;padding:20px;display:grid;place-items:center;background:rgba(25,35,31,.55);backdrop-filter:blur(5px)}.modal{width:min(100%,520px);max-height:min(88vh,760px);overflow:auto;background:#fff;border-radius:24px;box-shadow:0 24px 70px rgba(0,0,0,.28);padding:20px}.modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.modal-close{width:44px;height:44px;border-radius:13px;background:var(--surface-2);font-size:1.2rem}.modal .btn-row{margin-top:18px}
+    .toast{position:fixed;z-index:3000;left:50%;bottom:calc(var(--nav-h) + 18px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);width:max-content;max-width:calc(100% - 32px);padding:12px 16px;border-radius:14px;background:#26332e;color:#fff;box-shadow:var(--shadow);font-size:.84rem;opacity:0;pointer-events:none;transition:.25s}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    .spinner{width:22px;height:22px;border:3px solid #fff;border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    @media (min-width:680px){.main{padding:28px 24px calc(var(--nav-h) + 30px)}.hero{display:grid;grid-template-columns:1.15fr .85fr;align-items:center;padding:36px}.hero-art{height:240px;margin:0 0 0 24px}.stats{grid-template-columns:repeat(4,1fr)}.course-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.course-card{grid-template-columns:145px 1fr}.course-visual{min-height:100%}.detail-grid{grid-template-columns:1.05fr .95fr}.restaurant-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.settings-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.settings-group{margin-bottom:0}.growth-grid{grid-template-columns:repeat(3,1fr)}.modal{padding:26px}}
+    @media (min-width:1024px){.app-shell{display:grid;grid-template-columns:230px 1fr}.desktop-rail{position:sticky;z-index:1000;top:0;height:100vh;display:flex;flex-direction:column;padding:30px 18px;background:rgba(255,255,255,.88);border-right:1px solid var(--line);backdrop-filter:blur(16px)}.rail-nav{display:grid;gap:7px;margin-top:32px}.rail-nav .nav-btn{min-height:50px;flex-direction:row;justify-content:flex-start;gap:12px;padding:0 14px;font-size:.9rem}.rail-note{margin-top:auto;padding:14px;border-radius:15px;background:var(--orange-soft);font-size:.76rem;color:#754315}.main{padding:34px 32px 50px}.bottom-nav{display:none}.sticky-action{bottom:16px}.toast{bottom:26px}.topbar .brand{visibility:hidden}.topbar{height:16px;margin:0}.hero{min-height:370px}.map-canvas{height:520px}}
+    @media (min-width:1280px){.app-shell{grid-template-columns:260px 1fr}.main{padding-left:42px;padding-right:42px}.course-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media (max-width:360px){.main{padding-left:12px;padding-right:12px}.btn{padding-left:12px;padding-right:12px}.profile-card{grid-template-columns:64px 1fr}.avatar-orb{width:62px;height:62px}.map-summary{max-width:68%}.activity-stats .stat-label{font-size:.67rem}.restaurant-actions{grid-template-columns:1fr}.info-list{grid-template-columns:1fr 1fr}}
+    @media (prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+    body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">본문으로 바로가기</a>
+  <div class="app-shell">
+    <aside class="desktop-rail" aria-label="주요 메뉴">
+      <a class="brand" href="#/home"><span class="brand-mark" aria-hidden="true">ㅎ</span><span>혼디길</span></a>
+      <nav class="rail-nav" id="desktopNav"></nav>
+      <div class="rail-note">📍 코스·식당 정보는 MVP 시연용입니다. 출발 전 공식 지도와 현장 상황을 확인해 주세요.</div>
+    </aside>
+    <div>
+      <main class="main" id="main-content" tabindex="-1"></main>
+    </div>
+  </div>
+  <nav class="bottom-nav" id="bottomNav" aria-label="하단 메뉴"></nav>
+  <div id="modalRoot"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+  (function(){
+    'use strict';
+
+    var STORAGE_KEY='hondigil_mvp_v3';
+    var navItems=[
+      {id:'home',label:'홈',icon:'⌂'}, {id:'courses',label:'코스',icon:'🧭'},
+      {id:'room',label:'제주방',icon:'🏡'}, {id:'history',label:'기록',icon:'✓'},
+      {id:'settings',label:'설정',icon:'⚙'}
+    ];
+    var courses=[
+      {id:'aewol-run',name:'애월 노을 해안길',type:'러닝',region:'애월',lat:33.4606,lng:126.3113,distance:5.0,duration:48,difficulty:'초급',env:'해안',start:'애월한담공원 입구',end:'곽지 해변 산책로',desc:'바다를 가까이 두고 달리는 평탄한 왕복형 코스예요.',parking:true,toilet:true,store:true,pet:'목줄 착용 시 가능',best:'해 질 무렵',night:'일부 구간 조명 부족',weather:'강풍·파도주의보 때 해안 접근을 피하세요.',safety:'산책객이 많은 구간에서는 속도를 낮춰 주세요.',minDistance:4.0,minDuration:8,coords:[[33.4606,126.3113],[33.4586,126.3100],[33.4567,126.3090],[33.4539,126.3080],[33.4515,126.3070]],restaurants:['r1','r2','r3'],reason:'초보도 부담 적은 노을 러닝',scene:'🌅'},
+      {id:'hamdeok-run',name:'함덕 서우봉 바닷길',type:'러닝',region:'함덕',lat:33.5430,lng:126.6692,distance:3.2,duration:32,difficulty:'초급',env:'해안',start:'함덕해수욕장 광장',end:'서우봉 입구',desc:'짧고 시원하게 달리기 좋은 바다 전망 코스예요.',parking:true,toilet:true,store:true,pet:'목줄 착용 시 가능',best:'이른 아침',night:'해변 중심 구간 가능',weather:'바람이 강하면 모래가 날릴 수 있어요.',safety:'자전거와 보행자를 함께 살펴 주세요.',minDistance:2.5,minDuration:6,coords:[[33.5430,126.6692],[33.5451,126.6733],[33.5466,126.6771],[33.5502,126.6813]],restaurants:['r4','r5'],reason:'3km대 입문 러닝에 알맞아요',scene:'🌊'},
+      {id:'yongdam-run',name:'용담 해안 야경길',type:'러닝',region:'제주시',lat:33.5161,lng:126.5002,distance:7.0,duration:65,difficulty:'중급',env:'도심',start:'용두암 공영주차장',end:'도두 무지개해안도로',desc:'공항 옆 바다와 도심 편의시설을 함께 누리는 코스예요.',parking:true,toilet:true,store:true,pet:'목줄 착용 시 가능',best:'저녁',night:'조명 구간 중심 이용',weather:'비 온 뒤 미끄러운 데크를 조심하세요.',safety:'교차로 횡단 시 신호를 반드시 지켜 주세요.',minDistance:5.6,minDuration:10,coords:[[33.5161,126.5002],[33.5173,126.4932],[33.5162,126.4849],[33.5132,126.4765],[33.5092,126.4688]],restaurants:['r6','r7'],reason:'여행 첫날 가볍게 즐기는 도심 코스',scene:'✈️'},
+      {id:'hyeopjae-run',name:'협재 청량 해변길',type:'러닝',region:'한림',lat:33.3940,lng:126.2397,distance:4.4,duration:42,difficulty:'초급',env:'해안',start:'협재해수욕장',end:'금능해수욕장',desc:'비양도를 바라보며 두 해변을 잇는 산뜻한 코스예요.',parking:true,toilet:true,store:true,pet:'성수기 일부 제한 확인',best:'오전 8시 이전',night:'권장하지 않음',weather:'한여름 낮에는 그늘이 적어요.',safety:'해수욕장 성수기에는 혼잡 구간을 걸어 주세요.',minDistance:3.5,minDuration:7,coords:[[33.3940,126.2397],[33.3917,126.2350],[33.3900,126.2302],[33.3892,126.2246]],restaurants:['r8','r9'],reason:'비양도 풍경을 담는 짧은 해안길',scene:'🏝️'},
+      {id:'seogwipo-run',name:'새연교 바다 러닝',type:'러닝',region:'서귀포',lat:33.2361,lng:126.5587,distance:8.0,duration:75,difficulty:'중급',env:'해안',start:'서귀포항',end:'칠십리공원',desc:'항구와 다리, 공원을 잇는 변화가 있는 코스예요.',parking:true,toilet:true,store:true,pet:'일부 공원 목줄 착용',best:'아침',night:'새연교 주변만 권장',weather:'비 온 날 계단과 경사로를 주의하세요.',safety:'일부 오르막에서 무리하지 말고 보폭을 줄이세요.',minDistance:6.4,minDuration:12,coords:[[33.2361,126.5587],[33.2335,126.5599],[33.2296,126.5612],[33.2355,126.5708],[33.2412,126.5700]],restaurants:['r10','r11'],reason:'바다와 공원을 한 번에 만나요',scene:'🌉'},
+      {id:'saryeoni-trek',name:'사려니 숲 숨길',type:'트래킹',region:'제주시',lat:33.4088,lng:126.6268,distance:10.2,duration:180,difficulty:'중급',env:'숲길',start:'사려니숲길 붉은오름 입구',end:'숲길 반환점',desc:'삼나무 향과 고요한 흙길을 오래 걷는 코스예요.',parking:true,toilet:true,store:false,pet:'출입 제한 구간 확인',best:'오전',night:'이용 금지',weather:'호우·강풍 시 통제 여부를 확인하세요.',safety:'운영시간과 출입 가능 구간을 공식 채널에서 확인하세요.',minDistance:8.2,minDuration:25,coords:[[33.4088,126.6268],[33.4118,126.6212],[33.4159,126.6160],[33.4214,126.6101],[33.4262,126.6038]],restaurants:['r12','r13'],reason:'제주 숲을 천천히 깊게 걷는 길',scene:'🌲'},
+      {id:'seongsan-trek',name:'성산 바람 오름길',type:'트래킹',region:'성산',lat:33.4588,lng:126.9425,distance:3.6,duration:75,difficulty:'중급',env:'오름',start:'성산 일출봉 인근 광장',end:'해안 전망 반환점',desc:'오름 능선과 바다 풍경을 짧게 즐기는 코스예요.',parking:true,toilet:true,store:true,pet:'공식 출입 규정 확인',best:'오전',night:'이용 금지',weather:'강풍 때 능선 구간을 피하세요.',safety:'실제 입장시간과 통제 구간을 현장에서 확인하세요.',minDistance:2.8,minDuration:12,coords:[[33.4588,126.9425],[33.4610,126.9392],[33.4641,126.9361],[33.4675,126.9337]],restaurants:['r14','r15'],reason:'짧지만 선명한 동쪽 제주 풍경',scene:'🌋'},
+      {id:'geumoreum-trek',name:'금오름 억새 한 바퀴',type:'트래킹',region:'한림',lat:33.3561,lng:126.3058,distance:4.8,duration:95,difficulty:'중급',env:'오름',start:'금오름 주차장 인근',end:'분화구 둘레 반환점',desc:'완만한 오름과 탁 트인 서쪽 전망을 만나요.',parking:true,toilet:false,store:false,pet:'목줄 착용, 현장 규정 확인',best:'오후 4시 전',night:'권장하지 않음',weather:'비 온 뒤 진흙과 미끄럼을 주의하세요.',safety:'사유지·출입 통제 안내를 우선 따라 주세요.',minDistance:3.8,minDuration:14,coords:[[33.3561,126.3058],[33.3582,126.3040],[33.3600,126.3016],[33.3615,126.2988],[33.3588,126.2968]],restaurants:['r8','r9'],reason:'서쪽 노을과 오름 풍경을 함께',scene:'🌾'},
+      {id:'bijarim-trek',name:'비자림 초록 산책',type:'트래킹',region:'구좌',lat:33.4912,lng:126.8114,distance:2.8,duration:60,difficulty:'초급',env:'숲길',start:'비자림 입구 인근',end:'숲길 순환 반환점',desc:'걷기 초보와 가족도 편안하게 즐기는 숲길이에요.',parking:true,toilet:true,store:false,pet:'입장 규정 확인',best:'오전',night:'이용 금지',weather:'우천 시 나무뿌리와 돌길이 미끄러워요.',safety:'운영시간·입장료·통제 여부를 공식 안내로 확인하세요.',minDistance:2.2,minDuration:10,coords:[[33.4912,126.8114],[33.4930,126.8096],[33.4949,126.8083],[33.4968,126.8104],[33.4950,126.8130]],restaurants:['r4','r14'],reason:'부담 없이 만나는 오래된 제주 숲',scene:'🍃'},
+      {id:'ollegil7-trek',name:'외돌개 돌담 바닷길',type:'트래킹',region:'서귀포',lat:33.2391,lng:126.5454,distance:12.0,duration:230,difficulty:'상급',env:'해안',start:'외돌개 입구',end:'법환포구 인근',desc:'돌담과 바다 절벽, 마을길을 길게 이어 걷는 코스예요.',parking:true,toilet:true,store:true,pet:'일부 구간 제한 확인',best:'오전 9시 이전',night:'이용 비권장',weather:'태풍·풍랑특보 시 해안 구간을 피하세요.',safety:'공식 올레길 표식과 우회 안내를 따라 주세요.',minDistance:9.6,minDuration:30,coords:[[33.2391,126.5454],[33.2370,126.5381],[33.2351,126.5301],[33.2330,126.5210],[33.2314,126.5119]],restaurants:['r10','r11'],reason:'제주다운 바다와 마을을 오래 걷기',scene:'🧱'}
+    ];
+    var restaurants=[
+      {id:'r1',name:'한담 바당국수',region:'애월',lat:33.470,lng:126.295,menu:'고기국수',price:'₩₩',hours:'10:30–21:00',breakTime:'15:30–17:00',closed:'수요일',parking:true,solo:true,takeout:false,category:'든든한 한 끼',walk:7,drive:2,reason:'도착지에서 도보 7분, 운동 후 든든한 면 요리',courses:['aewol-run'],verified:'2026-07-01'},
+      {id:'r2',name:'몽돌 보말한상',region:'애월',lat:33.468,lng:126.299,menu:'보말죽·성게미역국',price:'₩₩',hours:'09:00–20:00',breakTime:'없음',closed:'화요일',parking:true,solo:true,takeout:true,category:'제주다운 메뉴',walk:11,drive:3,reason:'부담 없이 따뜻하게 먹는 제주식 한 끼',courses:['aewol-run'],verified:'2026-06-25'},
+      {id:'r3',name:'귤빛 파도카페',region:'애월',lat:33.466,lng:126.303,menu:'감귤에이드·오메기라떼',price:'₩₩',hours:'10:00–21:00',breakTime:'없음',closed:'목요일',parking:false,solo:true,takeout:true,category:'카페·음료',walk:5,drive:2,reason:'도착 뒤 가볍게 쉬기 좋은 바다 카페',courses:['aewol-run'],verified:'2026-07-05'},
+      {id:'r4',name:'서우봉 해녀밥상',region:'함덕',lat:33.546,lng:126.674,menu:'전복돌솥밥',price:'₩₩',hours:'11:00–20:30',breakTime:'15:00–17:00',closed:'월요일',parking:true,solo:false,takeout:false,category:'제주다운 메뉴',walk:8,drive:3,reason:'바다 코스 뒤 제주 재료로 든든하게',courses:['hamdeok-run','bijarim-trek'],verified:'2026-06-28'},
+      {id:'r5',name:'함덕 작은김밥',region:'함덕',lat:33.543,lng:126.668,menu:'톳김밥·우동',price:'₩',hours:'08:00–19:30',breakTime:'없음',closed:'일요일',parking:false,solo:true,takeout:true,category:'가볍게 먹기',walk:4,drive:1,reason:'혼밥 가능, 빠르고 가볍게 먹기 좋아요',courses:['hamdeok-run'],verified:'2026-07-02'},
+      {id:'r6',name:'용담 돌문어식탁',region:'제주시',lat:33.513,lng:126.478,menu:'돌문어덮밥',price:'₩₩',hours:'11:00–21:30',breakTime:'15:30–17:00',closed:'화요일',parking:true,solo:true,takeout:true,category:'든든한 한 끼',walk:9,drive:3,reason:'오후 9시 30분까지, 저녁 러닝 후 방문하기 좋아요',courses:['yongdam-run'],verified:'2026-07-04'},
+      {id:'r7',name:'도두 구름샌드',region:'제주시',lat:33.508,lng:126.470,menu:'당근샌드위치·커피',price:'₩₩',hours:'09:00–20:00',breakTime:'없음',closed:'없음',parking:true,solo:true,takeout:true,category:'가볍게 먹기',walk:6,drive:2,reason:'가벼운 식사와 테이크아웃 모두 가능',courses:['yongdam-run'],verified:'2026-07-08'},
+      {id:'r8',name:'비양도 들깨국수',region:'한림',lat:33.391,lng:126.231,menu:'들깨칼국수',price:'₩',hours:'10:30–20:00',breakTime:'15:00–16:30',closed:'금요일',parking:true,solo:true,takeout:false,category:'든든한 한 끼',walk:7,drive:2,reason:'따뜻한 국물과 넉넉한 양으로 회복 식사 추천',courses:['hyeopjae-run','geumoreum-trek'],verified:'2026-06-30'},
+      {id:'r9',name:'한림 초록보리집',region:'한림',lat:33.388,lng:126.228,menu:'보리비빔밥',price:'₩',hours:'11:00–19:30',breakTime:'없음',closed:'월요일',parking:true,solo:true,takeout:true,category:'제주다운 메뉴',walk:10,drive:3,reason:'채소 중심의 산뜻한 제주 보리 한상',courses:['hyeopjae-run','geumoreum-trek'],verified:'2026-07-01'},
+      {id:'r10',name:'새연 포구식당',region:'서귀포',lat:33.235,lng:126.562,menu:'옥돔구이정식',price:'₩₩₩',hours:'11:00–21:00',breakTime:'15:00–17:00',closed:'수요일',parking:true,solo:false,takeout:false,category:'제주다운 메뉴',walk:12,drive:4,reason:'완주 뒤 천천히 즐기는 제주 생선 한상',courses:['seogwipo-run','ollegil7-trek'],verified:'2026-07-03'},
+      {id:'r11',name:'칠십리 따뜻한밥',region:'서귀포',lat:33.240,lng:126.568,menu:'흑돼지 제육덮밥',price:'₩₩',hours:'10:30–20:30',breakTime:'없음',closed:'목요일',parking:false,solo:true,takeout:true,category:'든든한 한 끼',walk:6,drive:2,reason:'혼밥 가능, 운동 후 단백질 식사로 추천',courses:['seogwipo-run','ollegil7-trek'],verified:'2026-07-06'},
+      {id:'r12',name:'숲길 메밀부엌',region:'조천',lat:33.413,lng:126.620,menu:'메밀비빔국수',price:'₩',hours:'10:00–18:30',breakTime:'없음',closed:'화요일',parking:true,solo:true,takeout:true,category:'가볍게 먹기',walk:14,drive:5,reason:'숲길 뒤 산뜻하게 먹는 메밀 메뉴',courses:['saryeoni-trek'],verified:'2026-06-20'},
+      {id:'r13',name:'사려니 차롱카페',region:'조천',lat:33.410,lng:126.625,menu:'당근주스·보리빵',price:'₩',hours:'09:30–18:00',breakTime:'없음',closed:'월요일',parking:true,solo:true,takeout:true,category:'카페·음료',walk:8,drive:3,reason:'주차 가능, 출발지 근처에서 쉬어가기 좋아요',courses:['saryeoni-trek'],verified:'2026-07-02'},
+      {id:'r14',name:'성산 바람해장국',region:'성산',lat:33.462,lng:126.938,menu:'몸국·해장국',price:'₩',hours:'07:00–20:00',breakTime:'없음',closed:'일요일',parking:true,solo:true,takeout:true,category:'제주다운 메뉴',walk:9,drive:3,reason:'아침 일찍 열고 혼밥하기 편한 제주 몸국',courses:['seongsan-trek','bijarim-trek'],verified:'2026-07-07'},
+      {id:'r15',name:'일출봉 당근분식',region:'성산',lat:33.459,lng:126.941,menu:'당근떡볶이·김밥',price:'₩',hours:'10:00–20:30',breakTime:'15:30–16:30',closed:'목요일',parking:false,solo:true,takeout:true,category:'가볍게 먹기',walk:4,drive:1,reason:'도착지에서 가깝고 간단히 먹기 좋아요',courses:['seongsan-trek'],verified:'2026-07-09'}
+    ];
+    var defaults={xp:0,totalDistance:0,completions:[],avatar:{hair:'단정한 머리',top:'주황 바람막이',bottom:'네이비 반바지',shoes:'흰 운동화',accessory:'감귤 배지'},background:'제주 바다',textSize:'normal',reduceMotion:false,filters:{type:'전체',distance:'전체',difficulty:'전체',env:'전체',parking:false,toilet:false},restaurantFilter:'전체'};
+    var state=loadState();
+    var ui={map:null,mapCourse:null,activity:null,timer:null,watchId:null,leafletLoading:false,toastTimer:null};
+
+    function clone(obj){return JSON.parse(JSON.stringify(obj));}
+    function loadState(){
+      try{var raw=localStorage.getItem(STORAGE_KEY);var saved=raw?JSON.parse(raw):{};return mergeState(saved);}catch(e){return clone(defaults);}
+    }
+    function mergeState(saved){
+      var next=clone(defaults),k;
+      if(!saved||typeof saved!=='object')return next;
+      for(k in next){if(Object.prototype.hasOwnProperty.call(saved,k)&&k!=='filters')next[k]=saved[k];}
+      if(saved.filters&&typeof saved.filters==='object'){for(k in next.filters){if(Object.prototype.hasOwnProperty.call(saved.filters,k))next.filters[k]=saved.filters[k];}}
+      if(!Array.isArray(next.completions))next.completions=[];
+      return next;
+    }
+    function saveState(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch(e){toast('이 브라우저에서는 저장이 제한되어 있어요.');}}
+    function setSession(key,value){try{sessionStorage.setItem(key,value);}catch(e){}}
+    function getSession(key,fallback){try{return sessionStorage.getItem(key)||fallback;}catch(e){return fallback;}}
+    function esc(value){return String(value==null?'':value).replace(/[&<>'"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c];});}
+    function fmtKm(n){return (Math.round(Number(n||0)*10)/10).toFixed(1)+'km';}
+    function fmtTime(sec){sec=Math.max(0,Math.floor(sec||0));var m=Math.floor(sec/60),s=sec%60;return (m<10?'0':'')+m+':'+(s<10?'0':'')+s;}
+    function courseById(id){return courses.filter(function(c){return c.id===id;})[0]||null;}
+    function restaurantById(id){return restaurants.filter(function(r){return r.id===id;})[0]||null;}
+    function activePage(){var hash=location.hash||'#/home';var part=hash.replace(/^#\//,'').split('/')[0];return navItems.some(function(n){return n.id===part;})?part:(part==='course'||part==='activity'||part==='complete'?'courses':'home');}
+    function navigate(path){location.hash='#/'+path;}
+    function topbar(title,sub){return '<div class="topbar"><a class="brand" href="#/home"><span class="brand-mark" aria-hidden="true">ㅎ</span><span>혼디길</span></a><div class="top-actions"><button class="icon-btn" data-nav="settings" aria-label="설정 열기">⚙</button></div></div>'+(title?'<div class="section-head"><div><p class="eyebrow">'+esc(sub||'혼디길')+'</p><h1>'+esc(title)+'</h1></div></div>':'');}
+    function sampleNotice(){return '<div class="notice"><span aria-hidden="true">ⓘ</span><span>현재 코스와 식당 정보는 MVP 시연용 예시이며, 실제 이용 전 공식 지도와 현장 상황을 확인해 주세요.</span></div>';}
+    function renderNav(){
+      var current=activePage();
+      var html=navItems.map(function(n){return '<button class="nav-btn" data-nav="'+n.id+'" '+(current===n.id?'aria-current="page"':'')+'><span class="nav-icon" aria-hidden="true">'+n.icon+'</span><span>'+n.label+'</span></button>';}).join('');
+      document.getElementById('bottomNav').innerHTML=html;document.getElementById('desktopNav').innerHTML=html;
+    }
+    function applyPrefs(){
+      document.documentElement.style.setProperty('--text-scale',state.textSize==='large'?'1.1':'1');
+      document.body.classList.toggle('reduce-motion',!!state.reduceMotion);
+    }
+    function level(){return Math.floor(state.xp/100)+1;}
+    function dolStage(){var n=state.completions.length;if(n>=20)return {name:'특별 제주 돌하르방',emoji:'🗿✨',next:'최고 단계 달성'};if(n>=10)return {name:'러닝 돌하르방',emoji:'🗿🏃',next:(20-n)+'회 더 완주'};if(n>=5)return {name:'헤어밴드 돌하르방',emoji:'🗿🎽',next:(10-n)+'회 더 완주'};if(n>=3)return {name:'미소 돌하르방',emoji:'🗿😊',next:(5-n)+'회 더 완주'};if(n>=1)return {name:'작은 돌하르방',emoji:'🗿',next:(3-n)+'회 더 완주'};return {name:'아직 잠든 돌',emoji:'🪨',next:'첫 완주가 필요해요'};}
+    function treeStage(){var d=state.totalDistance;if(d>=100)return {name:'귤이 열린 나무',emoji:'🍊🌳',next:'최고 단계 달성'};if(d>=50)return {name:'귤꽃 나무',emoji:'🌼🌳',next:'다음 성장까지 '+fmtKm(100-d)};if(d>=30)return {name:'어린 나무',emoji:'🌳',next:'다음 성장까지 '+fmtKm(50-d)};if(d>=10)return {name:'새싹',emoji:'🌱',next:'다음 성장까지 '+fmtKm(30-d)};return {name:'씨앗',emoji:'🌰',next:'다음 성장까지 '+fmtKm(10-d)};}
+    function avatarEmoji(){var acc=state.avatar.accessory==='선글라스'?'😎':'🙂';return acc+'🏃';}
+    function homeView(){
+      var recent=state.completions[0],dol=dolStage(),tree=treeStage(),recommended=courses[0];
+      return topbar()+'<section class="hero"><div class="hero-copy"><p class="eyebrow">제주에서 혼디, 같이 걷는 길</p><h1>걷고 달릴수록<br>나의 제주가 자라요</h1><p>제주 코스를 완주하고 캐릭터와 제주방을 키운 뒤, 가까운 로컬 식당을 발견해 보세요.</p><div class="btn-row"><button class="btn btn-primary" data-course-type="러닝">🏃 러닝 코스 보기</button><button class="btn btn-secondary" data-course-type="트래킹">🥾 트래킹 코스 보기</button></div></div><div class="hero-art" aria-label="제주 오름길을 달리는 캐릭터 일러스트"><span class="hero-avatar">'+avatarEmoji()+'</span><span class="hero-road"></span></div></section>'+
+      '<section class="card profile-card"><div class="avatar-orb" aria-hidden="true">'+avatarEmoji()+'</div><div><div class="course-actions" style="margin-top:0"><strong>Lv.'+level()+' 나의 여행자</strong><span class="pill orange">EXP '+state.xp+'</span></div><p class="small muted">다음 레벨까지 '+(100-(state.xp%100||0))+' EXP</p><div class="level-bar" aria-label="레벨 진행률"><div class="level-fill" style="width:'+(state.xp%100)+'%"></div></div></div></section>'+
+      '<section class="section"><div class="grid stats"><div class="card stat"><div class="stat-icon">✓</div><div class="stat-value">'+state.completions.length+'</div><div class="stat-label">완주 코스</div></div><div class="card stat"><div class="stat-icon">↗</div><div class="stat-value">'+fmtKm(state.totalDistance)+'</div><div class="stat-label">누적 거리</div></div><div class="card stat"><div class="stat-icon">'+dol.emoji+'</div><div class="stat-value small">'+dol.name+'</div><div class="stat-label">'+dol.next+'</div></div><div class="card stat"><div class="stat-icon">'+tree.emoji+'</div><div class="stat-value small">'+tree.name+'</div><div class="stat-label">'+tree.next+'</div></div></div></section>'+
+      '<section class="section"><div class="section-head"><div><p class="eyebrow">오늘의 추천</p><h2>부담 없이 시작해요</h2></div><button class="text-btn" data-nav="courses">전체 보기</button></div><div class="grid course-grid">'+courseCard(recommended)+'</div></section>'+
+      '<section class="section grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))"><div class="card card-pad"><p class="eyebrow">🌱 완주 보상</p><h3>기록이 눈에 보이게 자라요</h3><p class="muted small">완주 횟수로 돌하르방이, 누적 거리로 귤나무가 성장해요.</p><button class="text-btn" data-nav="room">나의 제주방 보기 →</button></div><div class="card card-pad"><p class="eyebrow">🍚 로컬 발견</p><h3>도착하자마자 가까운 한 끼</h3><p class="muted small">코스 도착지, 혼밥·주차 여부를 반영한 시연용 식당을 추천해요.</p><button class="text-btn" data-course="'+recommended.id+'">코스에서 미리 보기 →</button></div></section>'+
+      '<section class="section"><div class="section-head"><div><p class="eyebrow">최근 기록</p><h2>'+(recent?'다시 만난 제주':'첫 기록을 만들어 보세요')+'</h2></div></div>'+(recent?historyCard(recent):'<div class="card empty"><div class="empty-icon">👟</div><h3>아직 완주 기록이 없어요</h3><p class="muted small">데모 코스로 먼저 경험해도 좋아요.</p><button class="btn btn-soft" data-course="hamdeok-run">3.2km 코스 체험하기</button></div>')+'</section>'+sampleNotice();
+    }
+    function courseCard(c){
+      var cls=c.env==='해안'?'coast':c.env==='숲길'||c.env==='오름'?'forest':'city';
+      return '<article class="card course-card"><div class="course-visual '+cls+'"><div class="pills"><span class="pill '+(c.type==='러닝'?'orange':'green')+'">'+c.type+'</span><span class="pill">'+c.region+'</span></div><span class="course-scene" aria-hidden="true">'+c.scene+'</span></div><div class="course-body"><h3>'+esc(c.name)+'</h3><p class="small muted">'+esc(c.reason)+'</p><div class="course-meta"><span>↗ '+fmtKm(c.distance)+'</span><span>◷ 약 '+c.duration+'분</span><span>◆ '+c.difficulty+'</span><span>'+c.env+'</span></div><div class="course-actions"><div class="pills"><span class="pill">'+(c.parking?'🅿 주차':'주차 확인')+'</span><span class="pill">'+(c.toilet?'🚻 화장실':'화장실 확인')+'</span></div><button class="btn btn-soft" data-course="'+c.id+'">상세 보기</button></div></div></article>';
+    }
+    function courseView(){
+      var f=state.filters,filtered=courses.filter(function(c){
+        var dist=f.distance==='전체'||(f.distance==='3km 이하'&&c.distance<=3)||(f.distance==='3–5km'&&c.distance>3&&c.distance<=5)||(f.distance==='5–10km'&&c.distance>5&&c.distance<=10)||(f.distance==='10km 이상'&&c.distance>=10);
+        return (f.type==='전체'||c.type===f.type)&&dist&&(f.difficulty==='전체'||c.difficulty===f.difficulty)&&(f.env==='전체'||c.env===f.env)&&(!f.parking||c.parking)&&(!f.toilet||c.toilet);
+      });
+      return topbar('제주 코스','내 속도에 맞는 길 찾기')+sampleNotice()+'<section class="card filter-panel" aria-label="코스 필터">'+filterGroup('종류','type',['전체','러닝','트래킹'])+filterGroup('거리','distance',['전체','3km 이하','3–5km','5–10km','10km 이상'])+filterGroup('난이도','difficulty',['전체','초급','중급','상급'])+filterGroup('환경','env',['전체','해안','오름','숲길','도심'])+'<div class="filter-title">편의시설</div><div class="filter-row"><button class="filter-btn" data-filter="parking" data-value="toggle" aria-pressed="'+f.parking+'">🅿 주차 가능</button><button class="filter-btn" data-filter="toilet" data-value="toggle" aria-pressed="'+f.toilet+'">🚻 화장실 있음</button></div></section><div class="results-line"><strong>'+filtered.length+'개 코스</strong><button class="text-btn" data-action="clear-filters">필터 초기화</button></div>'+(filtered.length?'<div class="grid course-grid">'+filtered.map(courseCard).join('')+'</div>':'<div class="card empty"><div class="empty-icon">🔎</div><h3>조건에 맞는 코스가 없어요</h3><p class="muted">필터를 하나씩 줄여 보세요.</p><button class="btn btn-soft" data-action="clear-filters">필터 모두 지우기</button></div>');
+    }
+    function filterGroup(title,key,values){return '<div class="filter-title">'+title+'</div><div class="filter-row">'+values.map(function(v){return '<button class="filter-btn" data-filter="'+key+'" data-value="'+v+'" aria-pressed="'+(state.filters[key]===v)+'">'+v+'</button>';}).join('')+'</div>';}
+    function backRow(title){return '<div class="back-row"><button class="back-btn" data-action="back" aria-label="이전 화면">←</button><span class="back-title">'+esc(title)+'</span></div>';}
+    function detailView(id){
+      var c=courseById(id);if(!c)return notFound();
+      var rs=c.restaurants.map(restaurantById).filter(Boolean);
+      setTimeout(function(){initMap(c);},30);
+      return backRow('코스 목록')+'<section><p class="eyebrow">'+c.region+' · '+c.type+'</p><h1>'+esc(c.name)+'</h1><div class="pills"><span class="pill orange">'+fmtKm(c.distance)+'</span><span class="pill">약 '+c.duration+'분</span><span class="pill green">'+c.difficulty+'</span><span class="pill sea">'+c.env+'</span></div></section><section class="map-shell" aria-label="'+esc(c.name)+' 경로 지도"><div class="map-canvas" id="map-main"></div><div class="map-fallback" id="mapFallback"><svg viewBox="0 0 320 180" aria-hidden="true"><path class="route-line" d="M25,145 C65,108 83,129 120,92 S180,52 206,79 S260,45 297,25"/><circle cx="25" cy="145" r="10" fill="#3e7751"/><circle cx="297" cy="25" r="10" fill="#e85d24"/></svg><div class="fallback-note">지도 연결을 확인하고 있어요. 경로 정보와 활동 체험은 그대로 이용할 수 있어요.</div></div><div class="map-topbar"><div class="map-summary"><strong>'+esc(c.name)+'</strong><span>'+esc(c.start)+' → '+esc(c.end)+'</span></div><div class="map-tools"><button class="map-tool" data-action="fit-map" aria-label="전체 경로 보기" title="전체 경로 보기">⌖</button></div></div><div class="map-legend"><span class="legend-item"><i class="legend-dot" style="background:#3e7751"></i>출발</span><span class="legend-item"><i class="legend-line"></i>코스</span><span class="legend-item"><i class="legend-dot" style="background:#e85d24"></i>도착</span></div></section><div class="detail-grid"><section class="card card-pad"><h2>코스 한눈에 보기</h2><p class="muted">'+esc(c.desc)+'</p><div class="info-list">'+info('출발',c.start)+info('도착',c.end)+info('주차',c.parking?'가능':'현장 확인')+info('화장실',c.toilet?'있음':'현장 확인')+info('편의점',c.store?'주변 있음':'미리 준비')+info('반려동물',c.pet)+info('추천 시간',c.best)+info('야간',c.night)+'</div><div class="warning-box"><strong>날씨 주의</strong><br>'+esc(c.weather)+'</div><div class="warning-box"><strong>안전 안내</strong><br>'+esc(c.safety)+'</div></section><section><div class="section-head"><div><p class="eyebrow">도착 후 추천</p><h2>가까운 로컬 한 끼</h2></div></div><div class="grid">'+rs.slice(0,2).map(restaurantCard).join('')+'</div></section></div><div class="sticky-action"><div class="btn-row"><button class="btn btn-secondary" data-start-real="'+c.id+'">📍 실제 GPS로 시작</button><button class="btn btn-primary" data-start-demo="'+c.id+'">▶ 데모로 체험</button></div></div>'+sampleNotice();
+    }
+    function info(label,value){return '<div class="info-item"><span>'+esc(label)+'</span><strong>'+esc(value)+'</strong></div>';}
+    function initMap(c){
+      ui.mapCourse=c;
+      if(window.L){drawLeaflet(c);return;}
+      if(ui.leafletLoading)return;
+      ui.leafletLoading=true;var s=document.createElement('script');s.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';s.crossOrigin='anonymous';
+      s.onload=function(){ui.leafletLoading=false;if(ui.mapCourse&&document.getElementById('map-main'))drawLeaflet(ui.mapCourse);};
+      s.onerror=function(){ui.leafletLoading=false;toast('지도 연결이 어려워 대체 경로를 표시했어요.');};document.head.appendChild(s);
+    }
+    function drawLeaflet(c){
+      var el=document.getElementById('map-main');if(!el||!window.L)return;
+      destroyMap();
+      try{
+        ui.map=window.L.map(el,{zoomControl:false,attributionControl:true,scrollWheelZoom:false,tap:true});
+        window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(ui.map);
+        var line=window.L.polyline(c.coords,{color:'#e85d24',weight:6,opacity:.95,lineCap:'round'}).addTo(ui.map);
+        window.L.circleMarker(c.coords[0],{radius:9,color:'#fff',weight:3,fillColor:'#3e7751',fillOpacity:1}).addTo(ui.map).bindPopup('<strong>출발</strong><br>'+esc(c.start));
+        window.L.circleMarker(c.coords[c.coords.length-1],{radius:9,color:'#fff',weight:3,fillColor:'#e85d24',fillOpacity:1}).addTo(ui.map).bindPopup('<strong>도착</strong><br>'+esc(c.end));
+        ui.map.fitBounds(line.getBounds(),{padding:[45,45]});
+        var fb=document.getElementById('mapFallback');if(fb)fb.classList.add('hidden');setTimeout(function(){if(ui.map)ui.map.invalidateSize();},100);
+      }catch(e){destroyMap();}
+    }
+    function destroyMap(){if(ui.map){try{ui.map.remove();}catch(e){}ui.map=null;}}
+    function startActivity(id,mode){
+      var c=courseById(id);if(!c)return;
+      stopActivity();
+      ui.activity={courseId:id,mode:mode,status:mode==='demo'?'running':'locating',elapsed:0,distance:0,progress:0,accuracy:mode==='demo'?8:null,lastPos:null,startedAt:Date.now()};
+      navigate('activity/'+id);
+      if(mode==='demo')setTimeout(runDemo,100);else setTimeout(runGps,100);
+    }
+    function runDemo(){if(!ui.activity||ui.activity.mode!=='demo')return;clearInterval(ui.timer);ui.timer=setInterval(function(){if(!ui.activity||ui.activity.status!=='running')return;ui.activity.elapsed+=5;ui.activity.progress=Math.min(100,ui.activity.progress+2.5);var c=courseById(ui.activity.courseId);ui.activity.distance=c.distance*ui.activity.progress/100;updateActivityDom();if(ui.activity.progress>=100)clearInterval(ui.timer);},850);}
+    function runGps(){
+      if(!ui.activity)return;
+      if(!navigator.geolocation){gpsFail('이 브라우저는 위치 기능을 지원하지 않아요.');return;}
+      if(location.protocol==='file:'||(!window.isSecureContext&&location.hostname!=='localhost')){gpsFail('파일로 열면 실제 GPS가 제한될 수 있어요. 데모 모드를 이용해 주세요.');return;}
+      try{ui.watchId=navigator.geolocation.watchPosition(onPosition,function(err){var msg=err.code===1?'위치 권한이 거부되었어요.':err.code===2?'현재 위치를 확인할 수 없어요.':'위치 확인 시간이 초과되었어요.';gpsFail(msg);},{enableHighAccuracy:true,timeout:12000,maximumAge:3000});ui.activity.status='running';ui.timer=setInterval(function(){if(ui.activity&&ui.activity.status==='running'){ui.activity.elapsed++;updateActivityDom();}},1000);}catch(e){gpsFail('GPS를 시작하지 못했어요.');}
+    }
+    function onPosition(pos){
+      if(!ui.activity)return;var a=ui.activity,c=courseById(a.courseId),now={lat:pos.coords.latitude,lng:pos.coords.longitude};a.accuracy=Math.round(pos.coords.accuracy||0);
+      if(a.lastPos){var add=haversine(a.lastPos,now);if(add<.3)a.distance+=add;}a.lastPos=now;a.progress=Math.min(100,(a.distance/c.minDistance)*100);updateActivityDom();
+    }
+    function haversine(a,b){var R=6371,dLat=(b.lat-a.lat)*Math.PI/180,dLng=(b.lng-a.lng)*Math.PI/180,x=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
+    function gpsFail(msg){if(!ui.activity)return;ui.activity.status='error';ui.activity.error=msg;updateActivityDom();toast(msg);}
+    function activityView(id){
+      var c=courseById(id),a=ui.activity;if(!c||!a||a.courseId!==id)return '<div class="card empty"><div class="empty-icon">📍</div><h2>진행 중인 활동이 없어요</h2><button class="btn btn-primary" data-course="'+(c?c.id:'hamdeok-run')+'">코스 보기</button></div>';
+      var status=a.status==='paused'?'일시정지':a.status==='error'?'GPS 확인 필요':a.mode==='demo'?'데모 이동 중':'GPS 기록 중';
+      return backRow('활동 종료')+'<section class="card activity-hero"><p class="eyebrow" style="justify-content:center">'+(a.mode==='demo'?'안전한 데모 체험':'실제 GPS 활동')+'</p><h1>'+esc(c.name)+'</h1><div class="activity-ring" id="activityRing" style="--p:'+a.progress+'"><div class="activity-ring-content"><strong id="progressText">'+Math.round(a.progress)+'%</strong><span>코스 진행률</span></div></div><div class="grid activity-stats"><div class="card stat"><div class="stat-value" id="distanceText">'+fmtKm(a.distance)+'</div><div class="stat-label">이동 거리</div></div><div class="card stat"><div class="stat-value" id="timeText">'+fmtTime(a.elapsed)+'</div><div class="stat-label">활동 시간</div></div><div class="card stat"><div class="stat-value" id="accuracyText">'+(a.accuracy!=null?'약 '+a.accuracy+'m':'확인 중')+'</div><div class="stat-label">GPS 정확도</div></div></div><div class="gps-status"><i class="pulse" id="gpsPulse"></i><span id="gpsStatus">'+status+'</span></div>'+(a.error?'<div class="warning-box" id="gpsError">'+esc(a.error)+'</div>':'<div class="warning-box hidden" id="gpsError"></div>')+'<div class="warning-box">화면보다 주변을 먼저 살펴 주세요. 운전 중에는 사용하지 마세요.</div><div class="btn-row" style="justify-content:center;margin-top:18px"><button class="btn btn-secondary" data-action="pause">'+(a.status==='paused'?'▶ 다시 시작':'Ⅱ 일시정지')+'</button><button class="btn btn-primary" data-action="finish">✓ 완주 처리</button><button class="btn btn-danger" data-action="end-activity">활동 종료</button></div></section>';
+    }
+    function updateActivityDom(){
+      var a=ui.activity;if(!a)return;var ring=document.getElementById('activityRing'),p=document.getElementById('progressText'),d=document.getElementById('distanceText'),t=document.getElementById('timeText'),ac=document.getElementById('accuracyText'),s=document.getElementById('gpsStatus'),er=document.getElementById('gpsError');
+      if(ring)ring.style.setProperty('--p',a.progress);if(p)p.textContent=Math.round(a.progress)+'%';if(d)d.textContent=fmtKm(a.distance);if(t)t.textContent=fmtTime(a.elapsed);if(ac)ac.textContent=a.accuracy!=null?'약 '+a.accuracy+'m':'확인 중';if(s)s.textContent=a.status==='paused'?'일시정지':a.status==='error'?'GPS 확인 필요':a.mode==='demo'?'데모 이동 중':'GPS 기록 중';if(er&&a.error){er.textContent=a.error;er.classList.remove('hidden');}
+    }
+    function attemptFinish(){
+      var a=ui.activity;if(!a)return;var c=courseById(a.courseId);
+      if(a.mode==='demo'){a.progress=100;a.distance=c.distance;a.elapsed=Math.max(a.elapsed,c.minDuration*60);completeActivity(c,a);return;}
+      var remain=Math.max(0,c.minDistance-a.distance),timeRemain=Math.max(0,c.minDuration*60-a.elapsed);
+      if(remain>.05||timeRemain>0){openModal('<h2>아직 완주 조건이 남았어요</h2><p>완주까지 약 <strong>'+fmtKm(remain)+'</strong>'+(timeRemain?'와 '+Math.ceil(timeRemain/60)+'분':'')+'이 남았어요.</p><p class="small muted">실제 서비스에서는 도착지 접근 여부도 함께 확인합니다.</p><div class="btn-row"><button class="btn btn-secondary btn-block" data-action="close-modal">계속 활동하기</button></div>');return;}
+      completeActivity(c,a);
+    }
+    function completeActivity(c,a){
+      var beforeDol=dolStage().name,beforeTree=treeStage().name,record={id:'h'+Date.now(),courseId:c.id,name:c.name,type:c.type,distance:c.distance,duration:a.elapsed,date:new Date().toISOString(),xp:20};
+      state.completions.unshift(record);state.totalDistance=Math.round((state.totalDistance+c.distance)*10)/10;state.xp+=20;saveState();stopActivity(false);var growth=beforeDol!==dolStage().name?'돌하르방이 '+dolStage().name+' 단계로 성장했어요!':beforeTree!==treeStage().name?'귤나무가 '+treeStage().name+' 단계로 성장했어요!':'제주방에 완주 스티커가 추가됐어요!';setSession('hondigil_last_growth',growth);navigate('complete/'+c.id);
+    }
+    function stopActivity(clear){clearInterval(ui.timer);ui.timer=null;if(ui.watchId!=null&&navigator.geolocation){try{navigator.geolocation.clearWatch(ui.watchId);}catch(e){}}ui.watchId=null;if(clear!==false)ui.activity=null;}
+    function completionView(id){
+      var c=courseById(id),rec=state.completions[0];if(!c||!rec||rec.courseId!==id)return notFound();var growth=getSession('hondigil_last_growth','제주방에 완주 스티커가 추가됐어요!');
+      return '<section class="card completion"><div class="celebrate" aria-hidden="true">🎉</div><p class="eyebrow" style="justify-content:center">완주 성공</p><h1>'+esc(c.name)+'</h1><p class="muted">제주에서 오늘의 길을 멋지게 채웠어요.</p><div class="grid stats"><div class="stat"><div class="stat-value">'+fmtKm(rec.distance)+'</div><div class="stat-label">완주 거리</div></div><div class="stat"><div class="stat-value">'+fmtTime(rec.duration)+'</div><div class="stat-label">활동 시간</div></div><div class="stat"><div class="stat-value">+20</div><div class="stat-label">경험치</div></div><div class="stat"><div class="stat-value">'+state.completions.length+'</div><div class="stat-label">누적 완주</div></div></div><div class="reward-card"><div style="font-size:42px">'+treeStage().emoji+'</div><strong>'+esc(growth)+'</strong><p class="small muted">'+esc(treeStage().next)+'</p></div><div class="btn-row" style="justify-content:center"><button class="btn btn-primary" data-nav="restaurants" data-course-restaurants="'+c.id+'">🍚 주변 식당 보기</button><button class="btn btn-secondary" data-nav="room">🏡 제주방 보기</button><button class="btn btn-soft" data-action="share" data-record="'+rec.id+'">공유하기</button></div></section>'+restaurantSection(c);
+    }
+    function restaurantSection(c){
+      var list=c.restaurants.map(restaurantById).filter(Boolean);var filter=state.restaurantFilter;if(filter!=='전체')list=list.filter(function(r){return r.category===filter||(filter==='혼밥 가능'&&r.solo)||(filter==='주차 가능'&&r.parking)||(filter==='현재 영업 중'&&isOpen(r));});
+      var filters=['전체','든든한 한 끼','가볍게 먹기','제주다운 메뉴','카페·음료','혼밥 가능','주차 가능','현재 영업 중'];
+      return '<section class="section" id="restaurants"><div class="section-head"><div><p class="eyebrow">완주 후 추천</p><h2>도착지 가까운 로컬 맛집</h2></div></div><div class="filter-row" style="margin-bottom:13px">'+filters.map(function(x){return '<button class="filter-btn" data-restaurant-filter="'+x+'" aria-pressed="'+(filter===x)+'">'+x+'</button>';}).join('')+'</div><div class="grid restaurant-grid">'+(list.length?list.map(restaurantCard).join(''):'<div class="card empty"><div class="empty-icon">🍽️</div><h3>조건에 맞는 식당이 없어요</h3><button class="btn btn-soft" data-restaurant-filter="전체">필터 지우기</button></div>')+'</div></section>'+sampleNotice();
+    }
+    function isOpen(r){var h=new Date().getHours(),start=parseInt(r.hours.split(':')[0],10),end=parseInt(r.hours.split('–')[1],10);return h>=start&&h<end;}
+    function restaurantCard(r){var score=Math.max(72,100-r.walk+(r.solo?3:0)+(r.parking?3:0));return '<article class="card restaurant-card"><div class="restaurant-top"><div><div class="pills"><span class="pill green">일반 추천</span><span class="pill">'+esc(r.region)+'</span></div><h3 style="margin-top:10px">'+esc(r.name)+'</h3><p class="small muted">'+esc(r.menu)+' · '+r.price+'</p></div><span class="restaurant-score" title="추천 적합도">'+score+'</span></div><div class="restaurant-reason">✓ '+esc(r.reason)+'</div><div class="pills"><span class="pill">🚶 '+r.walk+'분</span><span class="pill">'+(r.solo?'혼밥 가능':'2인 이상 추천')+'</span><span class="pill">'+(r.parking?'주차 가능':'주차 확인')+'</span></div><div class="restaurant-actions"><button class="btn btn-secondary" data-restaurant="'+r.id+'">상세 정보</button><a class="btn btn-soft" target="_blank" rel="noopener noreferrer" href="https://map.naver.com/p/search/'+encodeURIComponent(r.name+' 제주')+'">네이버지도 ↗</a></div></article>';}
+    function restaurantModal(id){var r=restaurantById(id);if(!r)return;openModal('<div class="modal-head"><div><p class="eyebrow">MVP 예시 · 일반 추천</p><h2>'+esc(r.name)+'</h2><p class="muted">'+esc(r.menu)+' · '+r.price+'</p></div><button class="modal-close" data-action="close-modal" aria-label="닫기">×</button></div><div class="info-list">'+info('영업시간',r.hours)+info('쉬는 시간',r.breakTime)+info('휴무',r.closed)+info('주차',r.parking?'가능':'주변 확인')+info('혼밥',r.solo?'가능':'2인 이상 추천')+info('포장',r.takeout?'가능':'매장 식사')+'</div><div class="restaurant-reason">'+esc(r.reason)+'</div><p class="small muted">정보 확인 기준일: '+r.verified+' · 실제 매장을 뜻하지 않는 시연용 가상 식당입니다.</p><div class="btn-row"><a class="btn btn-primary" target="_blank" rel="noopener noreferrer" href="https://map.naver.com/p/search/'+encodeURIComponent(r.name+' 제주')+'">네이버지도 열기</a><a class="btn btn-secondary" target="_blank" rel="noopener noreferrer" href="https://map.kakao.com/link/search/'+encodeURIComponent(r.name+' 제주')+'">카카오맵 열기</a></div>');}
+    function roomView(){var dol=dolStage(),tree=treeStage();return topbar('나의 제주방','완주할수록 자라는 공간')+'<section class="room" data-bg="'+esc(state.background)+'"><span class="room-label">Lv.'+level()+' · '+esc(state.background)+'</span><span class="room-sun"></span><span class="room-avatar" aria-label="나의 캐릭터">'+avatarEmoji()+'</span><span class="room-dol" aria-label="'+esc(dol.name)+'">'+dol.emoji+'</span><span class="room-tree" aria-label="'+esc(tree.name)+'">'+tree.emoji+'</span><span class="room-wall"></span><div class="stickers">'+(state.completions.length?state.completions.slice(0,6).map(function(r){return '<span class="sticker" title="'+esc(r.name)+'">'+(r.type==='러닝'?'👟':'🥾')+'</span>';}).join(''):'<span class="sticker" title="첫 완주를 기다려요">＋</span>')+'</div></section><section class="section grid growth-grid"><div class="card growth-card"><div class="growth-emoji">'+avatarEmoji()+'</div><h3>Lv.'+level()+' 나의 여행자</h3><p class="small muted">경험치 '+state.xp+' · 다음 레벨까지 '+(100-(state.xp%100||0))+' EXP</p></div><div class="card growth-card"><div class="growth-emoji">'+dol.emoji+'</div><h3>'+esc(dol.name)+'</h3><p class="small muted">'+esc(dol.next)+'</p></div><div class="card growth-card"><div class="growth-emoji">'+tree.emoji+'</div><h3>'+esc(tree.name)+'</h3><p class="small muted">'+esc(tree.next)+'</p></div></section><section class="card card-pad"><div class="section-head"><div><p class="eyebrow">방 꾸미기</p><h2>오늘의 제주 배경</h2></div></div><div class="filter-row">'+['제주 바다','귤밭','오름','돌담길'].map(function(bg){return '<button class="filter-btn" data-background="'+bg+'" aria-pressed="'+(state.background===bg)+'">'+bg+'</button>';}).join('')+'</div><button class="btn btn-soft" style="margin-top:14px" data-nav="settings">캐릭터도 꾸미기</button></section>';
+    }
+    function historyCard(r){return '<article class="history-item"><span class="history-icon">'+(r.type==='러닝'?'👟':'🥾')+'</span><div><strong>'+esc(r.name)+'</strong><div class="small muted">'+new Date(r.date).toLocaleDateString('ko-KR')+' · '+fmtKm(r.distance)+'</div></div><span class="pill orange">+20 EXP</span></article>';}
+    function historyView(){return topbar('완주 기록','차곡차곡 쌓인 나의 제주')+(state.completions.length?'<section class="card card-pad"><div class="grid stats" style="margin-bottom:12px"><div class="stat"><div class="stat-value">'+state.completions.length+'</div><div class="stat-label">완주 횟수</div></div><div class="stat"><div class="stat-value">'+fmtKm(state.totalDistance)+'</div><div class="stat-label">누적 거리</div></div></div>'+state.completions.map(historyCard).join('')+'</section>':'<section class="card empty"><div class="empty-icon">📝</div><h2>기록장이 비어 있어요</h2><p class="muted">데모 코스를 완주하면 이곳에 자동으로 저장돼요.</p><button class="btn btn-primary" data-nav="courses">코스 고르기</button></section>');}
+    function settingsView(){return topbar('설정','내게 편한 혼디길')+'<div class="settings-layout"><section class="card settings-group"><p class="eyebrow">캐릭터</p><h2>나의 여행자 꾸미기</h2>'+selectRow('헤어스타일','hair',['단정한 머리','곱슬 머리','짧은 머리'])+selectRow('상의','top',['주황 바람막이','바다색 티셔츠','초록 조끼'])+selectRow('하의','bottom',['네이비 반바지','회색 조거팬츠','베이지 팬츠'])+selectRow('신발','shoes',['흰 운동화','주황 트레일화','검정 워킹화'])+selectRow('액세서리','accessory',['감귤 배지','선글라스','돌하르방 키링'])+'</section><section class="card settings-group"><p class="eyebrow">화면</p><h2>보기 편하게</h2><div class="setting-row"><div class="setting-copy"><strong>큰 글씨</strong><span>전체 글자를 약 10% 키워요.</span></div><label class="switch"><input type="checkbox" data-setting="largeText" '+(state.textSize==='large'?'checked':'')+'><span></span></label></div><div class="setting-row"><div class="setting-copy"><strong>움직임 줄이기</strong><span>축하 효과와 전환을 최소화해요.</span></div><label class="switch"><input type="checkbox" data-setting="reduceMotion" '+(state.reduceMotion?'checked':'')+'><span></span></label></div><div class="setting-row"><div class="setting-copy"><strong>제주방 배경</strong><span>선택은 이 브라우저에 저장돼요.</span></div><select class="select" data-setting="background">'+['제주 바다','귤밭','오름','돌담길'].map(function(x){return '<option '+(state.background===x?'selected':'')+'>'+x+'</option>';}).join('')+'</select></div></section><section class="card settings-group"><p class="eyebrow">위치·개인정보</p><h2>GPS는 이렇게 사용해요</h2><p class="small muted">이 MVP는 계정이나 서버가 없으며 GPS 기록을 서버에 올리지 않습니다. 활동 중에는 거리 계산에만 사용하고, 완주 후에는 코스명·거리·시간 같은 단순 기록만 이 브라우저에 저장합니다.</p><div class="notice" style="margin-bottom:0"><span>🔒</span><span>파일을 직접 열면 브라우저 보안 정책 때문에 실제 GPS가 제한될 수 있어요. 데모 모드는 항상 사용할 수 있습니다.</span></div></section><section class="card settings-group"><p class="eyebrow">데이터 관리</p><h2>시연 데이터</h2><p class="small muted">기록과 꾸미기 설정은 이 기기의 localStorage에만 보관돼요. 아래 버튼으로 한 번에 삭제할 수 있습니다.</p><button class="btn btn-danger btn-block" data-action="reset">모든 기록과 설정 초기화</button></section></div><section class="section card card-pad"><h3>안전 안내</h3><ul class="small muted"><li>운전 중에는 혼디길을 사용하지 마세요.</li><li>출발 전 날씨, 탐방로 개방, 지역 통제 여부를 확인하세요.</li><li>실제 서비스 출시 전에는 별도의 개인정보처리방침이 필요합니다.</li></ul></section>'+sampleNotice();}
+    function selectRow(label,key,options){return '<div class="setting-row"><div class="setting-copy"><strong>'+label+'</strong></div><select class="select" data-avatar="'+key+'">'+options.map(function(x){return '<option '+(state.avatar[key]===x?'selected':'')+'>'+x+'</option>';}).join('')+'</select></div>';}
+    function notFound(){return '<section class="card empty"><div class="empty-icon">🧭</div><h1>길을 다시 찾고 있어요</h1><p class="muted">요청한 화면을 찾지 못했어요.</p><button class="btn btn-primary" data-nav="home">홈으로 가기</button></section>';}
+    function render(){
+      destroyMap();renderNav();applyPrefs();var main=document.getElementById('main-content'),hash=(location.hash||'#/home').replace(/^#\//,'').split('/'),page=hash[0],id=hash[1],html='';
+      if(page==='home')html=homeView();else if(page==='courses')html=courseView();else if(page==='course')html=detailView(id);else if(page==='activity')html=activityView(id);else if(page==='complete')html=completionView(id);else if(page==='room')html=roomView();else if(page==='history')html=historyView();else if(page==='settings')html=settingsView();else html=notFound();main.innerHTML=html;main.focus({preventScroll:true});window.scrollTo(0,0);renderNav();
+    }
+    function openModal(html){var root=document.getElementById('modalRoot');root.innerHTML='<div class="modal-backdrop" data-action="backdrop-close"><section class="modal" role="dialog" aria-modal="true">'+html+'</section></div>';var focus=root.querySelector('button,a,select');if(focus)focus.focus();}
+    function closeModal(){document.getElementById('modalRoot').innerHTML='';}
+    function toast(msg){var el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(ui.toastTimer);ui.toastTimer=setTimeout(function(){el.classList.remove('show');},2600);}
+    function shareRecord(id){var r=state.completions.filter(function(x){return x.id===id;})[0];if(!r)return;var text=r.name+' 코스를 '+fmtKm(r.distance)+' 완주했어요!\n캐릭터 경험치 +'+r.xp+'\n'+treeStage().name+' 단계의 제주방을 키우는 중이에요. #혼디길';if(navigator.share){navigator.share({title:'혼디길 완주 기록',text:text}).catch(function(){});}else if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(text).then(function(){toast('완주 문구를 복사했어요.');}).catch(function(){copyFallback(text);});}else copyFallback(text);}
+    function copyFallback(text){var t=document.createElement('textarea');t.value=text;t.style.position='fixed';t.style.opacity='0';document.body.appendChild(t);t.select();try{document.execCommand('copy');toast('완주 문구를 복사했어요.');}catch(e){toast('복사가 어려워요. 기록 화면을 캡처해 주세요.');}document.body.removeChild(t);}
+    function resetData(){openModal('<div class="modal-head"><div><p class="eyebrow">되돌릴 수 없어요</p><h2>모든 데이터를 지울까요?</h2></div><button class="modal-close" data-action="close-modal" aria-label="닫기">×</button></div><p class="muted">완주 기록, 성장 단계, 캐릭터와 제주방 설정이 모두 초기화됩니다.</p><div class="btn-row"><button class="btn btn-secondary" data-action="close-modal">취소</button><button class="btn btn-danger" data-action="confirm-reset">모두 지우기</button></div>');}
+    function handleClick(e){
+      var el=e.target.closest('button,a');if(!el)return;
+      if(el.dataset.nav){e.preventDefault();if(el.dataset.nav==='restaurants'){var sec=document.getElementById('restaurants');if(sec)sec.scrollIntoView();return;}navigate(el.dataset.nav);return;}
+      if(el.dataset.course){navigate('course/'+el.dataset.course);return;}
+      if(el.dataset.courseType){state.filters.type=el.dataset.courseType;saveState();navigate('courses');return;}
+      if(el.dataset.filter){var k=el.dataset.filter,v=el.dataset.value;state.filters[k]=v==='toggle'?!state.filters[k]:v;saveState();render();return;}
+      if(el.dataset.restaurantFilter){state.restaurantFilter=el.dataset.restaurantFilter;saveState();render();setTimeout(function(){var s=document.getElementById('restaurants');if(s)s.scrollIntoView();},0);return;}
+      if(el.dataset.background){state.background=el.dataset.background;saveState();render();return;}
+      if(el.dataset.courseRestaurants){var section=document.getElementById('restaurants');if(section)section.scrollIntoView({behavior:state.reduceMotion?'auto':'smooth'});return;}
+      if(el.dataset.restaurant){restaurantModal(el.dataset.restaurant);return;}
+      if(el.dataset.startDemo){startActivity(el.dataset.startDemo,'demo');return;}
+      if(el.dataset.startReal){startActivity(el.dataset.startReal,'gps');return;}
+      var action=el.dataset.action;if(!action)return;
+      if(action==='clear-filters'){state.filters=clone(defaults.filters);saveState();render();}
+      else if(action==='back'){if(location.hash.indexOf('#/activity/')===0){if(confirm('활동을 종료하고 이전 화면으로 돌아갈까요?')){var cid=ui.activity&&ui.activity.courseId;stopActivity();navigate('course/'+(cid||'hamdeok-run'));}}else if(location.hash.indexOf('#/course/')===0)navigate('courses');else if(location.hash.indexOf('#/complete/')===0)navigate('history');else history.back();}
+      else if(action==='fit-map'){if(ui.map&&ui.mapCourse){var line=window.L.polyline(ui.mapCourse.coords);ui.map.fitBounds(line.getBounds(),{padding:[45,45]});}else toast('현재 전체 경로를 간단한 선으로 표시하고 있어요.');}
+      else if(action==='pause'){if(!ui.activity)return;ui.activity.status=ui.activity.status==='paused'?'running':'paused';render();if(ui.activity.mode==='demo'&&ui.activity.status==='running')runDemo();}
+      else if(action==='finish')attemptFinish();
+      else if(action==='end-activity'){if(confirm('활동 기록을 저장하지 않고 종료할까요?')){var id=ui.activity&&ui.activity.courseId;stopActivity();navigate('course/'+id);}}
+      else if(action==='share')shareRecord(el.dataset.record);
+      else if(action==='reset')resetData();
+      else if(action==='confirm-reset'){try{localStorage.removeItem(STORAGE_KEY);}catch(err){}state=clone(defaults);closeModal();applyPrefs();navigate('home');render();toast('모든 데이터를 초기화했어요.');}
+      else if(action==='close-modal')closeModal();
+      else if(action==='backdrop-close'&&e.target===el)closeModal();
+    }
+    function handleChange(e){var el=e.target;if(el.dataset.avatar){state.avatar[el.dataset.avatar]=el.value;saveState();toast('캐릭터 설정을 저장했어요.');}else if(el.dataset.setting==='largeText'){state.textSize=el.checked?'large':'normal';saveState();applyPrefs();}else if(el.dataset.setting==='reduceMotion'){state.reduceMotion=el.checked;saveState();applyPrefs();}else if(el.dataset.setting==='background'){state.background=el.value;saveState();}}
+    document.addEventListener('click',handleClick);document.addEventListener('change',handleChange);
+    window.addEventListener('hashchange',render);window.addEventListener('beforeunload',function(){stopActivity(false);});
+    window.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
+    if(!location.hash)location.replace('#/home');else render();
+  }());
+  </script>
+</body>
+</html>
