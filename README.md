@@ -25,6 +25,7 @@ hondigil-frontend/
 │       ├── storage.js
 │       ├── utils.js
 │       ├── data/
+│       │   ├── course-routes.js
 │       │   ├── courses.js
 │       │   └── restaurants.js
 │       ├── services/
@@ -75,8 +76,8 @@ hondigil-frontend/
 - `router.js`: 해시 해석, 화면 렌더링, 지도·타이머 정리를 담당합니다.
 - `state.js`: 현재 화면, 필터, 지도, 타이머, 백엔드 연결 등 메모리 상태입니다.
 - `storage.js`: LocalStorage 읽기·쓰기, 데이터 검증, 이전 `hondigil_mvp_v3` 마이그레이션, 초기화입니다.
-- `data/`: 기본 코스·식당 샘플 데이터입니다. Django 연결 시 서버 데이터로 안전하게 교체할 수 있습니다.
-- `services/`: Leaflet, GPS, 활동, 성장, 공유, 사용 통계, 선택적 Django 동기화 로직입니다.
+- `data/`: 기본 코스·식당 데이터와 OpenStreetMap 보행로에 맞춘 정적 경로 좌표입니다. 코스 거리는 경로 좌표에서 직접 계산하며 Django 연결 시 서버 데이터로 안전하게 교체할 수 있습니다.
+- `services/`: Leaflet(CARTO Voyager 타일·코스 경로·근처 식당 마커), GPS, 활동, 성장, 공유, 사용 통계, 선택적 Django 동기화 로직입니다.
 - `components/`: 공통 SVG 아이콘과 반복 UI, 모달, 토스트입니다.
 - `pages/`: 라우터가 사용하는 화면별 HTML 렌더 함수입니다.
 
@@ -145,6 +146,8 @@ python -m http.server 8000
 - 화면 이벤트는 `app.js`의 이벤트 위임으로 연결해 재렌더링 때 중복 등록하지 않습니다.
 - `router.js`는 화면 전환 전에 Leaflet 지도와 활동 경과 타이머를 정리합니다.
 - 코스·식당 데이터의 기존 ID는 저장 기록과 연결되므로 임의로 바꾸지 않습니다.
+- 기본 코스의 `distance`, `start`, `end`는 `course-routes.js` 좌표에서 계산됩니다. 경로를 수정할 때 별도 거리 숫자를 수동으로 맞추지 않습니다.
+- 코스 지도에는 경로에서 6km 이내인 연결 식당을 우선 표시하고, 해당 식당이 없으면 가장 가까운 연결 식당 1곳을 표시합니다.
 - 위치는 사용자 동작 시 한 번만 확인합니다. 사진 원본과 실시간 이동 경로를 LocalStorage에 저장하지 않습니다.
 - Django 동기화를 함께 사용할 때만 `config.js`의 `DJANGO_API_URL`을 같은 출처의 상대 URL로 설정합니다. GitHub Pages 기본 배포에서는 빈 값으로 둡니다.
-- 운영 전 실제 코스·식당 정보 검수, 개인정보처리방침, 서버 인증과 관리자 권한을 별도로 마련해야 합니다.
+- 운영 전 실제 코스 통행 가능 여부와 경사·우회로, 식당 위치·영업 정보를 현장에서 검수하고 개인정보처리방침, 서버 인증과 관리자 권한을 별도로 마련해야 합니다.

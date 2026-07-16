@@ -4,11 +4,12 @@ import { renderCourseCard } from '../components/course-card.js';
 
 export function getFilteredCourses() {
   return getCourses().filter(course => {
+    const displayedDistance = Number(course.distance.toFixed(1));
     if (state.filters.type !== 'all' && course.type !== state.filters.type) return false;
     if (state.filters.difficulty !== 'all' && course.difficulty !== state.filters.difficulty) return false;
-    if (state.filters.distance === 'short' && course.distance > 5) return false;
-    if (state.filters.distance === 'medium' && (course.distance <= 5 || course.distance > 8)) return false;
-    if (state.filters.distance === 'long' && course.distance <= 8) return false;
+    if (state.filters.distance === 'short' && displayedDistance > 2.5) return false;
+    if (state.filters.distance === 'medium' && (displayedDistance <= 2.5 || displayedDistance > 3)) return false;
+    if (state.filters.distance === 'long' && displayedDistance <= 3) return false;
     return true;
   });
 }
@@ -22,7 +23,7 @@ export function renderCourses() {
       <button type="button" class="filter-chip" data-action="filter-type" data-value="all" aria-pressed="${state.filters.type === 'all'}">전체</button>
       <button type="button" class="filter-chip" data-action="filter-type" data-value="walk" aria-pressed="${state.filters.type === 'walk'}">걷기</button>
       <button type="button" class="filter-chip" data-action="filter-type" data-value="run" aria-pressed="${state.filters.type === 'run'}">러닝</button></div>
-      <div class="filter-selects"><div class="field"><label for="distance-filter">거리</label><select class="select" id="distance-filter" data-filter="distance"><option value="all" ${selected(state.filters.distance,'all')}>전체 거리</option><option value="short" ${selected(state.filters.distance,'short')}>5km 이하</option><option value="medium" ${selected(state.filters.distance,'medium')}>5~8km</option><option value="long" ${selected(state.filters.distance,'long')}>8km 초과</option></select></div>
+      <div class="filter-selects"><div class="field"><label for="distance-filter">거리</label><select class="select" id="distance-filter" data-filter="distance"><option value="all" ${selected(state.filters.distance,'all')}>전체 거리</option><option value="short" ${selected(state.filters.distance,'short')}>2.5km 이하</option><option value="medium" ${selected(state.filters.distance,'medium')}>2.5~3km</option><option value="long" ${selected(state.filters.distance,'long')}>3km 초과</option></select></div>
       <div class="field"><label for="difficulty-filter">난이도</label><select class="select" id="difficulty-filter" data-filter="difficulty"><option value="all" ${selected(state.filters.difficulty,'all')}>전체 난이도</option><option value="쉬움" ${selected(state.filters.difficulty,'쉬움')}>쉬움</option><option value="보통" ${selected(state.filters.difficulty,'보통')}>보통</option></select></div></div>
     </section>
     <div class="section-heading"><h2>검색 결과 <span aria-live="polite">${courses.length}개</span></h2></div>

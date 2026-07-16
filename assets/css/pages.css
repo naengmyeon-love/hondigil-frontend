@@ -22,6 +22,32 @@
 .map-shell{position:relative;min-height:380px;overflow:hidden;border:5px solid #fff;border-radius:26px;background:#e7ebe7;box-shadow:var(--shadow-medium)}
 #course-map,.map-fallback{width:100%;min-height:370px}
 .map-fallback{padding:24px;display:grid;place-items:center;text-align:center;color:var(--color-text-secondary)}
+.map-div-icon{border:0!important;background:transparent!important}
+.map-marker{width:40px;height:40px;display:grid;place-items:center;border:3px solid #fff;border-radius:50% 50% 50% 0;box-shadow:0 5px 14px rgba(35,54,50,.28);color:#fff;font-size:.8rem;font-weight:950;transform:rotate(-45deg)}
+.map-marker>span{transform:rotate(45deg)}
+.map-marker-start{background:#187a95}
+.map-marker-end{background:#e85d24}
+.map-marker-restaurant{width:34px;height:34px;background:#39734f;font-size:.72rem}
+.map-control-card,.map-legend{border:1px solid rgba(52,70,65,.18);border-radius:13px;background:rgba(255,255,255,.94);box-shadow:0 5px 16px rgba(35,54,50,.18);color:#243b35;backdrop-filter:blur(10px)}
+.map-control-card{min-width:174px;padding:10px 12px}
+.map-control-card strong,.map-control-card span{display:block}
+.map-control-card strong{font-size:.86rem}
+.map-control-card span{margin-top:2px;color:#536b64;font-size:.7rem}
+.map-legend{padding:7px 9px;display:flex;gap:9px;font-size:.7rem;font-weight:800}
+.map-legend span{display:flex;align-items:center;gap:4px}
+.legend-dot{width:9px;height:9px;display:inline-block;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px rgba(35,54,50,.18)}
+.legend-start{background:#187a95}.legend-end{background:#e85d24}.legend-restaurant{background:#39734f}
+.map-restaurant-popup{min-width:210px;color:#243b35}
+.map-restaurant-popup strong{display:block;font-size:1rem}
+.map-restaurant-popup p{margin:5px 0;color:#536b64}
+.map-restaurant-popup .map-popup-eyebrow{margin:0 0 2px;color:#39734f;font-size:.7rem;font-weight:900;letter-spacing:.04em}
+.map-popup-actions{margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.map-popup-actions a{padding:7px 8px;border:1px solid #d8e3de;border-radius:8px;background:#f8fbf9;color:#245e46;font-size:.72rem;font-weight:850;text-align:center;text-decoration:none}
+.map-popup-actions a:hover{border-color:#39734f;background:#edf6f0}
+.map-shell .leaflet-control-attribution{font-size:9px}
+.map-shell .leaflet-control-zoom a{color:#245e46}
+.map-shell .leaflet-popup-content{margin:15px 16px}
+.map-shell .leaflet-popup-content-wrapper{border-radius:15px;box-shadow:0 7px 24px rgba(35,54,50,.2)}
 .sticky-action{position:sticky;z-index:700;bottom:calc(var(--nav-height) + 10px + env(safe-area-inset-bottom));margin-top:24px;padding:12px;border:1px solid var(--color-border);border-radius:20px;background:rgba(255,249,237,.94);box-shadow:var(--shadow-medium);backdrop-filter:blur(14px)}
 .progress-hero{position:relative;overflow:hidden;padding:28px;border-radius:28px;background:linear-gradient(145deg,#166d83,#265e55);color:#fff;box-shadow:var(--shadow-medium)}
 .progress-hero::after{content:"";position:absolute;width:190px;height:190px;right:-76px;top:-96px;border:30px solid rgba(255,255,255,.1);border-radius:50%}
