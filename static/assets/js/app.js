@@ -2,9 +2,11 @@
   'use strict';
 
   var STORAGE_KEY='hondigil_mvp_v3';
+  var PROFILE_KEY='hondigil_device_profile_v1';
   prepareCourseRoutes();
   var defaults={xp:0,totalDistance:0,completions:[],background:'제주 바다',textSize:'normal',reduceMotion:false,filters:{type:'전체',distance:'전체',difficulty:'전체',env:'전체',parking:false,toilet:false},restaurantFilter:'전체'};
   var state=loadState();
+  var deviceProfile=loadDeviceProfile();
   var ui={map:null,mapCourse:null,mapBounds:null,activity:null,timer:null,watchId:null,leafletLoading:false,toastTimer:null,sidebarOpen:false};
 
   function clone(obj){return JSON.parse(JSON.stringify(obj));}
@@ -20,6 +22,20 @@
     return next;
   }
   function saveState(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch(e){toast('이 브라우저에서는 저장이 제한되어 있어요.');}}
+  function normalizeNickname(value){var text=String(value==null?'':value);if(text.normalize)text=text.normalize('NFKC');return text.replace(/[\u0000-\u001f\u007f]/g,'').replace(/\s+/g,' ').trim();}
+  function validateNickname(value){var nickname=normalizeNickname(value),length=Array.from(nickname).length;if(length<2||length>12)return {nickname:nickname,error:'별명은 2자 이상 12자 이하로 입력해 주세요.'};return {nickname:nickname,error:''};}
+  function createDeviceId(){if(window.crypto&&typeof window.crypto.randomUUID==='function')return 'device_'+window.crypto.randomUUID();return 'device_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,14);}
+  function loadDeviceProfile(){
+    try{
+      var raw=localStorage.getItem(PROFILE_KEY),saved=raw?JSON.parse(raw):null,validated=saved?validateNickname(saved.nickname):null,deviceId=saved&&String(saved.deviceId||'');
+      if(!saved||!validated||validated.error||!/^[A-Za-z0-9_-]{8,80}$/.test(deviceId))return null;
+      return {deviceId:deviceId,nickname:validated.nickname,createdAt:String(saved.createdAt||'')};
+    }catch(e){return null;}
+  }
+  function saveDeviceProfile(nickname){
+    try{var profile={deviceId:createDeviceId(),nickname:nickname,createdAt:new Date().toISOString()};localStorage.setItem(PROFILE_KEY,JSON.stringify(profile));deviceProfile=profile;return true;}catch(e){return false;}
+  }
+  function deviceCode(){return deviceProfile?deviceProfile.deviceId.replace(/[^A-Za-z0-9]/g,'').slice(-6).toUpperCase():'';}
   function setSession(key,value){try{sessionStorage.setItem(key,value);}catch(e){}}
   function getSession(key,fallback){try{return sessionStorage.getItem(key)||fallback;}catch(e){return fallback;}}
   function esc(value){return String(value==null?'':value).replace(/[&<>'"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c];});}
@@ -53,6 +69,9 @@
   function dolFigure(dol){return '<span class="dol-figure dol-stage-'+esc(dol.stage)+'" role="img" aria-label="'+esc(dol.name)+'"><img class="dol-base" src="./static/assets/dol-hareubang.svg" alt="" aria-hidden="true"><span class="dol-band" aria-hidden="true"></span><span class="dol-badge" aria-hidden="true">'+esc(dol.decoration||'')+'</span></span>';}
   function treeStage(){var d=state.totalDistance;if(d>=100)return {name:'귤이 열린 나무',stage:'fruit',emoji:'🍊🌳',next:'최고 단계 달성'};if(d>=50)return {name:'귤꽃 나무',stage:'flower',emoji:'🌼🌳',next:'다음 성장까지 '+fmtKm(100-d)};if(d>=30)return {name:'어린 나무',stage:'tree',emoji:'🌳',next:'다음 성장까지 '+fmtKm(50-d)};if(d>=10)return {name:'새싹',stage:'sprout',emoji:'🌱',next:'다음 성장까지 '+fmtKm(30-d)};return {name:'씨앗',stage:'seed',emoji:'',next:'다음 성장까지 '+fmtKm(10-d)};}
   function treeFigure(tree){return '<span class="tree-figure tree-stage-'+esc(tree.stage)+'" role="img" aria-label="'+esc(tree.name)+'">'+(tree.stage==='seed'?'<img class="tree-art" src="./static/assets/seed.svg" alt="" aria-hidden="true">':esc(tree.emoji))+'</span>';}
+  function onboardingView(){return '<section class="onboarding"><div class="onboarding-card"><div class="onboarding-brand"><span class="brand-mark" aria-hidden="true">ㅎ</span><strong>혼디길</strong></div><div class="onboarding-art" aria-hidden="true"><img src="./static/assets/seed.svg" alt=""></div><p class="eyebrow">계정 없이 가볍게</p><h1>이 기기에서 쓸<br>별명을 정해 주세요</h1><p class="onboarding-copy">아이디와 비밀번호는 필요 없어요. 별명 하나만 만들면 다음부터 바로 혼디길로 들어옵니다.</p><form class="nickname-form" data-form="nickname" novalidate><label for="nicknameInput">나의 별명</label><input class="nickname-input" id="nicknameInput" name="nickname" type="text" minlength="2" maxlength="12" autocomplete="nickname" autocapitalize="off" enterkeyhint="done" placeholder="2~12자" aria-describedby="nicknameHelp nicknameError" required><p class="nickname-error" id="nicknameError" role="alert" aria-live="polite"></p><button class="btn btn-primary btn-block" type="submit">이 별명으로 시작하기</button></form><p class="onboarding-note" id="nicknameHelp"><span aria-hidden="true">🔒</span><span>별명은 이 브라우저에 하나만 저장되며 앱 안에서는 바꿀 수 없어요. 브라우저 데이터를 지우면 다시 만들어야 합니다.</span></p></div></section>';}
+  function deviceSettingsView(){return topbar('설정','내게 편한 혼디길')+'<div class="settings-layout"><section class="card settings-group device-profile-card"><p class="eyebrow">이 기기의 별명</p><h2>'+esc(deviceProfile.nickname)+'</h2><p class="small muted">계정과 비밀번호 없이 이 브라우저에서 바로 입장해요. 별명은 앱 안에서 변경할 수 없고 다른 기기에서는 같은 별명을 사용할 수 있습니다.</p><span class="device-code">브라우저 코드 · '+esc(deviceCode())+'</span></section><section class="card settings-group"><p class="eyebrow">화면</p><h2>보기 편하게</h2><div class="setting-row"><div class="setting-copy"><strong>큰 글씨</strong><span>전체 글자를 약 10% 키워요.</span></div><label class="switch"><input type="checkbox" data-setting="largeText" '+(state.textSize==='large'?'checked':'')+'><span></span></label></div><div class="setting-row"><div class="setting-copy"><strong>움직임 줄이기</strong><span>축하 효과와 전환을 최소화해요.</span></div><label class="switch"><input type="checkbox" data-setting="reduceMotion" '+(state.reduceMotion?'checked':'')+'><span></span></label></div><div class="setting-row"><div class="setting-copy"><strong>제주방 배경</strong><span>선택은 이 브라우저에 저장돼요.</span></div><select class="select" data-setting="background">'+['제주 바다','귤밭','오름','돌담길'].map(function(x){return '<option '+(state.background===x?'selected':'')+'>'+x+'</option>';}).join('')+'</select></div></section><section class="card settings-group"><p class="eyebrow">위치·개인정보</p><h2>GPS는 이렇게 사용해요</h2><p class="small muted">이 MVP는 계정이나 서버가 없으며 GPS 기록을 서버에 올리지 않습니다. 활동 중에는 거리 계산에만 사용하고, 완주 후에는 코스명·거리·시간 같은 단순 기록만 이 브라우저에 저장합니다.</p><div class="notice" style="margin-bottom:0"><span>🔒</span><span>파일을 직접 열면 브라우저 보안 정책 때문에 실제 GPS가 제한될 수 있어요. 데모 모드는 항상 사용할 수 있습니다.</span></div></section><section class="card settings-group"><p class="eyebrow">데이터 관리</p><h2>기록과 설정</h2><p class="small muted">완주 기록과 화면 설정만 초기화합니다. 이 기기의 별명은 그대로 유지돼요.</p><button class="btn btn-danger btn-block" data-action="reset">기록과 설정 초기화</button></section></div><section class="section card card-pad"><h3>안전 안내</h3><ul class="small muted"><li>운전 중에는 혼디길을 사용하지 마세요.</li><li>출발 전 날씨, 탐방로 개방, 지역 통제 여부를 확인하세요.</li><li>실제 서비스 출시 전에는 별도의 개인정보처리방침이 필요합니다.</li></ul></section>'+sampleNotice();}
+  function resetRecordsData(){openModal('<div class="modal-head"><div><p class="eyebrow">되돌릴 수 없어요</p><h2>기록과 설정을 지울까요?</h2></div><button class="modal-close" data-action="close-modal" aria-label="닫기">×</button></div><p class="muted">완주 기록, 성장 단계와 제주방 배경 설정이 초기화됩니다. 별명 ‘'+esc(deviceProfile.nickname)+'’도 그대로 유지돼요.</p><div class="btn-row"><button class="btn btn-secondary" data-action="close-modal">취소</button><button class="btn btn-danger" data-action="confirm-records-reset">기록만 지우기</button></div>');}
   function homeView(){
     var recent=state.completions[0],dol=dolStage(),tree=treeStage(),recommended=courses[0];
     return topbar()+'<section class="hero"><div class="hero-copy"><p class="eyebrow">제주에서 혼디, 같이 걷는 길</p><h1>걷고 달릴수록<br>나의 제주가 자라요</h1><p>제주 코스를 완주하고 돌하르방과 제주방을 키운 뒤, 가까운 로컬 식당을 발견해 보세요.</p><div class="btn-row"><button class="btn btn-primary" data-course-type="러닝">👟 러닝 코스 보기</button><button class="btn btn-secondary" data-course-type="트래킹">🥾 트래킹 코스 보기</button></div></div><div class="hero-art" aria-label="제주 오름길 일러스트"><span class="hero-road"></span></div></section>'+
@@ -180,8 +199,10 @@
   function settingsView(){return topbar('설정','내게 편한 혼디길')+'<div class="settings-layout"><section class="card settings-group"><p class="eyebrow">화면</p><h2>보기 편하게</h2><div class="setting-row"><div class="setting-copy"><strong>큰 글씨</strong><span>전체 글자를 약 10% 키워요.</span></div><label class="switch"><input type="checkbox" data-setting="largeText" '+(state.textSize==='large'?'checked':'')+'><span></span></label></div><div class="setting-row"><div class="setting-copy"><strong>움직임 줄이기</strong><span>축하 효과와 전환을 최소화해요.</span></div><label class="switch"><input type="checkbox" data-setting="reduceMotion" '+(state.reduceMotion?'checked':'')+'><span></span></label></div><div class="setting-row"><div class="setting-copy"><strong>제주방 배경</strong><span>선택은 이 브라우저에 저장돼요.</span></div><select class="select" data-setting="background">'+['제주 바다','귤밭','오름','돌담길'].map(function(x){return '<option '+(state.background===x?'selected':'')+'>'+x+'</option>';}).join('')+'</select></div></section><section class="card settings-group"><p class="eyebrow">위치·개인정보</p><h2>GPS는 이렇게 사용해요</h2><p class="small muted">이 MVP는 계정이나 서버가 없으며 GPS 기록을 서버에 올리지 않습니다. 활동 중에는 거리 계산에만 사용하고, 완주 후에는 코스명·거리·시간 같은 단순 기록만 이 브라우저에 저장합니다.</p><div class="notice" style="margin-bottom:0"><span>🔒</span><span>파일을 직접 열면 브라우저 보안 정책 때문에 실제 GPS가 제한될 수 있어요. 데모 모드는 항상 사용할 수 있습니다.</span></div></section><section class="card settings-group"><p class="eyebrow">데이터 관리</p><h2>시연 데이터</h2><p class="small muted">기록과 배경 설정은 이 기기의 localStorage에만 보관돼요. 아래 버튼으로 한 번에 삭제할 수 있습니다.</p><button class="btn btn-danger btn-block" data-action="reset">모든 기록과 설정 초기화</button></section></div><section class="section card card-pad"><h3>안전 안내</h3><ul class="small muted"><li>운전 중에는 혼디길을 사용하지 마세요.</li><li>출발 전 날씨, 탐방로 개방, 지역 통제 여부를 확인하세요.</li><li>실제 서비스 출시 전에는 별도의 개인정보처리방침이 필요합니다.</li></ul></section>'+sampleNotice();}
   function notFound(){return '<section class="card empty"><div class="empty-icon">🧭</div><h1>길을 다시 찾고 있어요</h1><p class="muted">요청한 화면을 찾지 못했어요.</p><button class="btn btn-primary" data-nav="home">홈으로 가기</button></section>';}
   function render(){
-    destroyMap();renderNav();applyPrefs();var main=document.getElementById('main-content'),hash=(location.hash||'#/home').replace(/^#\//,'').split('/'),page=hash[0],id=hash[1],html='';
-    if(page==='home')html=homeView();else if(page==='courses')html=courseView();else if(page==='course')html=detailView(id);else if(page==='activity')html=activityView(id);else if(page==='complete')html=completionView(id);else if(page==='room')html=roomView();else if(page==='history')html=historyView();else if(page==='settings')html=settingsView();else html=notFound();main.innerHTML=html;main.focus({preventScroll:true});window.scrollTo(0,0);renderNav();
+    destroyMap();applyPrefs();var main=document.getElementById('main-content'),hash=(location.hash||'#/home').replace(/^#\//,'').split('/'),page=hash[0],id=hash[1],html='';
+    if(!deviceProfile){document.body.classList.add('onboarding-active');setSidebar(false);document.getElementById('bottomNav').innerHTML='';document.getElementById('desktopNav').innerHTML='';main.innerHTML=onboardingView();main.focus({preventScroll:true});window.scrollTo(0,0);var nicknameInput=document.getElementById('nicknameInput');if(nicknameInput)nicknameInput.focus({preventScroll:true});return;}
+    document.body.classList.remove('onboarding-active');renderNav();
+    if(page==='home')html=homeView();else if(page==='courses')html=courseView();else if(page==='course')html=detailView(id);else if(page==='activity')html=activityView(id);else if(page==='complete')html=completionView(id);else if(page==='room')html=roomView();else if(page==='history')html=historyView();else if(page==='settings')html=deviceSettingsView();else html=notFound();main.innerHTML=html;if(page==='home'){var profileName=main.querySelector('.profile-card .course-actions strong');if(profileName)profileName.textContent=deviceProfile.nickname+'님의 돌하르방 · Lv.'+level();}main.focus({preventScroll:true});window.scrollTo(0,0);renderNav();
   }
   function legalModal(kind){
     var docs={
@@ -221,13 +242,22 @@
     else if(action==='finish')attemptFinish();
     else if(action==='end-activity'){if(confirm('활동 기록을 저장하지 않고 종료할까요?')){var id=ui.activity&&ui.activity.courseId;stopActivity();navigate('course/'+id);}}
     else if(action==='share')shareRecord(el.dataset.record);
-    else if(action==='reset')resetData();
+    else if(action==='reset')resetRecordsData();
+    else if(action==='confirm-records-reset'){try{localStorage.removeItem(STORAGE_KEY);}catch(err){}state=clone(defaults);closeModal();applyPrefs();navigate('home');render();toast('별명은 유지하고 기록과 설정을 초기화했어요.');}
     else if(action==='confirm-reset'){try{localStorage.removeItem(STORAGE_KEY);}catch(err){}state=clone(defaults);closeModal();applyPrefs();navigate('home');render();toast('모든 데이터를 초기화했어요.');}
     else if(action==='close-modal')closeModal();
     else if(action==='backdrop-close'&&e.target===el)closeModal();
   }
+  function handleSubmit(e){
+    var form=e.target;if(!form||form.dataset.form!=='nickname')return;e.preventDefault();
+    if(deviceProfile){render();return;}
+    var input=form.elements.nickname,error=document.getElementById('nicknameError'),validated=validateNickname(input&&input.value);
+    if(validated.error){if(error)error.textContent=validated.error;if(input){input.setAttribute('aria-invalid','true');input.focus();}return;}
+    if(!saveDeviceProfile(validated.nickname)){if(error)error.textContent='별명을 저장하지 못했어요. 브라우저 저장소 사용을 허용한 뒤 다시 시도해 주세요.';if(input)input.setAttribute('aria-invalid','true');return;}
+    render();toast(validated.nickname+'님, 혼디길에 오신 걸 환영해요!');
+  }
   function handleChange(e){var el=e.target;if(el.dataset.setting==='largeText'){state.textSize=el.checked?'large':'normal';saveState();applyPrefs();}else if(el.dataset.setting==='reduceMotion'){state.reduceMotion=el.checked;saveState();applyPrefs();}else if(el.dataset.setting==='background'){state.background=el.value;saveState();}}
-  document.addEventListener('click',handleClick);document.addEventListener('change',handleChange);
+  document.addEventListener('click',handleClick);document.addEventListener('change',handleChange);document.addEventListener('submit',handleSubmit);
   window.addEventListener('hashchange',render);window.addEventListener('beforeunload',function(){stopActivity(false);});
   window.addEventListener('keydown',function(e){if(e.key==='Escape'){setSidebar(false);closeModal();}});
   if(!location.hash)location.replace('#/home');else render();
