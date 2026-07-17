@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">혼디길</title>
+  <rect x="5" y="8" width="52" height="52" rx="17" fill="#e85d24"/>
+  <path d="M46 9c6-5 12-4 14-2-2 6-7 9-14 8z" fill="#3e7751"/>
+  <path d="M17 27h9v-6h6v20h-6v-8h-9zm20-6h6v20h-6z" fill="#fff9ed"/>
+  <path d="M16 46h29v6H16z" fill="#fff9ed"/>
+</svg>
