@@ -1,247 +1,2482 @@
-import { navItems } from './data/navigation.js';
-import { courses } from './data/courses.js';
-import { routeShapes } from './data/route-shapes.js';
-import { restaurants } from './data/restaurants.js';
-import { legalDocuments } from './data/legal.js';
-import { decodeRouteShape, geoDistanceKm, routeDistanceKm, routeToDistance } from './core/geo.js';
-(function(){
-  'use strict';
 
-  var STORAGE_KEY='hondigil_mvp_v3';
-  var defaults={xp:0,totalDistance:0,completions:[],background:'제주 바다',textSize:'normal',reduceMotion:false,filters:{type:'전체',distance:'전체',difficulty:'전체',env:'전체',parking:false,toilet:false},restaurantFilter:'전체'};
-  var state=loadState();
-  var ui={map:null,mapCourse:null,mapBounds:null,activity:null,timer:null,watchId:null,leafletLoading:false,toastTimer:null,sidebarOpen:false};
+  (() => {
+    'use strict';
 
-  function clone(obj){return JSON.parse(JSON.stringify(obj));}
-  function loadState(){
-    try{var raw=localStorage.getItem(STORAGE_KEY);var saved=raw?JSON.parse(raw):{};return mergeState(saved);}catch(e){return clone(defaults);}
-  }
-  function mergeState(saved){
-    var next=clone(defaults),k;
-    if(!saved||typeof saved!=='object')return next;
-    for(k in next){if(Object.prototype.hasOwnProperty.call(saved,k)&&k!=='filters')next[k]=saved[k];}
-    if(saved.filters&&typeof saved.filters==='object'){for(k in next.filters){if(Object.prototype.hasOwnProperty.call(saved.filters,k))next.filters[k]=saved.filters[k];}}
-    if(!Array.isArray(next.completions))next.completions=[];
-    return next;
-  }
-  function saveState(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch(e){toast('이 브라우저에서는 저장이 제한되어 있어요.');}}
-  function setSession(key,value){try{sessionStorage.setItem(key,value);}catch(e){}}
-  function getSession(key,fallback){try{return sessionStorage.getItem(key)||fallback;}catch(e){return fallback;}}
-  function esc(value){return String(value==null?'':value).replace(/[&<>'"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c];});}
-  function fmtKm(n){return (Math.round(Number(n||0)*10)/10).toFixed(1)+'km';}
-  function fmtTime(sec){sec=Math.max(0,Math.floor(sec||0));var m=Math.floor(sec/60),s=sec%60;return (m<10?'0':'')+m+':'+(s<10?'0':'')+s;}
-  function prepareCourseRoutes(){
-    courses.forEach(function(course){
-      var target=Number(course.distance),encoded=routeShapes[course.id],base=encoded?decodeRouteShape(encoded):course.coords;
-      if(!Array.isArray(base)||base.length<2)return;
-      var baseDistance=routeDistanceKm(base);
-      course.turnaround=base[base.length-1].slice();
-      course.coords=routeToDistance(base,target);
-      course.mapDistance=routeDistanceKm(course.coords);
-      course.distance=Math.round(course.mapDistance*10)/10;
-      course.minDistance=Math.round(course.distance*.8*10)/10;
-      course.routeNote=target>baseDistance+.05?'보행로·반환 구간 포함':'OpenStreetMap 보행로 기준';
+    // 실제 운영 전 이 설정만 수정하면 개발 기능과 외부 전송을 한곳에서 제어할 수 있습니다.
+    const APP_CONFIG = Object.freeze({
+      APPS_SCRIPT_URL: '',
+      DJANGO_API_URL: '/api/v1',
+      DEVELOPMENT_MODE: false,
+      ALLOW_LOCATION_TEST: false,
+      ADMIN_ENABLED: false,
+      GPS_RADIUS_METERS: 300,
+      DATA_SYNC_ENABLED: true
     });
-  }
-  prepareCourseRoutes();
-  function courseById(id){return courses.filter(function(c){return c.id===id;})[0]||null;}
-  function restaurantById(id){return restaurants.filter(function(r){return r.id===id;})[0]||null;}
-  function activePage(){var hash=location.hash||'#/home';var part=hash.replace(/^#\//,'').split('/')[0];return navItems.some(function(n){return n.id===part;})?part:(part==='course'||part==='activity'||part==='complete'?'courses':'home');}
-  function navigate(path){location.hash='#/'+path;}
-  function topbar(title,sub){return '<div class="topbar"><a class="brand" href="#/home" data-nav="home"><span class="brand-mark" aria-hidden="true">ㅎ</span><span>혼디길</span></a><div class="top-actions"><button class="icon-btn" data-nav="settings" aria-label="설정 열기">⚙️</button></div></div>'+(title?'<div class="section-head"><div><p class="eyebrow">'+esc(sub||'혼디길')+'</p><h1>'+esc(title)+'</h1></div></div>':'');}
-  function sampleNotice(){return '<div class="notice"><span aria-hidden="true">ⓘ</span><span>코스 선과 거리는 OpenStreetMap 보행로를, 식당 마커는 OpenStreetMap에 등록된 실제 위치를 기준으로 표시합니다. 영업시간·메뉴와 현장 상황은 방문 전 확인해 주세요.</span></div>';}
-  function renderNav(){
-    var current=activePage();
-    var html=navItems.map(function(n){return '<button class="nav-btn" data-nav="'+n.id+'" '+(current===n.id?'aria-current="page"':'')+'><span class="nav-icon" aria-hidden="true">'+n.icon+'</span><span>'+n.label+'</span></button>';}).join('');
-    document.getElementById('bottomNav').innerHTML=html;document.getElementById('desktopNav').innerHTML=html;
-  }
-  function setSidebar(open){
-    ui.sidebarOpen=!!open;
-    document.body.classList.toggle('sidebar-open',ui.sidebarOpen);
-    var toggle=document.getElementById('sidebarToggle'),icon=document.getElementById('sidebarToggleIcon'),rail=document.getElementById('desktopRail');
-    if(toggle){toggle.setAttribute('aria-expanded',String(ui.sidebarOpen));toggle.setAttribute('aria-label',ui.sidebarOpen?'사이드바 닫기':'사이드바 열기');}
-    if(icon)icon.textContent=ui.sidebarOpen?'✕':'☰';
-    if(rail)rail.setAttribute('aria-hidden',String(!ui.sidebarOpen));
-  }
-  function applyPrefs(){
-    document.documentElement.style.setProperty('--text-scale',state.textSize==='large'?'1.1':'1');
-    document.body.classList.toggle('reduce-motion',!!state.reduceMotion);
-  }
-  function level(){return Math.floor(state.xp/100)+1;}
-  function dolStage(){var lv=level(),n=state.completions.length,nextExp=100-(state.xp%100||0),next='다음 장식까지 '+nextExp+' EXP';if(lv>=5)return {name:'왕관 쓴 제주 돌하르방',stage:'legend',base:'🗿',decoration:'👑',next:'최고 단계 달성'};if(lv>=4)return {name:'선글라스 돌하르방',stage:'shades',base:'🗿',decoration:'😎',next:next};if(lv>=3)return {name:'메달 돌하르방',stage:'runner',base:'🗿',decoration:'🏅',next:next};if(lv>=2)return {name:'헤어밴드 돌하르방',stage:'headband',base:'🗿',decoration:'',next:next};if(n>=1)return {name:'작은 돌하르방',stage:'small',base:'🗿',decoration:'',next:next};return {name:'아직 잠든 돌',stage:'stone',base:'🪨',decoration:'',next:'첫 완주가 필요해요'};}
-  function dolFigure(dol){return '<span class="dol-figure dol-stage-'+esc(dol.stage)+'" role="img" aria-label="'+esc(dol.name)+'"><span class="dol-base" aria-hidden="true">'+esc(dol.base)+'</span><span class="dol-band" aria-hidden="true"></span><span class="dol-badge" aria-hidden="true">'+esc(dol.decoration||'')+'</span></span>';}
-  function treeStage(){var d=state.totalDistance;if(d>=100)return {name:'귤이 열린 나무',emoji:'🍊🌳',next:'최고 단계 달성'};if(d>=50)return {name:'귤꽃 나무',emoji:'🌼🌳',next:'다음 성장까지 '+fmtKm(100-d)};if(d>=30)return {name:'어린 나무',emoji:'🌳',next:'다음 성장까지 '+fmtKm(50-d)};if(d>=10)return {name:'새싹',emoji:'🌱',next:'다음 성장까지 '+fmtKm(30-d)};return {name:'씨앗',emoji:'🌰',next:'다음 성장까지 '+fmtKm(10-d)};}
-  function homeView(){
-    var recent=state.completions[0],dol=dolStage(),tree=treeStage(),recommended=courses[0];
-    return topbar()+'<section class="hero"><div class="hero-copy"><p class="eyebrow">제주에서 혼디, 같이 걷는 길</p><h1>걷고 달릴수록<br>나의 제주가 자라요</h1><p>제주 코스를 완주하고 돌하르방과 제주방을 키운 뒤, 가까운 로컬 식당을 발견해 보세요.</p><div class="btn-row"><button class="btn btn-primary" data-course-type="러닝">👟 러닝 코스 보기</button><button class="btn btn-secondary" data-course-type="트래킹">🥾 트래킹 코스 보기</button></div></div><div class="hero-art" aria-label="제주 오름길 일러스트"><span class="hero-road"></span></div></section>'+
-    '<section class="card profile-card"><div class="avatar-orb" aria-hidden="true">'+dolFigure(dol)+'</div><div><div class="course-actions" style="margin-top:0"><strong>Lv.'+level()+' 나의 돌하르방</strong><span class="pill orange">EXP '+state.xp+'</span></div><p class="small muted">다음 레벨까지 '+(100-(state.xp%100||0))+' EXP</p><div class="level-bar" aria-label="레벨 진행률"><div class="level-fill" style="width:'+(state.xp%100)+'%"></div></div></div></section>'+
-    '<section class="section"><div class="grid stats"><div class="card stat"><div class="stat-icon">✓</div><div class="stat-value">'+state.completions.length+'</div><div class="stat-label">완주 코스</div></div><div class="card stat"><div class="stat-icon">↗</div><div class="stat-value">'+fmtKm(state.totalDistance)+'</div><div class="stat-label">누적 거리</div></div><div class="card stat"><div class="stat-icon">'+dolFigure(dol)+'</div><div class="stat-value small">'+dol.name+'</div><div class="stat-label">'+dol.next+'</div></div><div class="card stat"><div class="stat-icon">'+tree.emoji+'</div><div class="stat-value small">'+tree.name+'</div><div class="stat-label">'+tree.next+'</div></div></div></section>'+
-    '<section class="section"><div class="section-head"><div><p class="eyebrow">오늘의 추천</p><h2>부담 없이 시작해요</h2></div><button class="text-btn" data-nav="courses">전체 보기</button></div><div class="grid course-grid">'+courseCard(recommended)+'</div></section>'+
-    '<section class="section grid home-feature-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))"><div class="card card-pad"><p class="eyebrow">🌱 완주 보상</p><h3>기록이 눈에 보이게 자라요</h3><p class="muted small">완주 횟수로 돌하르방이, 누적 거리로 귤나무가 성장해요.</p><button class="text-btn" data-nav="room">나의 제주방 보기 →</button></div><div class="card card-pad"><p class="eyebrow">🍚 로컬 발견</p><h3>코스 주변의 실제 한 끼</h3><p class="muted small">OpenStreetMap에 등록된 식당 3곳을 실제 좌표에 표시해요.</p><button class="text-btn" data-course="'+recommended.id+'">코스에서 미리 보기 →</button></div></section>'+
-    '<section class="section"><div class="section-head"><div><p class="eyebrow">최근 기록</p><h2>'+(recent?'다시 만난 제주':'첫 기록을 만들어 보세요')+'</h2></div></div>'+(recent?historyCard(recent):'<div class="card empty"><div class="empty-icon">👟</div><h3>아직 완주 기록이 없어요</h3><p class="muted small">데모 코스로 먼저 경험해도 좋아요.</p><button class="btn btn-soft" data-course="hamdeok-run">3.2km 코스 체험하기</button></div>')+'</section>'+sampleNotice();
-  }
-  function courseCard(c){
-    var cls=c.env==='해안'?'coast':c.env==='숲길'||c.env==='오름'?'forest':'city';
-    return '<article class="card course-card"><div class="course-visual '+cls+'"><div class="pills"><span class="pill '+(c.type==='러닝'?'orange':'green')+'">'+c.type+'</span><span class="pill">'+c.region+'</span></div><span class="course-scene" aria-hidden="true">'+c.scene+'</span></div><div class="course-body"><h3>'+esc(c.name)+'</h3><p class="small muted">'+esc(c.reason)+'</p><div class="course-meta"><span>↗ '+fmtKm(c.distance)+'</span><span>◷ 약 '+c.duration+'분</span><span>◆ '+c.difficulty+'</span><span>'+c.env+'</span></div><div class="course-actions"><div class="pills"><span class="pill">'+(c.parking?'🅿 주차':'주차 확인')+'</span><span class="pill">'+(c.toilet?'🚻 화장실':'화장실 확인')+'</span></div><button class="btn btn-soft" data-course="'+c.id+'">상세 보기</button></div></div></article>';
-  }
-  function courseView(){
-    var f=state.filters,filtered=courses.filter(function(c){
-      var dist=f.distance==='전체'||(f.distance==='3km 이하'&&c.distance<=3)||(f.distance==='3–5km'&&c.distance>3&&c.distance<=5)||(f.distance==='5–10km'&&c.distance>5&&c.distance<=10)||(f.distance==='10km 이상'&&c.distance>=10);
-      return (f.type==='전체'||c.type===f.type)&&dist&&(f.difficulty==='전체'||c.difficulty===f.difficulty)&&(f.env==='전체'||c.env===f.env)&&(!f.parking||c.parking)&&(!f.toilet||c.toilet);
+
+    // 이 파일에서 사용하는 브라우저 저장 키입니다. 혼디길 데이터만 선택적으로 지울 수 있게 접두사를 통일합니다.
+    const STORAGE_KEYS = Object.freeze({
+      USER: 'hondigil:user',
+      ACTIVE: 'hondigil:active-course',
+      RECORDS: 'hondigil:records',
+      EVENTS: 'hondigil:events',
+      METRICS: 'hondigil:metrics',
+      QUEUE: 'hondigil:sync-queue',
+      PENDING_COMPLETIONS: 'hondigil:pending-completions',
+      LAST_RECORD: 'hondigil:last-record-id'
     });
-    return topbar('제주 코스','내 속도에 맞는 길 찾기')+sampleNotice()+'<section class="card filter-panel" aria-label="코스 필터">'+filterGroup('종류','type',['전체','러닝','트래킹'])+filterGroup('거리','distance',['전체','3km 이하','3–5km','5–10km','10km 이상'])+filterGroup('난이도','difficulty',['전체','초급','중급','상급'])+filterGroup('환경','env',['전체','해안','오름','숲길','도심'])+'<div class="filter-title">편의시설</div><div class="filter-row"><button class="filter-btn" data-filter="parking" data-value="toggle" aria-pressed="'+f.parking+'">🅿 주차 가능</button><button class="filter-btn" data-filter="toilet" data-value="toggle" aria-pressed="'+f.toilet+'">🚻 화장실 있음</button></div></section><div class="results-line"><strong>'+filtered.length+'개 코스</strong><button class="text-btn" data-action="clear-filters">필터 초기화</button></div>'+(filtered.length?'<div class="grid course-grid">'+filtered.map(courseCard).join('')+'</div>':'<div class="card empty"><div class="empty-icon">🔎</div><h3>조건에 맞는 코스가 없어요</h3><p class="muted">필터를 하나씩 줄여 보세요.</p><button class="btn btn-soft" data-action="clear-filters">필터 모두 지우기</button></div>');
-  }
-  function filterGroup(title,key,values){return '<div class="filter-title">'+title+'</div><div class="filter-row">'+values.map(function(v){return '<button class="filter-btn" data-filter="'+key+'" data-value="'+v+'" aria-pressed="'+(state.filters[key]===v)+'">'+v+'</button>';}).join('')+'</div>';}
-  function backRow(title){return '<div class="back-row"><button class="back-btn" data-action="back" aria-label="이전 화면">←</button><span class="back-title">'+esc(title)+'</span></div>';}
-  function detailView(id){
-    var c=courseById(id);if(!c)return notFound();
-    var rs=c.restaurants.map(restaurantById).filter(Boolean);
-    setTimeout(function(){initMap(c);},30);
-    return backRow('코스 목록')+'<section><p class="eyebrow">'+c.region+' · '+c.type+'</p><h1>'+esc(c.name)+'</h1><div class="pills"><span class="pill orange">'+fmtKm(c.distance)+'</span><span class="pill">약 '+c.duration+'분</span><span class="pill green">'+c.difficulty+'</span><span class="pill sea">'+c.env+'</span></div></section><section class="map-shell" aria-label="'+esc(c.name)+' 경로 지도"><div class="map-canvas" id="map-main"></div><div class="map-fallback" id="mapFallback"><svg viewBox="0 0 320 180" aria-hidden="true"><path class="route-line" d="M25,145 C65,108 83,129 120,92 S180,52 206,79 S260,45 297,25"/><circle cx="25" cy="145" r="10" fill="#3e7751"/><circle cx="297" cy="25" r="10" fill="#e85d24"/></svg><div class="fallback-note">지도 연결을 확인하고 있어요. 경로 정보와 활동 체험은 그대로 이용할 수 있어요.</div></div><div class="map-topbar"><div class="map-summary"><strong>'+esc(c.name)+' · '+fmtKm(c.mapDistance)+'</strong><span>'+esc(c.start)+' 출발 · '+esc(c.routeNote)+'</span></div><div class="map-tools"><button class="map-tool" data-action="fit-map" aria-label="전체 경로와 식당 보기" title="전체 경로와 식당 보기">⌖</button></div></div><div class="map-legend"><span class="legend-item"><i class="legend-dot" style="background:#3e7751"></i>출발</span><span class="legend-item"><i class="legend-line"></i>코스</span><span class="legend-item"><i class="legend-dot" style="background:#e85d24"></i>종료</span><span class="legend-item"><i class="legend-restaurant">🍚</i>식당</span></div></section><div class="detail-grid"><section class="card card-pad"><h2>코스 한눈에 보기</h2><p class="muted">'+esc(c.desc)+'</p><div class="info-list">'+info('출발',c.start)+info('도착',c.end)+info('지도 경로',fmtKm(c.mapDistance))+info('경로 방식',c.routeNote)+info('주차',c.parking?'가능':'현장 확인')+info('화장실',c.toilet?'있음':'현장 확인')+info('편의점',c.store?'주변 있음':'미리 준비')+info('반려동물',c.pet)+info('추천 시간',c.best)+info('야간',c.night)+'</div><div class="warning-box"><strong>날씨 주의</strong><br>'+esc(c.weather)+'</div><div class="warning-box"><strong>안전 안내</strong><br>'+esc(c.safety)+'</div></section><section><div class="section-head"><div><p class="eyebrow">코스 주변 추천</p><h2>실제 위치의 로컬 한 끼 3곳</h2></div></div><div class="grid">'+rs.slice(0,3).map(restaurantCard).join('')+'</div></section></div><div class="sticky-action"><div class="btn-row"><button class="btn btn-secondary" data-start-real="'+c.id+'">📍 실제 GPS로 시작</button><button class="btn btn-primary" data-start-demo="'+c.id+'">▶ 데모로 체험</button></div></div>'+sampleNotice();
-  }
-  function info(label,value){return '<div class="info-item"><span>'+esc(label)+'</span><strong>'+esc(value)+'</strong></div>';}
-  function initMap(c){
-    ui.mapCourse=c;
-    if(window.L){drawLeaflet(c);return;}
-    if(ui.leafletLoading)return;
-    ui.leafletLoading=true;var s=document.createElement('script');s.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';s.crossOrigin='anonymous';
-    s.onload=function(){ui.leafletLoading=false;if(ui.mapCourse&&document.getElementById('map-main'))drawLeaflet(ui.mapCourse);};
-    s.onerror=function(){ui.leafletLoading=false;toast('지도 연결이 어려워 대체 경로를 표시했어요.');};document.head.appendChild(s);
-  }
-  function drawLeaflet(c){
-    var el=document.getElementById('map-main');if(!el||!window.L)return;
-    destroyMap();
-    try{
-      ui.map=window.L.map(el,{zoomControl:false,attributionControl:true,scrollWheelZoom:true,doubleClickZoom:true,touchZoom:true,boxZoom:true,keyboard:true,tap:true});
-      window.L.control.zoom({position:'bottomright',zoomInTitle:'지도 확대',zoomOutTitle:'지도 축소'}).addTo(ui.map);
-      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(ui.map);
-      var line=window.L.polyline(c.coords,{color:'#e85d24',weight:6,opacity:.95,lineCap:'round'}).addTo(ui.map);
-      window.L.circleMarker(c.coords[0],{radius:9,color:'#fff',weight:3,fillColor:'#3e7751',fillOpacity:1}).addTo(ui.map).bindPopup('<strong>출발</strong><br>'+esc(c.start));
-      window.L.circleMarker(c.coords[c.coords.length-1],{radius:9,color:'#fff',weight:3,fillColor:'#e85d24',fillOpacity:1}).addTo(ui.map).bindPopup('<strong>코스 종료</strong><br>'+esc(c.end)+'<br>'+fmtKm(c.mapDistance));
-      var restaurantIcon=window.L.divIcon({className:'restaurant-map-icon',html:'🍚',iconSize:[34,34],iconAnchor:[17,17],popupAnchor:[0,-16]});
-      ui.mapBounds=line.getBounds();
-      c.restaurants.map(restaurantById).filter(Boolean).forEach(function(restaurant){
-        var marker=window.L.marker([restaurant.lat,restaurant.lng],{icon:restaurantIcon,title:restaurant.name}).addTo(ui.map);
-        var travel=restaurantTravel(restaurant);
-        marker.bindPopup('<div class="restaurant-popup"><strong>'+esc(restaurant.name)+'</strong><span>'+esc(restaurant.menu)+' · '+travel.icon+' '+esc(travel.label)+'</span><a target="_blank" rel="noopener noreferrer" href="'+esc(restaurant.osmUrl)+'">정확한 위치 보기 ↗</a></div>');
-        ui.mapBounds.extend([restaurant.lat,restaurant.lng]);
+
+    const SESSION_KEYS = Object.freeze({
+      ADMIN: 'hondigil:admin-session'
+    });
+
+    const PHOTO_URLS = Object.freeze({
+      FOREST: 'https://images.unsplash.com/photo-1670983245322-212a4b009cb9?auto=format&fit=crop&w=1400&q=80',
+      OLD_FOREST: 'https://images.unsplash.com/photo-1662564882361-6fe6eabb8da2?auto=format&fit=crop&w=1400&q=80',
+      COAST: 'https://images.unsplash.com/photo-1562680802-9cf8b15f419d?auto=format&fit=crop&w=1400&q=80'
+    });
+
+    const ART_ASSETS = Object.freeze({
+      HERO: 'static/assets/hondigil-jeju-hero.webp'
+    });
+
+    // 외부 API 없이 테스트할 수 있는 제주 샘플 코스입니다.
+    let COURSE_DATA = Object.freeze([
+      {
+        id: 'saryeoni',
+        name: '사려니숲 초보길',
+        type: 'walk',
+        typeLabel: '걷기',
+        distance: 6.2,
+        durationMin: 120,
+        difficulty: '쉬움',
+        region: '제주시 조천읍',
+        description: '삼나무 향을 따라 완만한 숲길을 걷는 입문 코스입니다. 그늘이 많아 천천히 걷기 좋습니다.',
+        image: PHOTO_URLS.FOREST,
+        imageAlt: '나무가 우거진 제주 사려니숲의 흙길',
+        startName: '사려니숲길 붉은오름 입구',
+        endName: '사려니숲길 북쪽 쉼터',
+        start: [33.4086, 126.6414],
+        end: [33.4223, 126.6261],
+        route: [[33.4086,126.6414],[33.4108,126.6389],[33.4131,126.6368],[33.4162,126.6339],[33.4193,126.6301],[33.4223,126.6261]],
+        caution: '비 온 뒤에는 흙길이 미끄러울 수 있습니다. 입장 가능 시간과 통제 여부를 현장에서 확인해 주세요.',
+        supplies: ['미끄럼 방지 운동화', '물 500mL 이상', '얇은 겉옷']
+      },
+      {
+        id: 'aewol-handam',
+        name: '애월 한담 바다산책',
+        type: 'walk',
+        typeLabel: '걷기',
+        distance: 4.6,
+        durationMin: 90,
+        difficulty: '쉬움',
+        region: '제주시 애월읍',
+        description: '곽지에서 한담까지 검은 현무암 해안과 푸른 바다를 가까이 보는 편안한 왕복 산책길입니다.',
+        image: PHOTO_URLS.COAST,
+        imageAlt: '제주의 검은 현무암과 푸른 바다가 보이는 해안',
+        startName: '곽지해수욕장 동쪽',
+        endName: '한담해안산책로 전망대',
+        start: [33.4508, 126.3046],
+        end: [33.4594, 126.3106],
+        route: [[33.4508,126.3046],[33.4525,126.3052],[33.4540,126.3066],[33.4558,126.3073],[33.4578,126.3089],[33.4594,126.3106]],
+        caution: '파도가 높은 날에는 해안 가까운 구간을 피하고, 젖은 현무암 위로 내려가지 마세요.',
+        supplies: ['바람막이', '햇빛 가리개', '물']
+      },
+      {
+        id: 'seongsan-run',
+        name: '성산 해맞이 러닝',
+        type: 'run',
+        typeLabel: '러닝',
+        distance: 5.4,
+        durationMin: 45,
+        difficulty: '보통',
+        region: '서귀포시 성산읍',
+        description: '성산일출봉과 바다를 바라보며 달리는 평지 중심 코스입니다. 이른 아침에 특히 여유롭습니다.',
+        image: PHOTO_URLS.COAST,
+        imageAlt: '성산일출봉 주변의 바다와 해안 절벽',
+        startName: '성산포항 공영주차장',
+        endName: '광치기해변 북쪽',
+        start: [33.4701, 126.9286],
+        end: [33.4521, 126.9235],
+        route: [[33.4701,126.9286],[33.4668,126.9310],[33.4627,126.9301],[33.4588,126.9279],[33.4552,126.9258],[33.4521,126.9235]],
+        caution: '관광객과 차량이 많은 시간에는 속도를 줄이고, 해안도로 횡단 시 신호를 확인해 주세요.',
+        supplies: ['러닝화', '반사 소재 의류', '휴대용 물']
+      },
+      {
+        id: 'bijarim',
+        name: '비자림 숨고르기길',
+        type: 'walk',
+        typeLabel: '걷기',
+        distance: 3.2,
+        durationMin: 70,
+        difficulty: '쉬움',
+        region: '제주시 구좌읍',
+        description: '오래된 비자나무 사이를 천천히 걸으며 호흡을 고르는 짧은 숲 코스입니다.',
+        image: PHOTO_URLS.OLD_FOREST,
+        imageAlt: '햇빛이 스며드는 제주의 오래된 숲',
+        startName: '비자림 매표소 앞',
+        endName: '새천년 비자나무 쉼터',
+        start: [33.4912, 126.8115],
+        end: [33.4873, 126.8090],
+        route: [[33.4912,126.8115],[33.4901,126.8101],[33.4892,126.8088],[33.4882,126.8081],[33.4873,126.8090]],
+        caution: '관람로 밖으로 벗어나지 말고, 숲 보호를 위해 음식물은 지정 장소에서만 드세요.',
+        supplies: ['편한 운동화', '작은 물병', '우천 시 우산']
+      },
+      {
+        id: 'hamdeok-gimnyeong',
+        name: '함덕 바다빛 러닝',
+        type: 'run',
+        typeLabel: '러닝',
+        distance: 7.8,
+        durationMin: 60,
+        difficulty: '보통',
+        region: '제주시 조천읍',
+        description: '함덕의 밝은 바다와 낮은 해안도로를 잇는 왕복 러닝 코스입니다. 중간 쉼터가 충분합니다.',
+        image: PHOTO_URLS.COAST,
+        imageAlt: '제주 동쪽 해안의 푸른 바다 풍경',
+        startName: '함덕해수욕장 서우봉 입구',
+        endName: '북촌포구 방파제 앞',
+        start: [33.5433, 126.6695],
+        end: [33.5488, 126.6898],
+        route: [[33.5433,126.6695],[33.5451,126.6736],[33.5463,126.6780],[33.5477,126.6822],[33.5484,126.6864],[33.5488,126.6898]],
+        caution: '일부 구간은 보행자와 함께 사용합니다. 야간에는 조명이 약한 곳이 있어 밝은 옷을 권합니다.',
+        supplies: ['쿠션 좋은 러닝화', '반사 밴드', '물']
+      },
+      {
+        id: 'olle-seven',
+        name: '올레 7코스 맛보기',
+        type: 'walk',
+        typeLabel: '걷기',
+        distance: 8.4,
+        durationMin: 170,
+        difficulty: '보통',
+        region: '서귀포시',
+        description: '외돌개에서 법환포구까지 바다와 마을을 번갈아 만나는 올레길 핵심 구간입니다.',
+        image: PHOTO_URLS.COAST,
+        imageAlt: '제주 서귀포의 바다와 바위 절벽',
+        startName: '외돌개 주차장',
+        endName: '법환포구',
+        start: [33.2400, 126.5457],
+        end: [33.2372, 126.5153],
+        route: [[33.2400,126.5457],[33.2385,126.5402],[33.2375,126.5342],[33.2367,126.5280],[33.2366,126.5214],[33.2372,126.5153]],
+        caution: '돌길과 계단이 섞여 있습니다. 해가 지기 전에 도착할 수 있도록 충분한 시간을 잡아 주세요.',
+        supplies: ['발목을 잡아주는 신발', '물 1L', '간단한 간식']
+      }
+    ]);
+
+    let RESTAURANT_DATA = Object.freeze([
+      { id:'saryeoni-bapsang', courseIds:['saryeoni','bijarim'], name:'교래 돌담밥상', category:'제주 가정식', distance:'차량 9분', hours:'11:00–19:30', description:'제철 나물과 제주 돼지 수육을 단정하게 내는 작은 마을 식당입니다.', menu:'돔베고기 정식', query:'제주 교래 돌담밥상', lat:33.4364, lng:126.6763 },
+      { id:'songdang-noodle', courseIds:['saryeoni','bijarim'], name:'송당 메밀집', category:'메밀 요리', distance:'차량 12분', hours:'10:30–18:00', description:'메밀 향이 또렷한 따뜻한 국수와 담백한 전을 맛볼 수 있습니다.', menu:'제주 메밀국수', query:'제주 송당 메밀국수', lat:33.4710, lng:126.7800 },
+      { id:'aewol-sea-table', courseIds:['aewol-handam'], name:'애월 바당식탁', category:'해산물 한식', distance:'도보 8분', hours:'11:30–20:00', description:'한담 바다 가까이에서 제철 생선과 톳 반찬을 내는 소규모 식당입니다.', menu:'옥돔구이 한상', query:'제주 애월 바당식탁', lat:33.4612, lng:126.3123 },
+      { id:'aewol-millet', courseIds:['aewol-handam'], name:'곽지 보리부엌', category:'보리밥', distance:'도보 12분', hours:'11:00–18:30', description:'구수한 보리밥과 직접 무친 계절 나물을 편안하게 즐기는 동네 밥집입니다.', menu:'제주 나물 보리밥', query:'제주 곽지 보리밥', lat:33.4492, lng:126.3070 },
+      { id:'seongsan-soup', courseIds:['seongsan-run'], name:'성산 해녀국', category:'제주 향토음식', distance:'도보 7분', hours:'07:30–17:00', description:'달리기 뒤 따뜻하게 속을 채우기 좋은 성게 미역국과 보말죽을 냅니다.', menu:'성게 미역국', query:'제주 성산 성게미역국', lat:33.4682, lng:126.9312 },
+      { id:'seongsan-fish', courseIds:['seongsan-run'], name:'광치기 생선방', category:'생선구이', distance:'차량 6분', hours:'11:00–20:30', description:'동쪽 바다에서 난 생선을 주문 즉시 구워 주는 가족 운영 식당입니다.', menu:'갈치구이', query:'제주 광치기 생선구이', lat:33.4527, lng:126.9191 },
+      { id:'hamdeok-noodle', courseIds:['hamdeok-gimnyeong'], name:'함덕 고기국수집', category:'제주 국수', distance:'도보 6분', hours:'10:00–20:00', description:'진한 육수와 부드러운 돼지고기를 든든하게 담아내는 동네 국수집입니다.', menu:'고기국수', query:'제주 함덕 고기국수', lat:33.5418, lng:126.6680 },
+      { id:'beophwan-seafood', courseIds:['olle-seven'], name:'법환 해녀밥상', category:'해산물', distance:'도보 9분', hours:'11:00–19:00', description:'법환포구 가까이에서 소라와 문어, 미역을 활용한 한 상을 만듭니다.', menu:'해녀 모둠밥상', query:'제주 법환포구 해산물', lat:33.2378, lng:126.5168 }
+    ]);
+
+    const ALLOWED_EVENT_TYPES = new Set([
+      'user_registered', 'user_visited', 'course_viewed', 'course_started',
+      'start_verified', 'finish_verified', 'photo_verified', 'course_completed',
+      'restaurant_clicked', 'directions_clicked'
+    ]);
+
+    const appElement = document.getElementById('app');
+    const modalRoot = document.getElementById('modal-root');
+    const toastElement = document.getElementById('toast');
+
+    const state = {
+      page: 'home',
+      selectedCourseId: COURSE_DATA[0].id,
+      filters: { type: 'all', distance: 'all', difficulty: 'all' },
+      lastRecord: null,
+      photoPreviewUrl: '',
+      gpsMessage: '',
+      gpsTone: '',
+      map: null,
+      elapsedTimer: null,
+      toastTimer: null,
+      syncInFlight: null,
+      backendAvailable: false,
+      backendProfile: null,
+      csrfToken: '',
+      activitySyncPromise: null,
+      pendingConfirmAction: '',
+      returnFocus: null
+    };
+
+    function safeParse(rawValue, fallback) {
+      if (!rawValue) return fallback;
+      try {
+        return JSON.parse(rawValue);
+      } catch (error) {
+        return fallback;
+      }
+    }
+
+    function readStored(key, fallback) {
+      try {
+        return safeParse(localStorage.getItem(key), fallback);
+      } catch (error) {
+        return fallback;
+      }
+    }
+
+    function writeStored(key, value) {
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+        return true;
+      } catch (error) {
+        showToast('브라우저 저장 공간을 사용할 수 없습니다. 저장 설정을 확인해 주세요.');
+        return false;
+      }
+    }
+
+    function removeStored(key) {
+      try { localStorage.removeItem(key); } catch (error) { /* 저장소가 막혀도 화면 사용은 계속합니다. */ }
+    }
+
+    function createId(prefix) {
+      let value = '';
+      try {
+        value = crypto.randomUUID();
+      } catch (error) {
+        value = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12);
+      }
+      return prefix + '_' + value;
+    }
+
+    function escapeHTML(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function normalizeNickname(value) {
+      return String(value || '')
+        .replace(/[\u0000-\u001f\u007f]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 12);
+    }
+
+    function getUser() {
+      const value = readStored(STORAGE_KEYS.USER, null);
+      if (!value || typeof value !== 'object' || typeof value.nickname !== 'string' || !value.nickname.trim()) return null;
+      const validAnonymousId = typeof value.id === 'string' && /^[A-Za-z0-9._:-]{8,100}$/.test(value.id);
+      const normalized = {
+        id: validAnonymousId ? value.id : createId('anon'),
+        nickname: normalizeNickname(value.nickname),
+        createdAt: value.createdAt || new Date().toISOString(),
+        lastVisitedAt: value.lastVisitedAt || new Date().toISOString()
+      };
+      if (normalized.nickname.length < 2) return null;
+      if (normalized.id !== value.id || normalized.nickname !== value.nickname) {
+        writeStored(STORAGE_KEYS.USER, normalized);
+      }
+      return normalized;
+    }
+
+    function getActiveCourse() {
+      const value = readStored(STORAGE_KEYS.ACTIVE, null);
+      if (!value || !value.courseId || !COURSE_DATA.some(course => course.id === value.courseId)) return null;
+      const parsedStart = new Date(value.startedAt);
+      const normalized = {
+        id: String(value.id || createId('activity')),
+        backendActivityId: typeof value.backendActivityId === 'string' ? value.backendActivityId : '',
+        courseId: value.courseId,
+        startedAt: Number.isNaN(parsedStart.getTime()) ? new Date().toISOString() : parsedStart.toISOString(),
+        startVerified: value.startVerified === true,
+        finishVerified: value.finishVerified === true,
+        photoVerified: value.photoVerified === true,
+        photoName: typeof value.photoName === 'string' ? value.photoName : '',
+        startLocation: value.startLocation && Number.isFinite(Number(value.startLocation.latitude)) && Number.isFinite(Number(value.startLocation.longitude))
+          ? Object.assign({}, value.startLocation) : null,
+        finishLocation: value.finishLocation && Number.isFinite(Number(value.finishLocation.latitude)) && Number.isFinite(Number(value.finishLocation.longitude))
+          ? Object.assign({}, value.finishLocation) : null,
+        photoMeta: value.photoMeta && String(value.photoMeta.fileType || '').startsWith('image/') && Number(value.photoMeta.fileSize) > 0
+          ? { requestId:String(value.photoMeta.requestId || createId('verify')), fileType:String(value.photoMeta.fileType), fileSize:Number(value.photoMeta.fileSize) }
+          : null,
+        currentStep: value.startVerified === true
+          ? (value.photoVerified === true ? (value.finishVerified === true ? 'complete' : 'finish') : 'photo')
+          : 'start'
+      };
+      if (!value.id || normalized.backendActivityId !== (value.backendActivityId || '') || normalized.startedAt !== value.startedAt ||
+          normalized.startVerified !== value.startVerified ||
+          normalized.finishVerified !== value.finishVerified ||
+          normalized.photoVerified !== value.photoVerified) {
+        writeStored(STORAGE_KEYS.ACTIVE, normalized);
+      }
+      return normalized;
+    }
+
+    function saveActiveCourse(value) {
+      if (!value) {
+        removeStored(STORAGE_KEYS.ACTIVE);
+        return;
+      }
+      writeStored(STORAGE_KEYS.ACTIVE, value);
+    }
+
+    function updateActiveCourse(changes) {
+      const active = getActiveCourse();
+      if (!active) return null;
+      const next = Object.assign({}, active, changes);
+      if (next.startVerified && next.photoVerified && next.finishVerified) next.currentStep = 'complete';
+      else if (next.startVerified && next.photoVerified) next.currentStep = 'finish';
+      else if (next.startVerified) next.currentStep = 'photo';
+      else next.currentStep = 'start';
+      saveActiveCourse(next);
+      return next;
+    }
+
+    function getRecords() {
+      const value = readStored(STORAGE_KEYS.RECORDS, []);
+      if (!Array.isArray(value)) return [];
+      return value.reduce((records, item) => {
+        if (!item || typeof item !== 'object' || typeof item.id !== 'string' || typeof item.courseId !== 'string') return records;
+        const course = COURSE_DATA.find(candidate => candidate.id === item.courseId);
+        if (!course) return records;
+        const distance = Number(item.distance);
+        const durationMs = Number(item.durationMs);
+        const completedAt = new Date(item.completedAt);
+        const startedAt = new Date(item.startedAt);
+        if (!Number.isFinite(distance) || distance < 0 || !Number.isFinite(durationMs) || durationMs < 0 || Number.isNaN(completedAt.getTime()) ||
+            item.startVerified !== true || item.finishVerified !== true || item.photoVerified !== true) return records;
+        records.push({
+          id: item.id,
+          activityId: typeof item.activityId === 'string' ? item.activityId : '',
+          courseId: course.id,
+          courseName: typeof item.courseName === 'string' && item.courseName ? item.courseName.slice(0, 120) : course.name,
+          distance,
+          durationMs,
+          startedAt: Number.isNaN(startedAt.getTime()) ? completedAt.toISOString() : startedAt.toISOString(),
+          completedAt: completedAt.toISOString(),
+          startVerified: item.startVerified === true,
+          finishVerified: item.finishVerified === true,
+          photoVerified: item.photoVerified === true
+        });
+        return records;
+      }, []);
+    }
+
+    function saveRecords(records) {
+      const unique = [];
+      const ids = new Set();
+      records.forEach(record => {
+        if (!record || !record.id || ids.has(record.id)) return;
+        ids.add(record.id);
+        unique.push(record);
       });
-      ui.map.fitBounds(ui.mapBounds,{padding:[45,45]});
-      var fb=document.getElementById('mapFallback');if(fb)fb.classList.add('hidden');setTimeout(function(){if(ui.map)ui.map.invalidateSize();},100);
-    }catch(e){destroyMap();}
-  }
-  function destroyMap(){if(ui.map){try{ui.map.remove();}catch(e){}ui.map=null;}ui.mapBounds=null;}
-  function startActivity(id,mode){
-    var c=courseById(id);if(!c)return;
-    stopActivity();
-    ui.activity={courseId:id,mode:mode,status:mode==='demo'?'running':'locating',elapsed:0,distance:0,progress:0,accuracy:mode==='demo'?8:null,lastPos:null,startedAt:Date.now()};
-    navigate('activity/'+id);
-    if(mode==='demo')setTimeout(runDemo,100);else setTimeout(runGps,100);
-  }
-  function runDemo(){if(!ui.activity||ui.activity.mode!=='demo')return;clearInterval(ui.timer);ui.timer=setInterval(function(){if(!ui.activity||ui.activity.status!=='running')return;ui.activity.elapsed+=5;ui.activity.progress=Math.min(100,ui.activity.progress+2.5);var c=courseById(ui.activity.courseId);ui.activity.distance=c.distance*ui.activity.progress/100;updateActivityDom();if(ui.activity.progress>=100)clearInterval(ui.timer);},850);}
-  function runGps(){
-    if(!ui.activity)return;
-    if(!navigator.geolocation){gpsFail('이 브라우저는 위치 기능을 지원하지 않아요.');return;}
-    if(location.protocol==='file:'||(!window.isSecureContext&&location.hostname!=='localhost')){gpsFail('파일로 열면 실제 GPS가 제한될 수 있어요. 데모 모드를 이용해 주세요.');return;}
-    try{ui.watchId=navigator.geolocation.watchPosition(onPosition,function(err){var msg=err.code===1?'위치 권한이 거부되었어요.':err.code===2?'현재 위치를 확인할 수 없어요.':'위치 확인 시간이 초과되었어요.';gpsFail(msg);},{enableHighAccuracy:true,timeout:12000,maximumAge:3000});ui.activity.status='running';ui.timer=setInterval(function(){if(ui.activity&&ui.activity.status==='running'){ui.activity.elapsed++;updateActivityDom();}},1000);}catch(e){gpsFail('GPS를 시작하지 못했어요.');}
-  }
-  function onPosition(pos){
-    if(!ui.activity)return;var a=ui.activity,c=courseById(a.courseId),now={lat:pos.coords.latitude,lng:pos.coords.longitude};a.accuracy=Math.round(pos.coords.accuracy||0);
-    if(a.lastPos){var add=haversine(a.lastPos,now);if(add<.3)a.distance+=add;}a.lastPos=now;a.progress=Math.min(100,(a.distance/c.minDistance)*100);updateActivityDom();
-  }
-  function haversine(a,b){var R=6371,dLat=(b.lat-a.lat)*Math.PI/180,dLng=(b.lng-a.lng)*Math.PI/180,x=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
-  function gpsFail(msg){if(!ui.activity)return;ui.activity.status='error';ui.activity.error=msg;updateActivityDom();toast(msg);}
-  function activityView(id){
-    var c=courseById(id),a=ui.activity;if(!c||!a||a.courseId!==id)return '<div class="card empty"><div class="empty-icon">📍</div><h2>진행 중인 활동이 없어요</h2><button class="btn btn-primary" data-course="'+(c?c.id:'hamdeok-run')+'">코스 보기</button></div>';
-    var status=a.status==='paused'?'일시정지':a.status==='error'?'GPS 확인 필요':a.mode==='demo'?'데모 이동 중':'GPS 기록 중';
-    return backRow('활동 종료')+'<section class="card activity-hero"><p class="eyebrow" style="justify-content:center">'+(a.mode==='demo'?'안전한 데모 체험':'실제 GPS 활동')+'</p><h1>'+esc(c.name)+'</h1><div class="activity-ring" id="activityRing" style="--p:'+a.progress+'"><div class="activity-ring-content"><strong id="progressText">'+Math.round(a.progress)+'%</strong><span>코스 진행률</span></div></div><div class="grid activity-stats"><div class="card stat"><div class="stat-value" id="distanceText">'+fmtKm(a.distance)+'</div><div class="stat-label">이동 거리</div></div><div class="card stat"><div class="stat-value" id="timeText">'+fmtTime(a.elapsed)+'</div><div class="stat-label">활동 시간</div></div><div class="card stat"><div class="stat-value" id="accuracyText">'+(a.accuracy!=null?'약 '+a.accuracy+'m':'확인 중')+'</div><div class="stat-label">GPS 정확도</div></div></div><div class="gps-status"><i class="pulse" id="gpsPulse"></i><span id="gpsStatus">'+status+'</span></div>'+(a.error?'<div class="warning-box" id="gpsError">'+esc(a.error)+'</div>':'<div class="warning-box hidden" id="gpsError"></div>')+'<div class="warning-box">화면보다 주변을 먼저 살펴 주세요. 운전 중에는 사용하지 마세요.</div><div class="btn-row" style="justify-content:center;margin-top:18px"><button class="btn btn-secondary" data-action="pause">'+(a.status==='paused'?'▶ 다시 시작':'Ⅱ 일시정지')+'</button><button class="btn btn-primary" data-action="finish">✓ 완주 처리</button><button class="btn btn-danger" data-action="end-activity">활동 종료</button></div></section>';
-  }
-  function updateActivityDom(){
-    var a=ui.activity;if(!a)return;var ring=document.getElementById('activityRing'),p=document.getElementById('progressText'),d=document.getElementById('distanceText'),t=document.getElementById('timeText'),ac=document.getElementById('accuracyText'),s=document.getElementById('gpsStatus'),er=document.getElementById('gpsError');
-    if(ring)ring.style.setProperty('--p',a.progress);if(p)p.textContent=Math.round(a.progress)+'%';if(d)d.textContent=fmtKm(a.distance);if(t)t.textContent=fmtTime(a.elapsed);if(ac)ac.textContent=a.accuracy!=null?'약 '+a.accuracy+'m':'확인 중';if(s)s.textContent=a.status==='paused'?'일시정지':a.status==='error'?'GPS 확인 필요':a.mode==='demo'?'데모 이동 중':'GPS 기록 중';if(er&&a.error){er.textContent=a.error;er.classList.remove('hidden');}
-  }
-  function attemptFinish(){
-    var a=ui.activity;if(!a)return;var c=courseById(a.courseId);
-    if(a.mode==='demo'){a.progress=100;a.distance=c.distance;a.elapsed=Math.max(a.elapsed,c.minDuration*60);completeActivity(c,a);return;}
-    var remain=Math.max(0,c.minDistance-a.distance),timeRemain=Math.max(0,c.minDuration*60-a.elapsed);
-    if(remain>.05||timeRemain>0){openModal('<h2>아직 완주 조건이 남았어요</h2><p>완주까지 약 <strong>'+fmtKm(remain)+'</strong>'+(timeRemain?'와 '+Math.ceil(timeRemain/60)+'분':'')+'이 남았어요.</p><p class="small muted">실제 서비스에서는 도착지 접근 여부도 함께 확인합니다.</p><div class="btn-row"><button class="btn btn-secondary btn-block" data-action="close-modal">계속 활동하기</button></div>');return;}
-    completeActivity(c,a);
-  }
-  function completeActivity(c,a){
-    var beforeDol=dolStage().name,beforeTree=treeStage().name,record={id:'h'+Date.now(),courseId:c.id,name:c.name,type:c.type,distance:c.distance,duration:a.elapsed,date:new Date().toISOString(),xp:20};
-    state.completions.unshift(record);state.totalDistance=Math.round((state.totalDistance+c.distance)*10)/10;state.xp+=20;saveState();stopActivity(false);var growth=beforeDol!==dolStage().name?'돌하르방이 '+dolStage().name+' 단계로 성장했어요!':beforeTree!==treeStage().name?'귤나무가 '+treeStage().name+' 단계로 성장했어요!':'제주방에 완주 스티커가 추가됐어요!';setSession('hondigil_last_growth',growth);navigate('complete/'+c.id);
-  }
-  function stopActivity(clear){clearInterval(ui.timer);ui.timer=null;if(ui.watchId!=null&&navigator.geolocation){try{navigator.geolocation.clearWatch(ui.watchId);}catch(e){}}ui.watchId=null;if(clear!==false)ui.activity=null;}
-  function completionView(id){
-    var c=courseById(id),rec=state.completions[0];if(!c||!rec||rec.courseId!==id)return notFound();var growth=getSession('hondigil_last_growth','제주방에 완주 스티커가 추가됐어요!');
-    return '<section class="card completion"><div class="celebrate" aria-hidden="true">🎉</div><p class="eyebrow" style="justify-content:center">완주 성공</p><h1>'+esc(c.name)+'</h1><p class="muted">제주에서 오늘의 길을 멋지게 채웠어요.</p><div class="grid stats"><div class="stat"><div class="stat-value">'+fmtKm(rec.distance)+'</div><div class="stat-label">완주 거리</div></div><div class="stat"><div class="stat-value">'+fmtTime(rec.duration)+'</div><div class="stat-label">활동 시간</div></div><div class="stat"><div class="stat-value">+20</div><div class="stat-label">경험치</div></div><div class="stat"><div class="stat-value">'+state.completions.length+'</div><div class="stat-label">누적 완주</div></div></div><div class="reward-card"><div style="font-size:42px">'+treeStage().emoji+'</div><strong>'+esc(growth)+'</strong><p class="small muted">'+esc(treeStage().next)+'</p></div><div class="btn-row" style="justify-content:center"><button class="btn btn-primary" data-nav="restaurants" data-course-restaurants="'+c.id+'">🍚 주변 식당 보기</button><button class="btn btn-secondary" data-nav="room">🏡 제주방 보기</button><button class="btn btn-soft" data-action="share" data-record="'+rec.id+'">공유하기</button></div></section>'+restaurantSection(c);
-  }
-  function restaurantSection(c){
-    var list=c.restaurants.map(restaurantById).filter(Boolean);var filter=state.restaurantFilter;if(filter!=='전체')list=list.filter(function(r){return r.category===filter||(filter==='혼밥 가능'&&r.solo)||(filter==='주차 가능'&&r.parking)||(filter==='현재 영업 중'&&isOpen(r));});
-    var filters=['전체','든든한 한 끼','가볍게 먹기','제주다운 메뉴','카페·음료','혼밥 가능','주차 가능','현재 영업 중'];
-    return '<section class="section" id="restaurants"><div class="section-head"><div><p class="eyebrow">완주 후 추천</p><h2>코스 주변 실제 식당</h2></div></div><div class="filter-row" style="margin-bottom:13px">'+filters.map(function(x){return '<button class="filter-btn" data-restaurant-filter="'+x+'" aria-pressed="'+(filter===x)+'">'+x+'</button>';}).join('')+'</div><div class="grid restaurant-grid">'+(list.length?list.map(restaurantCard).join(''):'<div class="card empty"><div class="empty-icon">🍽️</div><h3>조건에 맞는 식당이 없어요</h3><button class="btn btn-soft" data-restaurant-filter="전체">필터 지우기</button></div>')+'</div></section>'+sampleNotice();
-  }
-  function isOpen(r){
-    var match=String(r.hours||'').match(/^(\d{1,2}):(\d{2})–(\d{1,2}):(\d{2})$/);
-    if(!match)return false;
-    var now=new Date(),current=now.getHours()*60+now.getMinutes(),start=Number(match[1])*60+Number(match[2]),end=Number(match[3])*60+Number(match[4]);
-    return end>start?current>=start&&current<end:current>=start||current<end;
-  }
-  function restaurantTravel(r){return {icon:r.travelMode==='차량'?'🚗':'🚶',label:(r.travelMode||'도보')+' '+r.travelMin+'분'};}
-  function availability(value,yes,no,unknown){return value===true?yes:value===false?no:unknown;}
-  function restaurantCard(r){var travel=restaurantTravel(r),score=Math.max(72,100-r.travelMin+(r.solo===true?3:0)+(r.parking===true?3:0));return '<article class="card restaurant-card"><div class="restaurant-top"><div><div class="pills"><span class="pill green">실제 위치</span><span class="pill">'+esc(r.region)+'</span></div><h3 style="margin-top:10px">'+esc(r.name)+'</h3><p class="small muted">'+esc(r.menu)+' · '+esc(r.price)+'</p></div><span class="restaurant-score" title="추천 적합도">'+score+'</span></div><div class="restaurant-reason">✓ '+esc(r.reason)+'</div><div class="pills"><span class="pill">'+travel.icon+' '+esc(travel.label)+'</span><span class="pill">'+availability(r.solo,'혼밥 가능','2인 이상 추천','혼밥 확인')+'</span><span class="pill">'+availability(r.parking,'주차 가능','주차 없음','주차 확인')+'</span></div><div class="restaurant-actions"><button class="btn btn-secondary" data-restaurant="'+r.id+'">상세 정보</button><a class="btn btn-soft" target="_blank" rel="noopener noreferrer" href="'+esc(r.osmUrl)+'">정확한 위치 ↗</a></div></article>';}
-  function restaurantModal(id){var r=restaurantById(id);if(!r)return;var travel=restaurantTravel(r);openModal('<div class="modal-head"><div><p class="eyebrow">OpenStreetMap 등록 식당</p><h2>'+esc(r.name)+'</h2><p class="muted">'+esc(r.menu)+' · '+esc(r.price)+'</p></div><button class="modal-close" data-action="close-modal" aria-label="닫기">×</button></div><div class="info-list">'+info('코스에서 이동',travel.icon+' '+travel.label)+info('영업시간',r.hours)+info('쉬는 시간',r.breakTime)+info('휴무',r.closed)+info('주차',availability(r.parking,'가능','없음','현장 확인'))+info('혼밥',availability(r.solo,'가능','2인 이상 추천','현장 확인'))+info('포장',availability(r.takeout,'가능','매장 식사','현장 확인'))+'</div><div class="restaurant-reason">'+esc(r.reason)+'</div><p class="small muted">이름·좌표 확인 기준일: '+r.verified+' · 영업시간과 메뉴는 방문 전 다시 확인해 주세요.</p><div class="btn-row"><a class="btn btn-primary" target="_blank" rel="noopener noreferrer" href="'+esc(r.osmUrl)+'">정확한 위치 열기</a><a class="btn btn-secondary" target="_blank" rel="noopener noreferrer" href="https://map.naver.com/p/search/'+encodeURIComponent(r.name+' 제주')+'">네이버지도 검색</a></div>');}
-  function roomView(){var dol=dolStage(),tree=treeStage();return topbar('나의 제주방','완주할수록 자라는 공간')+'<section class="room" data-bg="'+esc(state.background)+'"><span class="room-label">Lv.'+level()+' · '+esc(state.background)+'</span><span class="room-sun"></span><span class="room-dol">'+dolFigure(dol)+'</span><span class="room-tree" aria-label="'+esc(tree.name)+'">'+tree.emoji+'</span><span class="room-wall"></span><div class="stickers">'+(state.completions.length?state.completions.slice(0,6).map(function(r){return '<span class="sticker" title="'+esc(r.name)+'">'+(r.type==='러닝'?'👟':'🥾')+'</span>';}).join(''):'<span class="sticker" title="첫 완주를 기다려요">＋</span>')+'</div></section><section class="section grid growth-grid"><div class="card growth-card"><div class="growth-emoji">'+dolFigure(dol)+'</div><h3>'+esc(dol.name)+'</h3><p class="small muted">'+esc(dol.next)+'</p></div><div class="card growth-card"><div class="growth-emoji">'+tree.emoji+'</div><h3>'+esc(tree.name)+'</h3><p class="small muted">'+esc(tree.next)+'</p></div></section><section class="card card-pad"><div class="section-head"><div><p class="eyebrow">방 꾸미기</p><h2>오늘의 제주 배경</h2></div></div><div class="filter-row">'+['제주 바다','귤밭','오름','돌담길'].map(function(bg){return '<button class="filter-btn" data-background="'+bg+'" aria-pressed="'+(state.background===bg)+'">'+bg+'</button>';}).join('')+'</div></section>';
-  }
-  function historyCard(r){return '<article class="history-item"><span class="history-icon">'+(r.type==='러닝'?'👟':'🥾')+'</span><div><strong>'+esc(r.name)+'</strong><div class="small muted">'+new Date(r.date).toLocaleDateString('ko-KR')+' · '+fmtKm(r.distance)+'</div></div><span class="pill orange">+20 EXP</span></article>';}
-  function historyView(){return topbar('완주 기록','차곡차곡 쌓인 나의 제주')+(state.completions.length?'<section class="card card-pad"><div class="grid stats" style="margin-bottom:12px"><div class="stat"><div class="stat-value">'+state.completions.length+'</div><div class="stat-label">완주 횟수</div></div><div class="stat"><div class="stat-value">'+fmtKm(state.totalDistance)+'</div><div class="stat-label">누적 거리</div></div></div>'+state.completions.map(historyCard).join('')+'</section>':'<section class="card empty"><div class="empty-icon">📝</div><h2>기록장이 비어 있어요</h2><p class="muted">데모 코스를 완주하면 이곳에 자동으로 저장돼요.</p><button class="btn btn-primary" data-nav="courses">코스 고르기</button></section>');}
-  function settingsView(){return topbar('설정','내게 편한 혼디길')+'<div class="settings-layout"><section class="card settings-group"><p class="eyebrow">화면</p><h2>보기 편하게</h2><div class="setting-row"><div class="setting-copy"><strong>큰 글씨</strong><span>전체 글자를 약 10% 키워요.</span></div><label class="switch"><input type="checkbox" data-setting="largeText" '+(state.textSize==='large'?'checked':'')+'><span></span></label></div><div class="setting-row"><div class="setting-copy"><strong>움직임 줄이기</strong><span>축하 효과와 전환을 최소화해요.</span></div><label class="switch"><input type="checkbox" data-setting="reduceMotion" '+(state.reduceMotion?'checked':'')+'><span></span></label></div><div class="setting-row"><div class="setting-copy"><strong>제주방 배경</strong><span>선택은 이 브라우저에 저장돼요.</span></div><select class="select" data-setting="background">'+['제주 바다','귤밭','오름','돌담길'].map(function(x){return '<option '+(state.background===x?'selected':'')+'>'+x+'</option>';}).join('')+'</select></div></section><section class="card settings-group"><p class="eyebrow">위치·개인정보</p><h2>GPS는 이렇게 사용해요</h2><p class="small muted">이 MVP는 계정이나 서버가 없으며 GPS 기록을 서버에 올리지 않습니다. 활동 중에는 거리 계산에만 사용하고, 완주 후에는 코스명·거리·시간 같은 단순 기록만 이 브라우저에 저장합니다.</p><div class="notice" style="margin-bottom:0"><span>🔒</span><span>파일을 직접 열면 브라우저 보안 정책 때문에 실제 GPS가 제한될 수 있어요. 데모 모드는 항상 사용할 수 있습니다.</span></div></section><section class="card settings-group"><p class="eyebrow">데이터 관리</p><h2>시연 데이터</h2><p class="small muted">기록과 배경 설정은 이 기기의 localStorage에만 보관돼요. 아래 버튼으로 한 번에 삭제할 수 있습니다.</p><button class="btn btn-danger btn-block" data-action="reset">모든 기록과 설정 초기화</button></section></div><section class="section card card-pad"><h3>안전 안내</h3><ul class="small muted"><li>운전 중에는 혼디길을 사용하지 마세요.</li><li>출발 전 날씨, 탐방로 개방, 지역 통제 여부를 확인하세요.</li><li>실제 서비스 출시 전에는 별도의 개인정보처리방침이 필요합니다.</li></ul></section>'+sampleNotice();}
-  function notFound(){return '<section class="card empty"><div class="empty-icon">🧭</div><h1>길을 다시 찾고 있어요</h1><p class="muted">요청한 화면을 찾지 못했어요.</p><button class="btn btn-primary" data-nav="home">홈으로 가기</button></section>';}
-  function render(){
-    destroyMap();renderNav();applyPrefs();var main=document.getElementById('main-content'),hash=(location.hash||'#/home').replace(/^#\//,'').split('/'),page=hash[0],id=hash[1],html='';
-    if(page==='home')html=homeView();else if(page==='courses')html=courseView();else if(page==='course')html=detailView(id);else if(page==='activity')html=activityView(id);else if(page==='complete')html=completionView(id);else if(page==='room')html=roomView();else if(page==='history')html=historyView();else if(page==='settings')html=settingsView();else html=notFound();main.innerHTML=html;main.focus({preventScroll:true});window.scrollTo(0,0);renderNav();
-  }
-  function legalModal(kind){
-    var doc=legalDocuments[kind];if(!doc)return;
-    openModal('<div class="modal-head"><div><p class="eyebrow">혼디길 법적 안내</p><h2>'+doc.title+'</h2><p class="legal-effective">시행일: 2026년 7월 17일</p></div><button class="modal-close" data-action="close-modal" aria-label="닫기">×</button></div><div class="legal-copy">'+doc.body+'</div>');
-  }
-  function openModal(html){var root=document.getElementById('modalRoot');root.innerHTML='<div class="modal-backdrop" data-action="backdrop-close"><section class="modal" role="dialog" aria-modal="true">'+html+'</section></div>';var focus=root.querySelector('button,a,select');if(focus)focus.focus();}
-  function closeModal(){document.getElementById('modalRoot').innerHTML='';}
-  function toast(msg){var el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(ui.toastTimer);ui.toastTimer=setTimeout(function(){el.classList.remove('show');},2600);}
-  function shareRecord(id){var r=state.completions.filter(function(x){return x.id===id;})[0];if(!r)return;var text=r.name+' 코스를 '+fmtKm(r.distance)+' 완주했어요!\n돌하르방 경험치 +'+r.xp+'\n'+treeStage().name+' 단계의 제주방을 키우는 중이에요. #혼디길';if(navigator.share){navigator.share({title:'혼디길 완주 기록',text:text}).catch(function(){});}else if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(text).then(function(){toast('완주 문구를 복사했어요.');}).catch(function(){copyFallback(text);});}else copyFallback(text);}
-  function copyFallback(text){var t=document.createElement('textarea');t.value=text;t.style.position='fixed';t.style.opacity='0';document.body.appendChild(t);t.select();try{document.execCommand('copy');toast('완주 문구를 복사했어요.');}catch(e){toast('복사가 어려워요. 기록 화면을 캡처해 주세요.');}document.body.removeChild(t);}
-  function resetData(){openModal('<div class="modal-head"><div><p class="eyebrow">되돌릴 수 없어요</p><h2>모든 데이터를 지울까요?</h2></div><button class="modal-close" data-action="close-modal" aria-label="닫기">×</button></div><p class="muted">완주 기록, 성장 단계와 제주방 배경 설정이 모두 초기화됩니다.</p><div class="btn-row"><button class="btn btn-secondary" data-action="close-modal">취소</button><button class="btn btn-danger" data-action="confirm-reset">모두 지우기</button></div>');}
-  function handleClick(e){
-    var el=e.target.closest('button,a');if(!el)return;
-    if(el.dataset.legal){e.preventDefault();legalModal(el.dataset.legal);return;}
-    if(el.dataset.nav){e.preventDefault();setSidebar(false);if(el.dataset.nav==='restaurants'){var sec=document.getElementById('restaurants');if(sec)sec.scrollIntoView();return;}navigate(el.dataset.nav);return;}
-    if(el.dataset.course){navigate('course/'+el.dataset.course);return;}
-    if(el.dataset.courseType){state.filters.type=el.dataset.courseType;saveState();navigate('courses');return;}
-    if(el.dataset.filter){var k=el.dataset.filter,v=el.dataset.value;state.filters[k]=v==='toggle'?!state.filters[k]:v;saveState();render();return;}
-    if(el.dataset.restaurantFilter){state.restaurantFilter=el.dataset.restaurantFilter;saveState();render();setTimeout(function(){var s=document.getElementById('restaurants');if(s)s.scrollIntoView();},0);return;}
-    if(el.dataset.background){state.background=el.dataset.background;saveState();render();return;}
-    if(el.dataset.courseRestaurants){var section=document.getElementById('restaurants');if(section)section.scrollIntoView({behavior:state.reduceMotion?'auto':'smooth'});return;}
-    if(el.dataset.restaurant){restaurantModal(el.dataset.restaurant);return;}
-    if(el.dataset.startDemo){startActivity(el.dataset.startDemo,'demo');return;}
-    if(el.dataset.startReal){startActivity(el.dataset.startReal,'gps');return;}
-    var action=el.dataset.action;if(!action)return;
-    if(action==='toggle-sidebar'){setSidebar(!ui.sidebarOpen);return;}
-    if(action==='close-sidebar'){setSidebar(false);return;}
-    if(action==='clear-filters'){state.filters=clone(defaults.filters);saveState();render();}
-    else if(action==='back'){if(location.hash.indexOf('#/activity/')===0){if(confirm('활동을 종료하고 이전 화면으로 돌아갈까요?')){var cid=ui.activity&&ui.activity.courseId;stopActivity();navigate('course/'+(cid||'hamdeok-run'));}}else if(location.hash.indexOf('#/course/')===0)navigate('courses');else if(location.hash.indexOf('#/complete/')===0)navigate('history');else history.back();}
-    else if(action==='fit-map'){if(ui.map&&ui.mapBounds){ui.map.fitBounds(ui.mapBounds,{padding:[45,45]});}else toast('현재 전체 경로를 간단한 선으로 표시하고 있어요.');}
-    else if(action==='pause'){if(!ui.activity)return;ui.activity.status=ui.activity.status==='paused'?'running':'paused';render();if(ui.activity.mode==='demo'&&ui.activity.status==='running')runDemo();}
-    else if(action==='finish')attemptFinish();
-    else if(action==='end-activity'){if(confirm('활동 기록을 저장하지 않고 종료할까요?')){var id=ui.activity&&ui.activity.courseId;stopActivity();navigate('course/'+id);}}
-    else if(action==='share')shareRecord(el.dataset.record);
-    else if(action==='reset')resetData();
-    else if(action==='confirm-reset'){try{localStorage.removeItem(STORAGE_KEY);}catch(err){}state=clone(defaults);closeModal();applyPrefs();navigate('home');render();toast('모든 데이터를 초기화했어요.');}
-    else if(action==='close-modal')closeModal();
-    else if(action==='backdrop-close'&&e.target===el)closeModal();
-  }
-  function handleChange(e){var el=e.target;if(el.dataset.setting==='largeText'){state.textSize=el.checked?'large':'normal';saveState();applyPrefs();}else if(el.dataset.setting==='reduceMotion'){state.reduceMotion=el.checked;saveState();applyPrefs();}else if(el.dataset.setting==='background'){state.background=el.value;saveState();}}
-  document.addEventListener('click',handleClick);document.addEventListener('change',handleChange);
-  window.addEventListener('hashchange',render);window.addEventListener('beforeunload',function(){stopActivity(false);});
-  window.addEventListener('keydown',function(e){if(e.key==='Escape'){setSidebar(false);closeModal();}});
-  if(!location.hash)location.replace('#/home');else render();
-}());
+      writeStored(STORAGE_KEYS.RECORDS, unique.slice(0, 100));
+    }
+
+    function getPendingCompletions() {
+      const value = readStored(STORAGE_KEYS.PENDING_COMPLETIONS, []);
+      if (!Array.isArray(value)) return [];
+      return value.filter(item => item && typeof item.localRecordId === 'string' && item.activity && item.activity.courseId);
+    }
+
+    function savePendingCompletions(items) {
+      writeStored(STORAGE_KEYS.PENDING_COMPLETIONS, items.slice(-20));
+    }
+
+    function getEvents() {
+      const value = readStored(STORAGE_KEYS.EVENTS, []);
+      return Array.isArray(value) ? value.filter(item => item && item.requestId && item.eventType) : [];
+    }
+
+    function saveEvents(events) {
+      writeStored(STORAGE_KEYS.EVENTS, events.slice(-500));
+    }
+
+    function getSyncQueue() {
+      const value = readStored(STORAGE_KEYS.QUEUE, []);
+      if (!Array.isArray(value)) return [];
+      return value.filter(event => event && typeof event === 'object' &&
+        event.schemaVersion === 1 &&
+        typeof event.requestId === 'string' && /^[A-Za-z0-9._:-]{8,100}$/.test(event.requestId) &&
+        ALLOWED_EVENT_TYPES.has(event.eventType) &&
+        typeof event.anonymousId === 'string' && /^[A-Za-z0-9._:-]{8,100}$/.test(event.anonymousId) &&
+        !Number.isNaN(new Date(event.occurredAt).getTime()) &&
+        event.data && typeof event.data === 'object' && !Array.isArray(event.data));
+    }
+
+    function createEmptyMetrics() {
+      return {
+        schemaVersion: 1,
+        eventCounts: {},
+        users: [],
+        dailyVisitors: {},
+        courseStarts: {},
+        courseCompletes: {},
+        locationAttempts: 0,
+        locationSuccesses: 0,
+        photoAttempts: 0,
+        photoSuccesses: 0
+      };
+    }
+
+    function applyEventToMetrics(metrics, event) {
+      if (!metrics.eventCounts || typeof metrics.eventCounts !== 'object') metrics.eventCounts = {};
+      if (!Array.isArray(metrics.users)) metrics.users = [];
+      if (!metrics.dailyVisitors || typeof metrics.dailyVisitors !== 'object') metrics.dailyVisitors = {};
+      if (!metrics.courseStarts || typeof metrics.courseStarts !== 'object') metrics.courseStarts = {};
+      if (!metrics.courseCompletes || typeof metrics.courseCompletes !== 'object') metrics.courseCompletes = {};
+      const type = event.eventType;
+      metrics.eventCounts[type] = Number(metrics.eventCounts[type] || 0) + 1;
+      if (event.anonymousId && !metrics.users.includes(event.anonymousId)) {
+        metrics.users.push(event.anonymousId);
+        metrics.users = metrics.users.slice(-200);
+      }
+      if (type === 'user_visited' && event.anonymousId) {
+        const dateKey = localDateKey(event.occurredAt);
+        if (dateKey) {
+          const visitors = Array.isArray(metrics.dailyVisitors[dateKey]) ? metrics.dailyVisitors[dateKey] : [];
+          if (!visitors.includes(event.anonymousId)) visitors.push(event.anonymousId);
+          metrics.dailyVisitors[dateKey] = visitors.slice(-200);
+          const recentDates = Object.keys(metrics.dailyVisitors).sort().slice(-45);
+          Object.keys(metrics.dailyVisitors).forEach(key => {
+            if (!recentDates.includes(key)) delete metrics.dailyVisitors[key];
+          });
+        }
+      }
+      const courseId = event.data && event.data.courseId;
+      if (type === 'course_started' && courseId) {
+        metrics.courseStarts[courseId] = Number(metrics.courseStarts[courseId] || 0) + 1;
+      }
+      if (type === 'course_completed' && courseId) {
+        metrics.courseCompletes[courseId] = Number(metrics.courseCompletes[courseId] || 0) + 1;
+      }
+      if (type === 'start_verified' || type === 'finish_verified') {
+        metrics.locationAttempts = Number(metrics.locationAttempts || 0) + 1;
+        if (event.data && event.data.result === 'success') metrics.locationSuccesses = Number(metrics.locationSuccesses || 0) + 1;
+      }
+      if (type === 'photo_verified') {
+        metrics.photoAttempts = Number(metrics.photoAttempts || 0) + 1;
+        if (event.data && event.data.result === 'success') metrics.photoSuccesses = Number(metrics.photoSuccesses || 0) + 1;
+      }
+      return metrics;
+    }
+
+    function getMetricsRollup() {
+      const stored = readStored(STORAGE_KEYS.METRICS, null);
+      if (stored && stored.schemaVersion === 1 && stored.eventCounts && stored.dailyVisitors && stored.courseStarts && stored.courseCompletes) {
+        return stored;
+      }
+      const rebuilt = getEvents().reduce(applyEventToMetrics, createEmptyMetrics());
+      writeStored(STORAGE_KEYS.METRICS, rebuilt);
+      return rebuilt;
+    }
+
+    function updateMetricsRollup(event) {
+      const metrics = getMetricsRollup();
+      applyEventToMetrics(metrics, event);
+      writeStored(STORAGE_KEYS.METRICS, metrics);
+    }
+
+    function courseById(courseId) {
+      return COURSE_DATA.find(course => course.id === courseId) || COURSE_DATA[0];
+    }
+
+    function restaurantsForCourse(courseId) {
+      return RESTAURANT_DATA.filter(restaurant => restaurant.courseIds.includes(courseId));
+    }
+
+    function formatDate(value, includeTime) {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '-';
+      return new Intl.DateTimeFormat('ko-KR', {
+        year: 'numeric', month: 'long', day: 'numeric',
+        hour: includeTime ? '2-digit' : undefined,
+        minute: includeTime ? '2-digit' : undefined
+      }).format(date);
+    }
+
+    function localDateKey(value) {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '';
+      return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
+    }
+
+    function formatClock(value) {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '-';
+      return new Intl.DateTimeFormat('ko-KR', { hour: '2-digit', minute: '2-digit' }).format(date);
+    }
+
+    function formatDuration(milliseconds) {
+      const totalSeconds = Math.max(0, Math.floor(Number(milliseconds || 0) / 1000));
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      return [hours, minutes, seconds].map(number => String(number).padStart(2, '0')).join(':');
+    }
+
+    function formatCourseDuration(minutes) {
+      const hours = Math.floor(minutes / 60);
+      const rest = minutes % 60;
+      if (!hours) return rest + '분';
+      return hours + '시간' + (rest ? ' ' + rest + '분' : '');
+    }
+
+    function maskAnonymousId(value) {
+      const clean = String(value || '');
+      if (clean.length < 10) return clean;
+      return clean.slice(0, 8) + '••••' + clean.slice(-4);
+    }
+
+    function eventLabel(type) {
+      const labels = {
+        user_registered:'최초 등록', user_visited:'접속', course_viewed:'코스 상세 조회',
+        course_started:'코스 시작', start_verified:'출발 위치 인증', finish_verified:'도착 위치 인증',
+        photo_verified:'사진 인증', course_completed:'코스 완주',
+        restaurant_clicked:'맛집 보기', directions_clicked:'길찾기'
+      };
+      return labels[type] || type;
+    }
+
+    function logEvent(eventType, data) {
+      if (!ALLOWED_EVENT_TYPES.has(eventType)) return null;
+      const user = getUser();
+      const event = {
+        schemaVersion: 1,
+        requestId: createId('req'),
+        eventType,
+        anonymousId: user ? user.id : '',
+        nickname: user ? user.nickname : '',
+        occurredAt: new Date().toISOString(),
+        data: Object.assign({ page: state.page }, data || {})
+      };
+      const events = getEvents();
+      updateMetricsRollup(event);
+      events.push(event);
+      saveEvents(events);
+      if (APP_CONFIG.DATA_SYNC_ENABLED && (APP_CONFIG.DJANGO_API_URL || APP_CONFIG.APPS_SCRIPT_URL)) {
+        const nextQueue = getSyncQueue();
+        nextQueue.push(event);
+        writeStored(STORAGE_KEYS.QUEUE, nextQueue.slice(-200));
+        flushEventQueue();
+      }
+      return event;
+    }
+
+    function flushEventQueue() {
+      if (state.syncInFlight) return state.syncInFlight;
+      state.syncInFlight = flushEventQueueInternal()
+        .catch(() => undefined)
+        .finally(() => { state.syncInFlight = null; });
+      return state.syncInFlight;
+    }
+
+    async function flushEventQueueInternal() {
+      const endpoint = state.backendAvailable
+        ? APP_CONFIG.DJANGO_API_URL.replace(/\/$/, '') + '/events/'
+        : APP_CONFIG.APPS_SCRIPT_URL;
+      if (!APP_CONFIG.DATA_SYNC_ENABLED || !endpoint || !navigator.onLine) return;
+      // 새 이벤트가 전송 중 추가돼도 덮어쓰지 않도록 매 묶음마다 최신 큐를 다시 읽습니다.
+      for (let batchIndex = 0; batchIndex < 10; batchIndex += 1) {
+        const queue = getSyncQueue();
+        if (!queue.length) return;
+        const batch = queue.slice(0, 20);
+        const succeededIds = new Set();
+        let failed = false;
+        for (const event of batch) {
+          try {
+            const response = await fetch(endpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              credentials: state.backendAvailable ? 'include' : 'omit',
+              body: JSON.stringify(event)
+            });
+            if (!response.ok) throw new Error('network-response');
+            const responseText = await response.text();
+            const result = JSON.parse(responseText);
+            if (!result || result.ok !== true) throw new Error('server-rejected');
+            succeededIds.add(event.requestId);
+          } catch (error) {
+            failed = true;
+          }
+        }
+        const latestQueue = getSyncQueue();
+        const preserved = latestQueue.filter(event => !succeededIds.has(event.requestId));
+        writeStored(STORAGE_KEYS.QUEUE, preserved);
+        // 실패한 요청은 다음 온라인 복귀나 접속 때 같은 requestId로 다시 시도합니다.
+        if (failed || preserved.length === 0) return;
+      }
+    }
+
+    async function probeDjangoBackend() {
+      if (!APP_CONFIG.DJANGO_API_URL || location.protocol === 'file:') return false;
+      try {
+        const endpoint = APP_CONFIG.DJANGO_API_URL.replace(/\/$/, '') + '/health/';
+        const response = await fetch(endpoint, {
+          method: 'GET',
+          credentials: 'include',
+          headers: { 'Accept': 'application/json' }
+        });
+        const result = await response.json();
+        state.backendAvailable = response.ok && result && result.ok === true;
+      } catch (error) {
+        state.backendAvailable = false;
+      }
+      return state.backendAvailable;
+    }
+
+    function djangoApiUrl(path) {
+      return APP_CONFIG.DJANGO_API_URL.replace(/\/$/, '') + '/' + String(path || '').replace(/^\//, '');
+    }
+
+    async function djangoRequest(path, options) {
+      const requestOptions = options || {};
+      const method = String(requestOptions.method || 'GET').toUpperCase();
+      const headers = Object.assign({ 'Accept':'application/json' }, requestOptions.headers || {});
+      const fetchOptions = { method, headers, credentials:'include' };
+      if (!['GET', 'HEAD', 'OPTIONS'].includes(method) && state.csrfToken) {
+        headers['X-CSRFToken'] = state.csrfToken;
+      }
+      if (Object.prototype.hasOwnProperty.call(requestOptions, 'body')) {
+        headers['Content-Type'] = 'application/json;charset=utf-8';
+        fetchOptions.body = JSON.stringify(requestOptions.body == null ? {} : requestOptions.body);
+      }
+      let response;
+      try {
+        response = await fetch(djangoApiUrl(path), fetchOptions);
+      } catch (error) {
+        state.backendAvailable = false;
+        throw error;
+      }
+      let payload = null;
+      if (response.status !== 204) {
+        const responseText = await response.text();
+        if (responseText) {
+          try { payload = JSON.parse(responseText); } catch (error) { payload = null; }
+        }
+      }
+      if (!response.ok) {
+        const error = new Error(payload && payload.message ? payload.message : '백엔드 요청을 처리하지 못했습니다.');
+        error.status = response.status;
+        error.code = payload && payload.code ? payload.code : 'REQUEST_FAILED';
+        throw error;
+      }
+      return payload;
+    }
+
+    function applyBackendDatasets(payload) {
+      if (Array.isArray(payload.courses) && payload.courses.length && payload.courses.every(course => course && course.id)) {
+        COURSE_DATA = Object.freeze(payload.courses.map(course => Object.freeze(Object.assign({}, course, {
+          start: Array.isArray(course.start) ? course.start.slice(0, 2) : [],
+          end: Array.isArray(course.end) ? course.end.slice(0, 2) : [],
+          route: Array.isArray(course.route) ? course.route.map(point => Array.isArray(point) ? point.slice(0, 2) : point) : [],
+          supplies: Array.isArray(course.supplies) ? course.supplies.slice() : []
+        }))));
+      }
+      if (Array.isArray(payload.restaurants) && payload.restaurants.length && payload.restaurants.every(restaurant => restaurant && restaurant.id)) {
+        RESTAURANT_DATA = Object.freeze(payload.restaurants.map(restaurant => Object.freeze(Object.assign({}, restaurant, {
+          courseIds: Array.isArray(restaurant.courseIds) ? restaurant.courseIds.slice() : []
+        }))));
+      }
+      if (!COURSE_DATA.some(course => course.id === state.selectedCourseId)) {
+        state.selectedCourseId = COURSE_DATA[0].id;
+      }
+    }
+
+    function localUserFromBackend(serverUser, fallbackUser) {
+      const fallback = fallbackUser || {};
+      return {
+        id: String(serverUser.anonymousId || serverUser.id || fallback.id || createId('anon')),
+        nickname: normalizeNickname(serverUser.nickname || fallback.nickname || ''),
+        createdAt: serverUser.createdAt || fallback.createdAt || new Date().toISOString(),
+        lastVisitedAt: serverUser.lastVisitedAt || fallback.lastVisitedAt || new Date().toISOString()
+      };
+    }
+
+    function localActivityFromBackend(serverActivity, existingActivity) {
+      const existing = existingActivity && existingActivity.courseId === serverActivity.courseId ? existingActivity : null;
+      return {
+        id: existing ? existing.id : 'activity_' + serverActivity.id,
+        backendActivityId: String(serverActivity.id),
+        courseId: serverActivity.courseId,
+        startedAt: serverActivity.startedAt || (existing && existing.startedAt) || new Date().toISOString(),
+        startVerified: serverActivity.startVerified === true,
+        finishVerified: serverActivity.finishVerified === true,
+        photoVerified: serverActivity.photoVerified === true,
+        photoName: existing && serverActivity.photoVerified ? existing.photoName : '',
+        startLocation: existing ? existing.startLocation : null,
+        finishLocation: existing ? existing.finishLocation : null,
+        photoMeta: existing ? existing.photoMeta : null,
+        currentStep: serverActivity.currentStep || 'start'
+      };
+    }
+
+    async function syncPendingActivityProgress(localActivity, serverActivity) {
+      let local = Object.assign({}, localActivity);
+      let server = serverActivity;
+      const basePath = 'activities/' + encodeURIComponent(server.id) + '/';
+      if (local.startVerified && !server.startVerified) {
+        if (local.startLocation) {
+          const result = await djangoRequest(basePath + 'verify-location/', {
+            method:'POST',
+            body:Object.assign({}, local.startLocation, { target:'start' })
+          });
+          server = result.activity || server;
+          if (result.verified !== true) local.startVerified = false;
+        } else {
+          local.startVerified = false;
+        }
+      }
+      if (local.photoVerified && !server.photoVerified) {
+        if ((server.startVerified || local.startVerified) && local.photoMeta) {
+          const result = await djangoRequest(basePath + 'verify-photo/', {
+            method:'POST', body:Object.assign({}, local.photoMeta)
+          });
+          server = result.activity || server;
+        } else {
+          local.photoVerified = false;
+          local.finishVerified = false;
+        }
+      }
+      if (local.finishVerified && !server.finishVerified) {
+        if ((server.startVerified || local.startVerified) && (server.photoVerified || local.photoVerified) && local.finishLocation) {
+          const result = await djangoRequest(basePath + 'verify-location/', {
+            method:'POST',
+            body:Object.assign({}, local.finishLocation, { target:'finish' })
+          });
+          server = result.activity || server;
+          if (result.verified !== true) local.finishVerified = false;
+        } else {
+          local.finishVerified = false;
+        }
+      }
+      return { localActivity:local, serverActivity:server };
+    }
+
+    async function syncPendingCompletions() {
+      const pending = getPendingCompletions();
+      if (!pending.length || !state.backendAvailable) return;
+      const remaining = [];
+      for (let index = 0; index < pending.length; index += 1) {
+        const item = pending[index];
+        try {
+          let serverActivity = null;
+          if (item.activity.backendActivityId) {
+            try {
+              const detail = await djangoRequest('activities/' + encodeURIComponent(item.activity.backendActivityId) + '/');
+              serverActivity = detail && detail.activity;
+            } catch (error) {
+              if (!error || error.status !== 404) throw error;
+            }
+          }
+          if (!serverActivity) {
+            const activeResult = await djangoRequest('activities/active/');
+            const currentServerActivity = activeResult && activeResult.activity;
+            if (currentServerActivity && currentServerActivity.courseId !== item.activity.courseId) {
+              remaining.push(item);
+              continue;
+            }
+            if (currentServerActivity) {
+              serverActivity = currentServerActivity;
+            } else {
+              const created = await djangoRequest('activities/', { method:'POST', body:{ courseId:item.activity.courseId } });
+              serverActivity = created && created.activity;
+            }
+          }
+          if (!serverActivity) {
+            remaining.push(item);
+            continue;
+          }
+          const progress = await syncPendingActivityProgress(item.activity, serverActivity);
+          const verified = progress.serverActivity;
+          if (!(verified.startVerified && verified.photoVerified && verified.finishVerified)) {
+            remaining.push(item);
+            continue;
+          }
+          const completed = await djangoRequest(
+            'activities/' + encodeURIComponent(verified.id) + '/complete/',
+            { method:'POST', body:{} }
+          );
+          const serverRecord = completed && (completed.completion || completed.record);
+          if (!serverRecord) {
+            remaining.push(item);
+            continue;
+          }
+          const records = getRecords().filter(record => record.id !== item.localRecordId && record.id !== serverRecord.id);
+          records.unshift(serverRecord);
+          saveRecords(records);
+          if (readStored(STORAGE_KEYS.LAST_RECORD, '') === item.localRecordId) {
+            writeStored(STORAGE_KEYS.LAST_RECORD, serverRecord.id);
+          }
+        } catch (error) {
+          savePendingCompletions(remaining.concat(pending.slice(index)));
+          throw error;
+        }
+      }
+      savePendingCompletions(remaining);
+    }
+
+    function mergeBackendRecords(completions) {
+      if (!Array.isArray(completions)) return;
+      saveRecords(completions.concat(getRecords()));
+      state.lastRecord = getLastRecord();
+    }
+
+    async function syncNicknameWithBackend(nickname) {
+      if (!state.backendAvailable) return null;
+      const path = state.backendProfile ? 'me/' : 'session/';
+      const method = state.backendProfile ? 'PATCH' : 'POST';
+      const result = await djangoRequest(path, { method, body:{ nickname } });
+      if (!result || !result.user) return null;
+      state.backendProfile = result.user;
+      const localUser = localUserFromBackend(result.user, getUser());
+      if (localUser.nickname.length >= 2) writeStored(STORAGE_KEYS.USER, localUser);
+      return localUser;
+    }
+
+    async function syncStartedActivity(localActivityId, courseId, replaceExisting) {
+      if (!state.backendAvailable) return getActiveCourse();
+      if (state.activitySyncPromise) {
+        await state.activitySyncPromise;
+        const alreadySynced = getActiveCourse();
+        if (alreadySynced && alreadySynced.id === localActivityId && alreadySynced.backendActivityId) return alreadySynced;
+      }
+      const task = (async () => {
+        const user = getUser();
+        if (!state.backendProfile && user) await syncNicknameWithBackend(user.nickname);
+        let result;
+        try {
+          result = await djangoRequest('activities/', { method:'POST', body:{ courseId } });
+        } catch (error) {
+          if (error.code !== 'ACTIVE_ACTIVITY_EXISTS') throw error;
+          const currentResult = await djangoRequest('activities/active/');
+          const serverActive = currentResult && currentResult.activity;
+          if (serverActive && serverActive.courseId === courseId) {
+            result = { activity:serverActive };
+          } else if (replaceExisting && serverActive) {
+            await djangoRequest('activities/' + encodeURIComponent(serverActive.id) + '/', { method:'DELETE' });
+            result = await djangoRequest('activities/', { method:'POST', body:{ courseId } });
+          } else {
+            throw error;
+          }
+        }
+        const currentLocal = getActiveCourse();
+        if (result && result.activity && currentLocal && currentLocal.id === localActivityId) {
+          const progress = await syncPendingActivityProgress(currentLocal, result.activity);
+          const merged = localActivityFromBackend(progress.serverActivity, progress.localActivity);
+          saveActiveCourse(merged);
+          return merged;
+        }
+        return currentLocal;
+      })();
+      state.activitySyncPromise = task;
+      try {
+        return await task;
+      } finally {
+        if (state.activitySyncPromise === task) state.activitySyncPromise = null;
+      }
+    }
+
+    async function ensureBackendActivity(active) {
+      if (!state.backendAvailable || !active) return active;
+      if (active.backendActivityId) return active;
+      return syncStartedActivity(active.id, active.courseId, false);
+    }
+
+    async function stopBackendActivity(active) {
+      if (!state.backendAvailable || !active) return;
+      if (state.activitySyncPromise) {
+        try { await state.activitySyncPromise; } catch (error) { /* 아래 조회로 현재 서버 상태를 다시 확인합니다. */ }
+      }
+      let backendActivityId = active.backendActivityId;
+      if (!backendActivityId) {
+        const result = await djangoRequest('activities/active/');
+        if (result && result.activity && result.activity.courseId === active.courseId) backendActivityId = result.activity.id;
+      }
+      if (backendActivityId) {
+        await djangoRequest('activities/' + encodeURIComponent(backendActivityId) + '/', { method:'DELETE' });
+      }
+    }
+
+    function reportBackendSyncFailure(error, offlineMessage) {
+      if (!error || !error.status) {
+        state.backendAvailable = false;
+        showToast(offlineMessage || '백엔드 연결이 끊겨 브라우저에만 저장했습니다.');
+        return;
+      }
+      showToast(error.message || '백엔드에서 요청을 처리하지 못했습니다.');
+    }
+
+    async function syncDjangoBootstrap() {
+      const payload = await djangoRequest('bootstrap/');
+      if (!payload || payload.ok !== true) throw new Error('invalid-bootstrap');
+      state.backendAvailable = true;
+      state.csrfToken = String(payload.csrfToken || '');
+      applyBackendDatasets(payload);
+
+      let localUser = getUser();
+      if (payload.user) {
+        state.backendProfile = payload.user;
+        if (localUser && localUser.nickname && localUser.nickname !== payload.user.nickname) {
+          localUser = await syncNicknameWithBackend(localUser.nickname);
+        } else if (!localUser && normalizeNickname(payload.user.nickname).length >= 2) {
+          localUser = localUserFromBackend(payload.user, null);
+          writeStored(STORAGE_KEYS.USER, localUser);
+        } else if (localUser) {
+          localUser = localUserFromBackend(payload.user, localUser);
+          writeStored(STORAGE_KEYS.USER, localUser);
+        }
+      } else if (localUser) {
+        state.backendProfile = null;
+        localUser = await syncNicknameWithBackend(localUser.nickname);
+      } else {
+        state.backendProfile = null;
+      }
+
+      if (localUser) {
+        await syncPendingCompletions();
+        const localActive = getActiveCourse();
+        const activeResult = await djangoRequest('activities/active/');
+        const serverActive = activeResult && activeResult.activity;
+        if (serverActive) {
+          if (!localActive) {
+            saveActiveCourse(localActivityFromBackend(serverActive, null));
+          } else if (localActive.courseId === serverActive.courseId) {
+            const progress = await syncPendingActivityProgress(localActive, serverActive);
+            saveActiveCourse(localActivityFromBackend(progress.serverActivity, progress.localActivity));
+          } else {
+            const localStarted = new Date(localActive.startedAt).getTime();
+            const serverStarted = new Date(serverActive.startedAt).getTime();
+            if (Number.isFinite(localStarted) && localStarted > serverStarted) {
+              await syncStartedActivity(localActive.id, localActive.courseId, true);
+            } else {
+              saveActiveCourse(localActivityFromBackend(serverActive, null));
+            }
+          }
+        } else if (localActive) {
+          await syncStartedActivity(localActive.id, localActive.courseId, false);
+        }
+        mergeBackendRecords(payload.completions);
+        const active = getActiveCourse();
+        if (active) {
+          state.selectedCourseId = active.courseId;
+          if (state.page === 'home') state.page = 'progress';
+        }
+      }
+      render();
+      return true;
+    }
+
+    function buildShell(content, activePage, showNavigation) {
+      const user = getUser();
+      const navPages = ['home', 'courses', 'room', 'more'];
+      const navItems = [
+        { page:'home', label:'홈', icon:'home' },
+        { page:'courses', label:'코스', icon:'courses' },
+        { page:'room', label:'나의 제주방', icon:'room' },
+        { page:'more', label:'더보기', icon:'more' }
+      ];
+      const desktopNav = navItems.map(item =>
+        '<button type="button" data-action="navigate" data-page="' + item.page + '"' +
+        (activePage === item.page ? ' aria-current="page"' : '') + '>' + item.label + '</button>'
+      ).join('');
+      const bottomNav = navItems.map(item =>
+        '<button type="button" data-action="navigate" data-page="' + item.page + '"' +
+        (activePage === item.page ? ' aria-current="page"' : '') + '>' +
+        '<span class="nav-icon ' + item.icon + '" aria-hidden="true"></span><span>' + item.label + '</span></button>'
+      ).join('');
+      return '<header class="site-header"><div class="header-inner">' +
+        '<button type="button" class="brand btn-text" data-action="navigate" data-page="home" aria-label="혼디길 홈으로">' +
+        '<span class="brand-mark" aria-hidden="true"></span><span>혼디길</span></button>' +
+        '<nav class="desktop-nav" aria-label="주요 메뉴">' + desktopNav + '</nav>' +
+        '<span class="header-user">' + escapeHTML(user ? user.nickname : '') + '님</span></div></header>' +
+        '<main id="main-content" class="main" tabindex="-1">' + content + '</main>' +
+        (showNavigation === false ? '' : '<nav class="bottom-nav" aria-label="하단 주요 메뉴">' + bottomNav + '</nav>');
+    }
+
+    function navigate(page, options) {
+      cleanupTransientUI();
+      state.page = page;
+      if (options && options.courseId) state.selectedCourseId = options.courseId;
+      render();
+      window.scrollTo({ top: 0, behavior: 'auto' });
+      window.setTimeout(() => {
+        const main = document.getElementById('main-content');
+        if (main) main.focus({ preventScroll: true });
+      }, 0);
+    }
+
+    function cleanupTransientUI() {
+      if (state.map) {
+        try { state.map.remove(); } catch (error) { /* 이미 제거된 지도는 무시합니다. */ }
+        state.map = null;
+      }
+      if (state.elapsedTimer) {
+        clearInterval(state.elapsedTimer);
+        state.elapsedTimer = null;
+      }
+    }
+
+    function showToast(message) {
+      if (!toastElement) return;
+      toastElement.textContent = message;
+      toastElement.hidden = false;
+      if (state.toastTimer) clearTimeout(state.toastTimer);
+      state.toastTimer = window.setTimeout(() => { toastElement.hidden = true; }, 3200);
+    }
+
+    function openModal(html, focusSelector) {
+      state.returnFocus = document.activeElement;
+      modalRoot.innerHTML = '<div class="modal-backdrop" data-action="backdrop-close">' +
+        '<section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">' + html + '</section></div>';
+      window.setTimeout(() => {
+        const target = modalRoot.querySelector(focusSelector || 'button, input');
+        if (target) target.focus();
+      }, 0);
+    }
+
+    function closeModal() {
+      modalRoot.innerHTML = '';
+      state.pendingConfirmAction = '';
+      if (state.returnFocus && typeof state.returnFocus.focus === 'function') {
+        state.returnFocus.focus();
+      }
+      state.returnFocus = null;
+    }
+
+    function openConfirm(title, description, confirmLabel, actionName) {
+      state.pendingConfirmAction = actionName;
+      openModal(
+        '<h2 id="modal-title">' + escapeHTML(title) + '</h2>' +
+        '<p>' + escapeHTML(description) + '</p>' +
+        '<div class="modal-actions">' +
+        '<button type="button" class="btn btn-secondary" data-action="close-modal">취소</button>' +
+        '<button type="button" class="btn ' + (actionName === 'delete-all' ? 'btn-danger' : 'btn-primary') + '" data-action="confirm-pending">' + escapeHTML(confirmLabel) + '</button></div>',
+        '[data-action="close-modal"]'
+      );
+    }
+
+    function render() {
+      const user = getUser();
+      if (!user) {
+        cleanupTransientUI();
+        appElement.innerHTML = renderOnboarding();
+        document.title = '혼디길 시작하기';
+        return;
+      }
+
+      let pageContent = '';
+      let activeNavigation = state.page;
+      let showNavigation = true;
+      switch (state.page) {
+        case 'courses':
+          pageContent = renderCourses();
+          document.title = '코스 찾기 | 혼디길';
+          break;
+        case 'detail':
+          pageContent = renderCourseDetail();
+          activeNavigation = 'courses';
+          showNavigation = false;
+          document.title = courseById(state.selectedCourseId).name + ' | 혼디길';
+          break;
+        case 'progress':
+          pageContent = renderCourseProgress();
+          activeNavigation = 'courses';
+          showNavigation = false;
+          document.title = '코스 진행 | 혼디길';
+          break;
+        case 'result':
+          pageContent = renderCompletionResult();
+          activeNavigation = 'room';
+          showNavigation = false;
+          document.title = '완주 결과 | 혼디길';
+          break;
+        case 'restaurants':
+          pageContent = renderRestaurants();
+          activeNavigation = 'room';
+          showNavigation = false;
+          document.title = '주변 로컬 맛집 | 혼디길';
+          break;
+        case 'room':
+          pageContent = renderMyRoom();
+          document.title = '나의 제주방 | 혼디길';
+          break;
+        case 'more':
+          pageContent = renderMore();
+          document.title = '더보기 | 혼디길';
+          break;
+        case 'admin':
+          pageContent = renderAdmin();
+          activeNavigation = 'more';
+          showNavigation = false;
+          document.title = '관리자 | 혼디길';
+          break;
+        case 'home':
+        default:
+          state.page = 'home';
+          pageContent = renderHome();
+          activeNavigation = 'home';
+          document.title = '혼디길 | 제주 걷기와 러닝';
+      }
+      appElement.innerHTML = buildShell(pageContent, activeNavigation, showNavigation);
+
+      if (state.page === 'detail') {
+        window.setTimeout(initCourseMap, 0);
+      }
+      if (state.page === 'progress') {
+        startElapsedTimer();
+      }
+    }
+
+    function renderOnboarding() {
+      return `<main class="onboarding" id="main-content">
+        <section class="onboarding-card" aria-labelledby="onboarding-title">
+          <div class="onboarding-image">
+            <img src="${ART_ASSETS.HERO}" alt="오름과 바다가 보이는 제주 돌담길을 달리는 여행자 일러스트">
+          </div>
+          <div class="onboarding-copy">
+            <div class="brand"><span class="brand-mark" aria-hidden="true"></span><span>혼디길</span></div>
+            <p class="eyebrow">회원가입 없이 바로 시작</p>
+            <h1 id="onboarding-title">혼디길에서 사용할 이름을 정해 주세요</h1>
+            <p class="lead">회원가입 없이 바로 시작할 수 있어요. 닉네임은 완주 기록과 나의 제주방에 표시됩니다.</p>
+            <form id="nickname-form" novalidate>
+              <div class="field">
+                <label for="nickname">닉네임</label>
+                <input class="input" id="nickname" name="nickname" type="text" maxlength="12" autocomplete="nickname" placeholder="닉네임을 입력해 주세요" aria-describedby="nickname-help nickname-error" required>
+                <p class="help" id="nickname-help">공백을 제외하고 2~12자로 입력해 주세요.</p>
+                <p class="form-message" id="nickname-error" role="alert"></p>
+              </div>
+              <button class="btn btn-primary btn-block" type="submit">혼디길 시작하기</button>
+            </form>
+          </div>
+        </section>
+      </main>`;
+    }
+
+    function renderHome() {
+      const user = getUser();
+      const records = getRecords();
+      const latest = records[0];
+      const active = getActiveCourse();
+      const featured = COURSE_DATA[0];
+      const secondaryCourses = [COURSE_DATA[1], COURSE_DATA[2]];
+      return `<div class="page">
+        <section class="hero" aria-labelledby="home-title">
+          <div class="hero-copy">
+            <p class="eyebrow">${escapeHTML(user.nickname)}님, 혼저 옵서예</p>
+            <h1 id="home-title">제주에서 가볍게 걷고 달려 보세요</h1>
+            <p class="lead">초보자도 부담 없는 길을 골라 완주하고, 가까운 제주 로컬 맛집까지 이어서 만나세요.</p>
+            <button type="button" class="btn btn-primary" data-action="navigate" data-page="courses">내게 맞는 코스 찾기</button>
+          </div>
+          <div class="hero-image">
+            <img src="${ART_ASSETS.HERO}" alt="오름과 바다가 보이는 제주 돌담길을 달리는 여행자 일러스트">
+          </div>
+        </section>
+
+        ${active ? `<section class="section" aria-labelledby="active-heading">
+          <div class="section-heading"><div><p class="eyebrow">진행 중</p><h2 id="active-heading">걷던 길을 이어가세요</h2></div></div>
+          <div class="card summary-card">
+            <div><h3>${escapeHTML(courseById(active.courseId).name)}</h3><p class="lead">시작 ${formatDate(active.startedAt, true)} · 현재 ${active.currentStep === 'complete' ? '완주 확인' : active.currentStep === 'finish' ? '도착 인증' : active.currentStep === 'photo' ? '사진 인증' : '출발 인증'} 단계</p></div>
+            <button type="button" class="btn btn-primary" data-action="resume-course">진행 이어가기</button>
+          </div>
+        </section>` : ''}
+
+        <section class="section" aria-labelledby="recommended-heading">
+          <div class="section-heading"><div><p class="eyebrow">처음이라면 이 길</p><h2 id="recommended-heading">추천 코스</h2></div><button type="button" class="btn btn-text" data-action="navigate" data-page="courses">전체 보기</button></div>
+          <div class="card-grid three">
+            ${renderCourseCard(featured)}
+            ${secondaryCourses.map(renderCourseCard).join('')}
+          </div>
+        </section>
+
+        <section class="section" aria-labelledby="recent-heading">
+          <div class="section-heading"><div><p class="eyebrow">나의 기록</p><h2 id="recent-heading">최근 완주</h2></div></div>
+          ${latest ? `<div class="card summary-card">
+            <div><span class="summary-number">${latest.distance.toFixed(1)}km</span><h3>${escapeHTML(latest.courseName)}</h3><p class="lead">${formatDate(latest.completedAt, false)} · ${formatDuration(latest.durationMs)}</p></div>
+            <button type="button" class="btn btn-secondary" data-action="navigate" data-page="room">기록 자세히 보기</button>
+          </div>` : `<div class="empty-state"><h3>아직 완주 기록이 없어요</h3><p>첫 코스를 골라 제주에서 나만의 한 걸음을 시작해 보세요.</p></div>`}
+        </section>
+      </div>`;
+    }
+
+    function renderCourseCard(course) {
+      return `<article class="card course-card">
+        <div class="image-wrap">
+          <img src="${course.image}" alt="${escapeHTML(course.imageAlt)}" loading="lazy" referrerpolicy="no-referrer">
+          <span class="image-label">${course.typeLabel} 코스</span>
+        </div>
+        <div class="card-body">
+          <p class="eyebrow">${escapeHTML(course.region)}</p>
+          <h3>${escapeHTML(course.name)}</h3>
+          <div class="chips" aria-label="코스 요약">
+            <span class="chip primary">${course.distance.toFixed(1)}km</span>
+            <span class="chip">${formatCourseDuration(course.durationMin)}</span>
+            <span class="chip">${escapeHTML(course.difficulty)}</span>
+          </div>
+          <p class="course-description">${escapeHTML(course.description)}</p>
+          <button type="button" class="btn btn-secondary btn-block" data-action="view-course" data-course-id="${course.id}">상세보기</button>
+        </div>
+      </article>`;
+    }
+
+    function getFilteredCourses() {
+      return COURSE_DATA.filter(course => {
+        const typeMatch = state.filters.type === 'all' || course.type === state.filters.type;
+        const distanceMatch =
+          state.filters.distance === 'all' ||
+          (state.filters.distance === 'short' && course.distance < 5) ||
+          (state.filters.distance === 'medium' && course.distance >= 5 && course.distance < 8) ||
+          (state.filters.distance === 'long' && course.distance >= 8);
+        const difficultyMatch = state.filters.difficulty === 'all' || course.difficulty === state.filters.difficulty;
+        return typeMatch && distanceMatch && difficultyMatch;
+      });
+    }
+
+    function selected(value, expected) {
+      return value === expected ? ' selected' : '';
+    }
+
+    function renderCourses() {
+      const courses = getFilteredCourses();
+      return `<div class="page">
+        <header class="page-header">
+          <p class="eyebrow">제주 맞춤 코스</p>
+          <h1>오늘 걷기 좋은 길을 찾아보세요</h1>
+          <p class="lead">걷기와 러닝, 거리와 난이도를 골라 부담 없는 코스를 확인할 수 있어요.</p>
+        </header>
+        <section class="filter-panel" aria-labelledby="filter-heading">
+          <h2 id="filter-heading" style="font-size:20px;margin-bottom:12px">코스 유형</h2>
+          <div class="filter-chips">
+            <button type="button" class="filter-chip" data-action="filter-type" data-value="all" aria-pressed="${state.filters.type === 'all'}">전체</button>
+            <button type="button" class="filter-chip" data-action="filter-type" data-value="walk" aria-pressed="${state.filters.type === 'walk'}">걷기</button>
+            <button type="button" class="filter-chip" data-action="filter-type" data-value="run" aria-pressed="${state.filters.type === 'run'}">러닝</button>
+          </div>
+          <div class="filter-selects">
+            <div class="field">
+              <label for="distance-filter">거리</label>
+              <select class="select" id="distance-filter" data-filter="distance">
+                <option value="all"${selected(state.filters.distance,'all')}>전체 거리</option>
+                <option value="short"${selected(state.filters.distance,'short')}>5km 미만</option>
+                <option value="medium"${selected(state.filters.distance,'medium')}>5km 이상 8km 미만</option>
+                <option value="long"${selected(state.filters.distance,'long')}>8km 이상</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="difficulty-filter">난이도</label>
+              <select class="select" id="difficulty-filter" data-filter="difficulty">
+                <option value="all"${selected(state.filters.difficulty,'all')}>전체 난이도</option>
+                <option value="쉬움"${selected(state.filters.difficulty,'쉬움')}>쉬움</option>
+                <option value="보통"${selected(state.filters.difficulty,'보통')}>보통</option>
+              </select>
+            </div>
+          </div>
+        </section>
+        <div class="section-heading"><h2>검색 결과 <span aria-live="polite">${courses.length}개</span></h2></div>
+        ${courses.length ? `<div class="card-grid three">${courses.map(renderCourseCard).join('')}</div>` :
+          `<div class="empty-state"><h3>조건에 맞는 코스가 없어요</h3><p>거리나 난이도를 넓혀 다시 찾아보세요.</p><button type="button" class="btn btn-secondary" data-action="reset-filters">필터 초기화</button></div>`}
+      </div>`;
+    }
+
+    function renderCourseDetail() {
+      const course = courseById(state.selectedCourseId);
+      const active = getActiveCourse();
+      const isSameActive = active && active.courseId === course.id;
+      return `<div class="page detail-content">
+        <button type="button" class="btn btn-text" data-action="navigate" data-page="courses">코스 목록으로</button>
+        <section class="detail-hero">
+          <div class="image-wrap"><img src="${course.image}" alt="${escapeHTML(course.imageAlt)}" referrerpolicy="no-referrer"><span class="image-label">${course.typeLabel} 코스</span></div>
+        </section>
+        <header class="detail-title">
+          <p class="eyebrow">${escapeHTML(course.region)}</p>
+          <h1>${escapeHTML(course.name)}</h1>
+          <p class="lead">${escapeHTML(course.description)}</p>
+        </header>
+        <dl class="meta-list">
+          <div class="meta-item"><dt>거리</dt><dd>${course.distance.toFixed(1)}km</dd></div>
+          <div class="meta-item"><dt>예상 시간</dt><dd>${formatCourseDuration(course.durationMin)}</dd></div>
+          <div class="meta-item"><dt>난이도</dt><dd>${escapeHTML(course.difficulty)}</dd></div>
+          <div class="meta-item"><dt>유형</dt><dd>${course.typeLabel}</dd></div>
+        </dl>
+        <section class="info-block" aria-labelledby="route-points-heading">
+          <h3 id="route-points-heading">출발지와 도착지</h3>
+          <p><strong>출발</strong> ${escapeHTML(course.startName)}<br><strong>도착</strong> ${escapeHTML(course.endName)}</p>
+        </section>
+        <section class="section" aria-labelledby="map-heading">
+          <div class="section-heading"><div><p class="eyebrow">미리 보는 경로</p><h2 id="map-heading">코스 지도</h2></div></div>
+          <div class="map-shell"><div id="course-map" role="img" aria-label="${escapeHTML(course.name)}의 출발지부터 도착지까지 경로 지도"></div></div>
+          <p class="help">지도와 타일은 인터넷 연결이 필요합니다. 실제 이동 전 현장 안내판도 함께 확인해 주세요.</p>
+        </section>
+        <section class="section info-block">
+          <h3>주의사항</h3><p>${escapeHTML(course.caution)}</p>
+        </section>
+        <section class="info-block">
+          <h3>준비물</h3><ul>${course.supplies.map(item => '<li>' + escapeHTML(item) + '</li>').join('')}</ul>
+        </section>
+        <div class="sticky-action">
+          <button type="button" class="btn btn-primary btn-block" data-action="${isSameActive ? 'resume-course' : 'start-course'}" data-course-id="${course.id}">${isSameActive ? '진행 중인 코스 이어가기' : '이 코스 시작하기'}</button>
+        </div>
+      </div>`;
+    }
+
+    function initCourseMap() {
+      const mapElement = document.getElementById('course-map');
+      if (!mapElement) return;
+      const course = courseById(state.selectedCourseId);
+      if (!window.L) {
+        mapElement.innerHTML = '<div class="map-fallback"><div><strong>지도를 불러오지 못했어요.</strong><p>인터넷 연결을 확인해 주세요. 코스 정보와 시작 기능은 그대로 사용할 수 있습니다.</p></div></div>';
+        return;
+      }
+      try {
+        state.map = window.L.map(mapElement, { scrollWheelZoom: false });
+        window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> 기여자'
+        }).addTo(state.map);
+        const path = window.L.polyline(course.route, { color:'#e85d24', weight:6, opacity:0.95 }).addTo(state.map);
+        window.L.marker(course.start).addTo(state.map).bindTooltip('출발 · ' + course.startName, { permanent:true, direction:'top' });
+        window.L.marker(course.end).addTo(state.map).bindTooltip('도착 · ' + course.endName, { permanent:true, direction:'top' });
+        state.map.fitBounds(path.getBounds(), { padding:[30,30] });
+        window.setTimeout(() => { if (state.map) state.map.invalidateSize(); }, 150);
+      } catch (error) {
+        mapElement.innerHTML = '<div class="map-fallback"><div><strong>지도를 표시할 수 없어요.</strong><p>잠시 후 다시 열거나 인터넷 연결을 확인해 주세요.</p></div></div>';
+      }
+    }
+
+    function progressStatus(active) {
+      if (active.startVerified && active.photoVerified && active.finishVerified) return '모든 인증 완료';
+      if (active.startVerified && active.photoVerified) return '도착 위치 인증';
+      if (active.startVerified) return '완주 사진 인증';
+      return '출발 위치 인증';
+    }
+
+    function renderCourseProgress() {
+      const active = getActiveCourse();
+      if (!active) {
+        return `<div class="page"><div class="empty-state"><h1>진행 중인 코스가 없어요</h1><p>코스를 골라 시작해 주세요.</p><button type="button" class="btn btn-primary" data-action="navigate" data-page="courses">코스 찾기</button></div></div>`;
+      }
+      const course = courseById(active.courseId);
+      const allComplete = active.startVerified && active.photoVerified && active.finishVerified;
+      const testLocationButtons = APP_CONFIG.DEVELOPMENT_MODE && APP_CONFIG.ALLOW_LOCATION_TEST;
+      return `<div class="page detail-content">
+        <section class="progress-hero" aria-labelledby="progress-title">
+          <p class="eyebrow">현재 진행 중</p>
+          <h1 id="progress-title">${escapeHTML(course.name)}</h1>
+          <p>현재 단계: <strong>${progressStatus(active)}</strong></p>
+          <div class="progress-time">
+            <div><span>시작 시간</span><strong>${formatClock(active.startedAt)}</strong></div>
+            <div><span>경과 시간</span><strong id="elapsed-time">${formatDuration(Date.now() - new Date(active.startedAt).getTime())}</strong></div>
+          </div>
+        </section>
+
+        <div class="status-box ${state.gpsTone}" id="gps-status" role="status" aria-live="polite">
+          <strong>GPS 상태</strong><br>${escapeHTML(state.gpsMessage || '위치 인증 버튼을 누르면 GPS 상태가 여기에 표시됩니다.')}
+        </div>
+
+        <section class="section" aria-labelledby="steps-heading">
+          <div class="section-heading"><div><p class="eyebrow">세 단계로 완주</p><h2 id="steps-heading">인증 진행</h2></div></div>
+          <div class="step-list">
+            <article class="step-card ${active.startVerified ? 'complete' : 'current'}">
+              <span class="step-number" aria-hidden="true">${active.startVerified ? '✓' : '1'}</span>
+              <div><h3>출발 위치 인증</h3><p>${active.startVerified ? '출발지 인증이 완료되었습니다.' : course.startName + ' 근처에서 현재 위치를 확인합니다.'}</p>
+              ${active.startVerified ? '<p><strong>상태: 완료</strong></p>' : `<div class="verification-actions">
+                <button type="button" class="btn btn-primary" data-action="request-location" data-target="start">출발 위치 확인하기</button>
+                ${testLocationButtons ? '<button type="button" class="btn btn-secondary" data-action="test-location" data-target="start">개발용 출발 인증</button>' : ''}
+              </div>`}</div>
+            </article>
+
+            <article class="step-card ${active.photoVerified ? 'complete' : active.startVerified ? 'current' : ''}">
+              <span class="step-number" aria-hidden="true">${active.photoVerified ? '✓' : '2'}</span>
+              <div><h3>완주 사진 인증</h3>
+                <p>완주 순간을 확인하기 위한 사진입니다. 원본은 서버에 전송하거나 영구 저장하지 않으며, 얼굴 인식도 하지 않습니다.</p>
+                ${active.startVerified ? `<div class="verification-actions">
+                  <label class="btn btn-primary" for="photo-input">${active.photoVerified ? '다른 사진 선택하기' : '사진 촬영 또는 선택하기'}</label>
+                  <input class="file-input" id="photo-input" type="file" accept="image/*" capture="environment">
+                </div>
+                ${state.photoPreviewUrl ? `<div class="photo-preview"><img src="${state.photoPreviewUrl}" alt="선택한 완주 인증 사진 미리보기"><div class="photo-preview-footer"><strong>사진 인증 완료</strong><button type="button" class="btn btn-text" data-action="remove-photo">사진 삭제</button></div></div>` :
+                  active.photoVerified ? `<div class="status-box"><strong>사진 인증 완료</strong><br>사진 원본은 저장하지 않아 새로고침 후 미리보기는 사라집니다.<div style="margin-top:8px"><button type="button" class="btn btn-text" data-action="remove-photo">사진 인증 취소</button></div></div>` :
+                  '<p class="help">사진을 선택하면 이 화면에서만 미리보기를 확인할 수 있습니다.</p>'}` :
+                  '<p class="help">먼저 출발 위치를 인증해 주세요.</p>'}
+              </div>
+            </article>
+
+            <article class="step-card ${active.finishVerified ? 'complete' : active.startVerified && active.photoVerified ? 'current' : ''}">
+              <span class="step-number" aria-hidden="true">${active.finishVerified ? '✓' : '3'}</span>
+              <div><h3>도착 위치 인증</h3><p>${active.finishVerified ? '도착지 인증이 완료되었습니다.' : course.endName + ' 근처에서 현재 위치를 확인합니다.'}</p>
+              ${active.finishVerified ? '<p><strong>상태: 완료</strong></p>' : `<div class="verification-actions">
+                <button type="button" class="btn btn-primary" data-action="request-location" data-target="finish" ${active.startVerified && active.photoVerified ? '' : 'disabled aria-disabled="true"'}>도착 위치 확인하기</button>
+                ${testLocationButtons ? `<button type="button" class="btn btn-secondary" data-action="test-location" data-target="finish" ${active.startVerified && active.photoVerified ? '' : 'disabled aria-disabled="true"'}>개발용 도착 인증</button>` : ''}
+              </div>`}</div>
+            </article>
+          </div>
+        </section>
+
+        ${APP_CONFIG.DEVELOPMENT_MODE && APP_CONFIG.ALLOW_LOCATION_TEST ? `<section class="section info-block">
+          <h3>개발 모드 전체 흐름 테스트</h3>
+          <p>실제 운영에서는 설정에서 비활성화해야 합니다. 아래 버튼은 출발·사진·도착 인증을 한 번에 완료합니다.</p>
+          <button type="button" class="btn btn-secondary" data-action="test-complete-all">모든 인증 테스트 완료</button>
+        </section>` : ''}
+
+        <div class="section button-row">
+          <button type="button" class="btn btn-danger" data-action="stop-course">코스 중단</button>
+          <button type="button" class="btn btn-primary" data-action="complete-course" ${allComplete ? '' : 'disabled aria-disabled="true"'}>완주하기</button>
+        </div>
+        ${allComplete ? '<p class="status-box"><strong>완주할 준비가 됐어요.</strong><br>완주 버튼을 눌러 기록을 저장하세요.</p>' : '<p class="help">출발 위치, 사진, 도착 위치 인증을 모두 완료해야 완주할 수 있습니다.</p>'}
+      </div>`;
+    }
+
+    function startElapsedTimer() {
+      if (state.elapsedTimer) clearInterval(state.elapsedTimer);
+      const update = () => {
+        const active = getActiveCourse();
+        const target = document.getElementById('elapsed-time');
+        if (!active || !target) return;
+        target.textContent = formatDuration(Date.now() - new Date(active.startedAt).getTime());
+      };
+      update();
+      state.elapsedTimer = window.setInterval(update, 1000);
+    }
+
+    function getLastRecord() {
+      if (state.lastRecord) return state.lastRecord;
+      const lastId = readStored(STORAGE_KEYS.LAST_RECORD, '');
+      return getRecords().find(record => record.id === lastId) || getRecords()[0] || null;
+    }
+
+    function renderCompletionResult() {
+      const record = getLastRecord();
+      if (!record) {
+        return '<div class="page"><div class="empty-state"><h1>표시할 완주 기록이 없어요</h1><p>코스를 완주하면 결과를 확인할 수 있습니다.</p><button type="button" class="btn btn-primary" data-action="navigate" data-page="courses">코스 찾기</button></div></div>';
+      }
+      return `<div class="page detail-content">
+        <section class="result-banner">
+          <span class="result-badge">완주 인증 완료</span>
+          <h1>혼디길 완주를 축하해요</h1>
+          <p class="lead">${escapeHTML(record.courseName)}에서 나만의 제주 한 걸음을 남겼습니다.</p>
+        </section>
+        <section class="section info-block" aria-labelledby="result-summary">
+          <h2 id="result-summary">완주 기록</h2>
+          <dl class="meta-list">
+            <div class="meta-item"><dt>코스</dt><dd>${escapeHTML(record.courseName)}</dd></div>
+            <div class="meta-item"><dt>이동 거리</dt><dd>${Number(record.distance).toFixed(1)}km</dd></div>
+            <div class="meta-item"><dt>소요 시간</dt><dd>${formatDuration(record.durationMs)}</dd></div>
+            <div class="meta-item"><dt>완주 날짜</dt><dd>${formatDate(record.completedAt, false)}</dd></div>
+          </dl>
+          <ul class="check-list">
+            <li><span>출발 위치 인증</span><strong>완료</strong></li>
+            <li><span>도착 위치 인증</span><strong>완료</strong></li>
+            <li><span>사진 인증</span><strong>완료</strong></li>
+          </ul>
+        </section>
+        <div class="section button-row">
+          <button type="button" class="btn btn-primary" data-action="view-restaurants" data-course-id="${record.courseId}">주변 맛집 보기</button>
+          <button type="button" class="btn btn-secondary" data-action="navigate" data-page="room">나의 제주방에서 기록 보기</button>
+        </div>
+      </div>`;
+    }
+
+    function mapLinks(restaurant) {
+      const name = encodeURIComponent(restaurant.name);
+      return {
+        naver: 'https://map.naver.com/p/directions/-/' + restaurant.lng + ',' + restaurant.lat + ',' + name + ',PLACE_POI/-/walk?c=' + restaurant.lng + ',' + restaurant.lat + ',15,0,0,0,dh',
+        kakao: 'https://map.kakao.com/link/to/' + name + ',' + restaurant.lat + ',' + restaurant.lng
+      };
+    }
+
+    function renderRestaurants() {
+      const record = getLastRecord();
+      const courseId = state.selectedCourseId || (record && record.courseId) || COURSE_DATA[0].id;
+      const course = courseById(courseId);
+      const restaurants = restaurantsForCourse(course.id);
+      return `<div class="page">
+        <button type="button" class="btn btn-text" data-action="navigate" data-page="result">완주 결과로</button>
+        <header class="page-header">
+          <p class="eyebrow">${escapeHTML(course.name)} 가까이</p>
+          <h1>제주 로컬 맛집에서 쉬어가세요</h1>
+          <p class="lead">완주 지점 주변의 소규모 식당 샘플입니다. 영업시간은 방문 전에 지도에서 다시 확인해 주세요.</p>
+        </header>
+        <div class="card-grid">
+          ${restaurants.map(restaurant => {
+            const links = mapLinks(restaurant);
+            return `<article class="card restaurant-card"><div class="card-body">
+              <div><p class="eyebrow">${escapeHTML(restaurant.category)} · ${escapeHTML(restaurant.distance)}</p><h2 style="font-size:22px">${escapeHTML(restaurant.name)}</h2></div>
+              <p class="course-description">${escapeHTML(restaurant.description)}</p>
+              <dl class="meta-list">
+                <div class="meta-item"><dt>영업시간</dt><dd>${escapeHTML(restaurant.hours)}</dd></div>
+                <div class="meta-item"><dt>대표 메뉴</dt><dd>${escapeHTML(restaurant.menu)}</dd></div>
+              </dl>
+              <button type="button" class="btn btn-text" data-action="restaurant-click" data-restaurant-id="${restaurant.id}">이 맛집 정보 기록하기</button>
+              <div class="restaurant-actions">
+                <a class="btn btn-secondary" href="${links.naver}" target="_blank" rel="noopener noreferrer" data-action="directions" data-map="naver" data-restaurant-id="${restaurant.id}">네이버지도 길찾기</a>
+                <a class="btn btn-secondary" href="${links.kakao}" target="_blank" rel="noopener noreferrer" data-action="directions" data-map="kakao" data-restaurant-id="${restaurant.id}">카카오맵 길찾기</a>
+              </div>
+            </div></article>`;
+          }).join('')}
+        </div>
+        <div class="section"><button type="button" class="btn btn-secondary" data-action="navigate" data-page="room">나의 제주방으로</button></div>
+      </div>`;
+    }
+
+    function renderRecordItem(record) {
+      return `<article class="record-item">
+        <h3>${escapeHTML(record.courseName)}</h3>
+        <p>${formatDate(record.completedAt, false)} · ${Number(record.distance).toFixed(1)}km · ${formatDuration(record.durationMs)}</p>
+        <p>출발·도착·사진 인증 모두 완료</p>
+      </article>`;
+    }
+
+    function getRoomGrowth(records, totalDistance) {
+      const completionCount = records.length;
+      return {
+        level: Math.max(1, Math.floor(totalDistance / 10) + 1),
+        traveler: completionCount >= 5 ? '😎🏃' : completionCount >= 1 ? '🙂🏃' : '🙂',
+        dol: completionCount >= 5 ? '🗿✨' : completionCount >= 1 ? '🗿' : '🪨',
+        dolLabel: completionCount >= 5 ? '반짝이는 돌하르방' : completionCount >= 1 ? '깨어난 돌하르방' : '첫 완주를 기다리는 돌',
+        tree: totalDistance >= 30 ? '🍊🌳' : totalDistance >= 10 ? '🌳' : totalDistance > 0 ? '🌱' : '🌰',
+        treeLabel: totalDistance >= 30 ? '귤이 열린 나무' : totalDistance >= 10 ? '자라는 나무' : totalDistance > 0 ? '새싹' : '아직 심지 않은 씨앗'
+      };
+    }
+
+    function renderMyRoom() {
+      const user = getUser();
+      const records = getRecords();
+      const totalDistance = records.reduce((sum, record) => sum + Number(record.distance || 0), 0);
+      const growth = getRoomGrowth(records, totalDistance);
+      const courseCounts = records.reduce((counts, record) => {
+        counts[record.courseName] = (counts[record.courseName] || 0) + 1;
+        return counts;
+      }, {});
+      return `<div class="page">
+        <header class="profile-card">
+          <p class="eyebrow">나의 제주방</p>
+          <h1>${escapeHTML(user.nickname)}님의 혼디길</h1>
+          <p class="profile-id">익명 사용자 ID ${escapeHTML(maskAnonymousId(user.id))}</p>
+        </header>
+        <section class="jeju-room" aria-label="완주 기록에 따라 자라는 나의 제주방">
+          <span class="room-label">Lv.${growth.level} · 제주 바다</span>
+          <span class="room-sun" aria-hidden="true"></span>
+          <span class="room-character" role="img" aria-label="나의 여행자">${growth.traveler}</span>
+          <span class="room-dol" role="img" aria-label="${growth.dolLabel}">${growth.dol}</span>
+          <span class="room-tree" role="img" aria-label="${growth.treeLabel}">${growth.tree}</span>
+          <div class="room-stickers" aria-label="최근 완주 스티커">
+            ${records.length ? records.slice(0, 6).map(record => `<span class="room-sticker" role="img" aria-label="${escapeHTML(record.courseName)} 완주">${courseById(record.courseId).type === 'run' ? '👟' : '🥾'}</span>`).join('') : '<span class="room-sticker" aria-label="첫 완주를 기다려요">＋</span>'}
+          </div>
+        </section>
+        <section class="section stat-grid" aria-label="완주 통계">
+          <div class="stat-card"><span>완료한 코스</span><strong>${records.length}개</strong></div>
+          <div class="stat-card"><span>누적 거리</span><strong>${totalDistance.toFixed(1)}km</strong></div>
+        </section>
+        <section class="section" aria-labelledby="room-records">
+          <div class="section-heading"><div><p class="eyebrow">차곡차곡 쌓인 길</p><h2 id="room-records">최근 완주 기록</h2></div></div>
+          ${records.length ? '<div class="record-list">' + records.map(renderRecordItem).join('') + '</div>' :
+            '<div class="empty-state"><h3>아직 저장된 완주 기록이 없어요</h3><p>코스를 완주하면 이곳에 기록이 쌓입니다.</p><button type="button" class="btn btn-primary" data-action="navigate" data-page="courses">첫 코스 찾기</button></div>'}
+        </section>
+        ${Object.keys(courseCounts).length ? `<section class="section info-block"><h2 style="font-size:22px">코스별 완주 내역</h2><ul>${Object.entries(courseCounts).map(([name,count]) => '<li>' + escapeHTML(name) + ' · ' + count + '회</li>').join('')}</ul></section>` : ''}
+        <section class="section" aria-labelledby="profile-settings">
+          <div class="section-heading"><div><p class="eyebrow">내 정보 관리</p><h2 id="profile-settings">닉네임과 기록</h2></div></div>
+          <div class="settings-list">
+            <div class="setting-card"><div><h3>닉네임 변경</h3><p class="help">홈과 완주 기록에 표시되는 이름을 바꿉니다.</p></div><button type="button" class="btn btn-secondary" data-action="change-nickname">닉네임 변경하기</button></div>
+            <div class="setting-card"><div><h3>닉네임 삭제</h3><p class="help">완주 기록은 유지하고 닉네임 등록 화면부터 다시 시작합니다.</p></div><button type="button" class="btn btn-secondary" data-action="delete-nickname">닉네임 삭제하기</button></div>
+            <div class="setting-card"><div><h3>내 기록 초기화</h3><p class="help">완주 기록과 진행 중 코스만 지우고 닉네임은 유지합니다.</p></div><button type="button" class="btn btn-secondary" data-action="reset-records">기록 초기화하기</button></div>
+            <div class="setting-card"><div><h3>브라우저 저장 데이터 삭제</h3><p class="help">닉네임, 익명 ID, 기록, 로컬 통계를 모두 삭제합니다.</p></div><button type="button" class="btn btn-danger" data-action="delete-all">저장 데이터 삭제하기</button></div>
+          </div>
+        </section>
+      </div>`;
+    }
+
+    function renderMore() {
+      const queue = readStored(STORAGE_KEYS.QUEUE, []);
+      return `<div class="page">
+        <header class="page-header"><p class="eyebrow">서비스 안내</p><h1>더보기</h1><p class="lead">혼디길의 저장 방식과 테스트 설정을 확인할 수 있습니다.</p></header>
+        <div class="settings-list">
+          <section class="setting-card"><h2 style="font-size:22px">저장 안내</h2><p>화면은 브라우저에 먼저 저장되어 연결이 불안정해도 사용할 수 있습니다. Django 연결 중에는 닉네임, 코스 진행과 완주 기록도 서버에 동기화하며, 회원 계정이나 기기 간 동기화는 제공하지 않습니다.</p><button type="button" class="btn btn-secondary" data-action="navigate" data-page="room">내 데이터 관리</button></section>
+          <section class="setting-card"><h2 style="font-size:22px">위치와 사진</h2><p>위치는 사용자가 인증 버튼을 누를 때만 확인합니다. 사진 원본은 서버나 LocalStorage에 저장하지 않으며 얼굴 인식도 하지 않습니다.</p></section>
+          <section class="setting-card"><h2 style="font-size:22px">현재 실행 설정</h2>
+            <p>개발 모드: <strong>${APP_CONFIG.DEVELOPMENT_MODE ? '사용 중' : '사용 안 함'}</strong><br>위치 테스트: <strong>${APP_CONFIG.ALLOW_LOCATION_TEST ? '허용' : '차단'}</strong><br>데이터 전송: <strong>${state.backendAvailable ? 'Django 백엔드 연결됨' : (APP_CONFIG.APPS_SCRIPT_URL ? 'Apps Script 사용' : 'LocalStorage 우선 사용')}</strong><br>전송 대기: <strong>${Array.isArray(queue) ? queue.length : 0}건</strong></p>
+          </section>
+          ${state.backendAvailable ? '<section class="setting-card"><h2 style="font-size:22px">서비스 관리자</h2><p>Django의 안전한 관리자 계정으로 코스와 운영 데이터를 관리합니다.</p><a class="btn btn-secondary" href="/admin/">Django 관리자 열기</a></section>' : (APP_CONFIG.ADMIN_ENABLED ? '<section class="setting-card"><h2 style="font-size:22px">관리자 데모</h2><p>현재 브라우저에 쌓인 테스트 통계를 확인합니다. 실제 운영 인증 기능은 아닙니다.</p><button type="button" class="btn btn-secondary" data-action="navigate" data-page="admin">관리자 페이지 들어가기</button></section>' : '')}
+          <section class="setting-card"><h2 style="font-size:22px">이미지 안내</h2><p>홈과 시작 화면의 제주 러닝 일러스트는 혼디길의 감귤·바다·숲 색감에 맞춰 제작했습니다. 코스의 제주 숲과 해안 사진은 Unsplash의 ZIN YOON, Andrea Wilkins, Lightscape가 촬영한 무료 사진을 사용했습니다.</p>
+            <div class="button-row"><a class="btn btn-text" href="https://unsplash.com/photos/abEaba1dj7I" target="_blank" rel="noopener noreferrer">숲길 사진</a><a class="btn btn-text" href="https://unsplash.com/photos/db0RccNZq4M" target="_blank" rel="noopener noreferrer">숲 사진</a><a class="btn btn-text" href="https://unsplash.com/photos/JjnCtpzFXo4" target="_blank" rel="noopener noreferrer">성산 사진</a></div>
+          </section>
+        </div>
+      </div>`;
+    }
+
+    function percent(part, total) {
+      if (!total) return '0%';
+      return Math.min(100, Math.max(0, Math.round((part / total) * 100))) + '%';
+    }
+
+    function getAdminMetrics() {
+      const events = getEvents();
+      const rollup = getMetricsRollup();
+      const today = localDateKey(new Date());
+      const starts = Number(rollup.eventCounts.course_started || 0);
+      const completes = Number(rollup.eventCounts.course_completed || 0);
+      const courseUsage = COURSE_DATA.map(course => ({
+        course,
+        starts: Number(rollup.courseStarts[course.id] || 0),
+        completes: Number(rollup.courseCompletes[course.id] || 0)
+      })).filter(item => item.starts || item.completes);
+      return {
+        events,
+        totalUsers: Math.max(Array.isArray(rollup.users) ? rollup.users.length : 0, getUser() ? 1 : 0),
+        todayVisits: Array.isArray(rollup.dailyVisitors[today]) ? rollup.dailyVisitors[today].length : 0,
+        starts,
+        completes,
+        completionRate: percent(completes, starts),
+        locationRate: percent(Number(rollup.locationSuccesses || 0), Number(rollup.locationAttempts || 0)),
+        photoRate: percent(Number(rollup.photoSuccesses || 0), Number(rollup.photoAttempts || 0)),
+        restaurantClicks: Number(rollup.eventCounts.restaurant_clicked || 0),
+        directionsClicks: Number(rollup.eventCounts.directions_clicked || 0),
+        courseUsage
+      };
+    }
+
+    function renderAdmin() {
+      let authenticated = false;
+      try { authenticated = sessionStorage.getItem(SESSION_KEYS.ADMIN) === 'true'; } catch (error) { authenticated = false; }
+      if (!authenticated) {
+        return `<div class="page">
+          <button type="button" class="btn btn-text" data-action="navigate" data-page="more">더보기로</button>
+          <section class="admin-login">
+            <p class="eyebrow">로컬 통계 확인</p><h1>관리자 로그인</h1>
+            <p class="lead">초기 테스트 비밀번호로만 들어갈 수 있는 데모 화면입니다.</p>
+            <div class="admin-warning"><strong>보안 안내</strong><br>HTML 안에 있는 비밀번호는 누구나 확인할 수 있어 안전하지 않습니다. 실제 운영 전 Apps Script 또는 서버 인증으로 반드시 바꿔야 합니다.</div>
+            <form id="admin-login-form" class="section" novalidate>
+              <div class="field"><label for="admin-password">테스트 비밀번호</label><input class="input" id="admin-password" name="password" type="password" inputmode="numeric" autocomplete="current-password" required><p class="form-message" id="admin-error" role="alert"></p></div>
+              <button class="btn btn-primary btn-block" type="submit">관리자 화면 열기</button>
+            </form>
+          </section>
+        </div>`;
+      }
+      const metrics = getAdminMetrics();
+      const statItems = [
+        ['전체 사용자', metrics.totalUsers + '명'],
+        ['오늘 방문자', metrics.todayVisits + '명'],
+        ['코스 시작', metrics.starts + '회'],
+        ['완주', metrics.completes + '회'],
+        ['완주율', metrics.completionRate],
+        ['위치 인증 성공률', metrics.locationRate],
+        ['사진 인증 성공률', metrics.photoRate],
+        ['맛집 클릭', metrics.restaurantClicks + '회'],
+        ['길찾기 클릭', metrics.directionsClicks + '회']
+      ];
+      const recentEvents = metrics.events.slice(-12).reverse();
+      return `<div class="page">
+        <div class="button-row"><button type="button" class="btn btn-text" data-action="navigate" data-page="more">더보기로</button><button type="button" class="btn btn-secondary" data-action="admin-logout">관리자 로그아웃</button></div>
+        <header class="page-header"><p class="eyebrow">LocalStorage 기반 MVP</p><h1>관리자 대시보드</h1><p class="lead">이 브라우저의 누적 통계를 보여 주며, 최근 이용 표는 최대 500개 이벤트를 표시합니다.</p></header>
+        <div class="admin-warning"><strong>운영 전 변경 필요</strong><br>현재 비밀번호와 sessionStorage 세션은 화면 테스트용이며 보안 인증이 아닙니다.</div>
+        <section class="section stat-grid" aria-label="관리자 주요 통계">
+          ${statItems.map(item => '<div class="stat-card"><span>' + item[0] + '</span><strong>' + item[1] + '</strong></div>').join('')}
+        </section>
+        <section class="section" aria-labelledby="course-usage-heading">
+          <div class="section-heading"><h2 id="course-usage-heading">코스별 이용 현황</h2></div>
+          ${metrics.courseUsage.length ? '<div class="record-list">' + metrics.courseUsage.map(item => '<div class="record-item"><h3>' + escapeHTML(item.course.name) + '</h3><p>시작 ' + item.starts + '회 · 완주 ' + item.completes + '회</p></div>').join('') + '</div>' : '<div class="empty-state"><h3>아직 코스 이용 기록이 없어요</h3><p>코스를 시작하면 여기에 집계됩니다.</p></div>'}
+        </section>
+        <section class="section" aria-labelledby="recent-events-heading">
+          <div class="section-heading"><h2 id="recent-events-heading">최근 이용 기록</h2></div>
+          ${recentEvents.length ? `<div class="admin-table-wrap"><table><thead><tr><th>시각</th><th>이벤트</th><th>코스·대상</th><th>결과</th></tr></thead><tbody>
+            ${recentEvents.map(event => `<tr><td>${formatDate(event.occurredAt, true)}</td><td>${escapeHTML(eventLabel(event.eventType))}</td><td>${escapeHTML(event.data && (event.data.courseName || event.data.restaurantName || event.data.target) || '-')}</td><td>${escapeHTML(event.data && event.data.result || '-')}</td></tr>`).join('')}
+          </tbody></table></div>` : '<div class="empty-state"><h3>아직 이용 기록이 없어요</h3></div>'}
+        </section>
+      </div>`;
+    }
+
+    function beginCourse(courseId, replaceExisting) {
+      const course = courseById(courseId);
+      const active = {
+        id: createId('activity'),
+        backendActivityId: '',
+        courseId: course.id,
+        startedAt: new Date().toISOString(),
+        startVerified: false,
+        finishVerified: false,
+        photoVerified: false,
+        photoName: '',
+        currentStep: 'start'
+      };
+      saveActiveCourse(active);
+      state.selectedCourseId = course.id;
+      state.gpsMessage = '';
+      state.gpsTone = '';
+      logEvent('course_started', { courseId:course.id, courseName:course.name, result:'success' });
+      navigate('progress', { courseId:course.id });
+      if (state.backendAvailable) {
+        syncStartedActivity(active.id, course.id, replaceExisting === true)
+          .then(() => render())
+          .catch(error => {
+            if (error && error.status) {
+              const current = getActiveCourse();
+              if (current && current.id === active.id) saveActiveCourse(null);
+              navigate('courses');
+            }
+            reportBackendSyncFailure(error, '백엔드 연결이 끊겨 진행 상태를 브라우저에만 저장했습니다.');
+          });
+      }
+    }
+
+    function resumeCourse() {
+      const active = getActiveCourse();
+      if (!active) {
+        showToast('진행 중인 코스가 없습니다.');
+        navigate('courses');
+        return;
+      }
+      state.selectedCourseId = active.courseId;
+      navigate('progress', { courseId:active.courseId });
+    }
+
+    function requestStartCourse(courseId) {
+      const active = getActiveCourse();
+      state.selectedCourseId = courseId;
+      if (active && active.courseId !== courseId) {
+        openConfirm(
+          '새 코스를 시작할까요?',
+          '현재 진행 중인 코스 기록은 중단됩니다. 완주 기록에는 저장되지 않습니다.',
+          '새 코스 시작하기',
+          'replace-course'
+        );
+        return;
+      }
+      if (active) {
+        resumeCourse();
+        return;
+      }
+      beginCourse(courseId);
+    }
+
+    function openLocationPurpose(targetType) {
+      const active = getActiveCourse();
+      if (!active) return;
+      const course = courseById(active.courseId);
+      const isStart = targetType === 'start';
+      const place = isStart ? course.startName : course.endName;
+      const insecureNotice = (!window.isSecureContext || location.protocol === 'file:')
+        ? '<div class="status-box warning"><strong>HTTPS 안내</strong><br>현재 실행 주소에서는 브라우저가 위치 권한을 제한할 수 있습니다. 배포된 HTTPS 주소나 localhost에서 다시 시도해 주세요.</div>'
+        : '';
+      openModal(
+        '<h2 id="modal-title">' + (isStart ? '출발' : '도착') + ' 위치를 확인할게요</h2>' +
+        '<p>혼디길은 <strong>' + escapeHTML(place) + '</strong> 가까이에 있는지 확인하기 위해 이번 한 번만 현재 위치를 사용합니다.</p>' +
+        '<p>위치 정보는 인증 결과를 기록하는 데 사용합니다. 브라우저의 권한 창에서 허용해야 확인할 수 있습니다.</p>' +
+        insecureNotice +
+        '<div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">취소</button>' +
+        '<button type="button" class="btn btn-primary" data-action="confirm-location" data-target="' + targetType + '">위치 확인 시작</button></div>',
+        '[data-action="close-modal"]'
+      );
+    }
+
+    function distanceInMeters(first, second) {
+      const radius = 6371000;
+      const toRadians = degrees => degrees * Math.PI / 180;
+      const latDelta = toRadians(second[0] - first[0]);
+      const lngDelta = toRadians(second[1] - first[1]);
+      const lat1 = toRadians(first[0]);
+      const lat2 = toRadians(second[0]);
+      const value = Math.sin(latDelta / 2) ** 2 +
+        Math.cos(lat1) * Math.cos(lat2) * Math.sin(lngDelta / 2) ** 2;
+      return radius * 2 * Math.atan2(Math.sqrt(value), Math.sqrt(1 - value));
+    }
+
+    function locationErrorMessage(error) {
+      if (error && error.code === 1) {
+        return '위치 권한이 거부되었습니다. 브라우저 주소창의 자물쇠 또는 사이트 설정에서 위치를 허용한 뒤 다시 시도해 주세요.';
+      }
+      if (error && error.code === 2) {
+        return '현재 위치를 찾지 못했습니다. GPS와 Wi-Fi를 켜고 하늘이 잘 보이는 곳에서 다시 시도해 주세요.';
+      }
+      if (error && error.code === 3) {
+        return '위치 확인 시간이 오래 걸리고 있습니다. 잠시 이동한 뒤 다시 시도해 주세요.';
+      }
+      if (!window.isSecureContext || location.protocol === 'file:') {
+        return '이 브라우저에서는 위치 확인에 HTTPS가 필요합니다. 배포된 HTTPS 주소나 localhost에서 열어 주세요.';
+      }
+      return '위치를 확인할 수 없습니다. 브라우저의 위치 설정을 확인하고 다시 시도해 주세요.';
+    }
+
+    function verifyLocation(targetType) {
+      closeModal();
+      const active = getActiveCourse();
+      if (!active) return;
+      const activityId = active.id;
+      const course = courseById(active.courseId);
+      const target = targetType === 'start' ? course.start : course.end;
+      const eventType = targetType === 'start' ? 'start_verified' : 'finish_verified';
+      const field = targetType === 'start' ? 'startVerified' : 'finishVerified';
+      state.gpsMessage = '현재 위치를 확인하고 있습니다. 잠시만 기다려 주세요.';
+      state.gpsTone = '';
+      render();
+
+      if (!navigator.geolocation) {
+        state.gpsMessage = '이 브라우저는 위치 확인 기능을 지원하지 않습니다. 최신 브라우저에서 다시 시도해 주세요.';
+        state.gpsTone = 'error';
+        logEvent(eventType, { courseId:course.id, courseName:course.name, target:targetType, result:'failure', reason:'unsupported' });
+        render();
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(async position => {
+        const currentActive = getActiveCourse();
+        if (!currentActive || currentActive.id !== activityId) return;
+        const current = [position.coords.latitude, position.coords.longitude];
+        let measuredDistance = distanceInMeters(current, target);
+        const accuracy = Number(position.coords.accuracy || 0);
+        const effectiveRadius = APP_CONFIG.GPS_RADIUS_METERS + Math.min(Math.max(accuracy, 0), 100);
+        let success = measuredDistance <= effectiveRadius;
+        const verificationRequestId = createId('verify');
+        if (state.backendAvailable) {
+          try {
+            const syncedActive = await ensureBackendActivity(currentActive);
+            if (syncedActive && syncedActive.backendActivityId) {
+              const verification = await djangoRequest(
+                'activities/' + encodeURIComponent(syncedActive.backendActivityId) + '/verify-location/',
+                {
+                  method:'POST',
+                  body:{
+                    requestId:verificationRequestId,
+                    target:targetType,
+                    latitude:position.coords.latitude,
+                    longitude:position.coords.longitude,
+                    accuracyM:Math.max(0, accuracy)
+                  }
+                }
+              );
+              success = verification.verified === true;
+              measuredDistance = Number(verification.distanceM || 0);
+            }
+          } catch (error) {
+            if (error && error.status) {
+              state.gpsMessage = error.message || '서버에서 위치 인증을 완료하지 못했습니다.';
+              state.gpsTone = 'error';
+              logEvent(eventType, { courseId:course.id, courseName:course.name, target:targetType, result:'failure', reason:error.code || 'server-rejected' });
+              render();
+              return;
+            }
+            reportBackendSyncFailure(error, '백엔드 연결이 끊겨 위치 인증을 브라우저에서 처리했습니다.');
+          }
+        }
+        const eventData = {
+          courseId:course.id,
+          courseName:course.name,
+          target:targetType,
+          result:success ? 'success' : 'failure',
+          latitude:position.coords.latitude,
+          longitude:position.coords.longitude,
+          accuracyM:Math.round(Math.max(0, accuracy)),
+          location:{
+            latitude:position.coords.latitude,
+            longitude:position.coords.longitude,
+            accuracy:Math.round(Math.max(0, accuracy))
+          },
+          distanceM:Math.round(measuredDistance)
+        };
+        if (success) {
+          const locationField = targetType === 'start' ? 'startLocation' : 'finishLocation';
+          updateActiveCourse({
+            [field]:true,
+            [locationField]:{
+              requestId:verificationRequestId,
+              latitude:position.coords.latitude,
+              longitude:position.coords.longitude,
+              accuracyM:Math.max(0, accuracy)
+            }
+          });
+          state.gpsMessage = (targetType === 'start' ? '출발' : '도착') + ' 위치 인증이 완료되었습니다. 기준 지점에서 약 ' + Math.round(measuredDistance) + 'm 거리입니다.';
+          state.gpsTone = '';
+        } else {
+          state.gpsMessage = '현재 위치는 인증 지점에서 약 ' + Math.round(measuredDistance) + 'm 떨어져 있습니다. ' + placeLabel(targetType, course) + ' 가까이에서 다시 시도해 주세요.';
+          state.gpsTone = 'error';
+        }
+        logEvent(eventType, eventData);
+        render();
+      }, error => {
+        const currentActive = getActiveCourse();
+        if (!currentActive || currentActive.id !== activityId) return;
+        state.gpsMessage = locationErrorMessage(error);
+        state.gpsTone = 'error';
+        logEvent(eventType, { courseId:course.id, courseName:course.name, target:targetType, result:'failure', reason:'geolocation-error-' + (error && error.code || 'unknown') });
+        render();
+      }, {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0
+      });
+    }
+
+    function placeLabel(targetType, course) {
+      return targetType === 'start' ? course.startName : course.endName;
+    }
+
+    async function testVerifyLocation(targetType) {
+      if (!APP_CONFIG.DEVELOPMENT_MODE || !APP_CONFIG.ALLOW_LOCATION_TEST) return;
+      const active = getActiveCourse();
+      if (!active) return;
+      const course = courseById(active.courseId);
+      const field = targetType === 'start' ? 'startVerified' : 'finishVerified';
+      const eventType = targetType === 'start' ? 'start_verified' : 'finish_verified';
+      const target = targetType === 'start' ? course.start : course.end;
+      const verificationRequestId = createId('verify');
+      if (state.backendAvailable) {
+        try {
+          const syncedActive = await ensureBackendActivity(active);
+          if (syncedActive && syncedActive.backendActivityId) {
+            const result = await djangoRequest(
+              'activities/' + encodeURIComponent(syncedActive.backendActivityId) + '/verify-location/',
+              { method:'POST', body:{ requestId:verificationRequestId, target:targetType, latitude:target[0], longitude:target[1], accuracyM:1 } }
+            );
+            if (!result || result.verified !== true) throw new Error('development-location-not-verified');
+          }
+        } catch (error) {
+          if (error && error.status) {
+            reportBackendSyncFailure(error);
+            return;
+          }
+          reportBackendSyncFailure(error, '백엔드 연결이 끊겨 개발용 위치 인증을 브라우저에서 처리했습니다.');
+        }
+      }
+      const locationField = targetType === 'start' ? 'startLocation' : 'finishLocation';
+      updateActiveCourse({
+        [field]:true,
+        [locationField]:{ requestId:verificationRequestId, latitude:target[0], longitude:target[1], accuracyM:1 }
+      });
+      state.gpsMessage = '개발 모드에서 ' + (targetType === 'start' ? '출발' : '도착') + ' 위치 인증을 완료했습니다.';
+      state.gpsTone = '';
+      logEvent(eventType, { courseId:course.id, courseName:course.name, target:targetType, result:'success', method:'development-test' });
+      render();
+    }
+
+    async function testCompleteAll() {
+      if (!APP_CONFIG.DEVELOPMENT_MODE || !APP_CONFIG.ALLOW_LOCATION_TEST) return;
+      const active = getActiveCourse();
+      if (!active) return;
+      const course = courseById(active.courseId);
+      const startRequestId = createId('verify');
+      const photoRequestId = createId('verify');
+      const finishRequestId = createId('verify');
+      if (state.backendAvailable) {
+        try {
+          const syncedActive = await ensureBackendActivity(active);
+          if (syncedActive && syncedActive.backendActivityId) {
+            const basePath = 'activities/' + encodeURIComponent(syncedActive.backendActivityId) + '/';
+            await djangoRequest(basePath + 'verify-location/', {
+              method:'POST', body:{ requestId:startRequestId, target:'start', latitude:course.start[0], longitude:course.start[1], accuracyM:1 }
+            });
+            await djangoRequest(basePath + 'verify-photo/', {
+              method:'POST', body:{ requestId:photoRequestId, fileType:'image/jpeg', fileSize:1 }
+            });
+            await djangoRequest(basePath + 'verify-location/', {
+              method:'POST', body:{ requestId:finishRequestId, target:'finish', latitude:course.end[0], longitude:course.end[1], accuracyM:1 }
+            });
+          }
+        } catch (error) {
+          if (error && error.status) {
+            reportBackendSyncFailure(error);
+            return;
+          }
+          reportBackendSyncFailure(error, '백엔드 연결이 끊겨 개발용 전체 인증을 브라우저에서 처리했습니다.');
+        }
+      }
+      if (!active.startVerified) logEvent('start_verified', { courseId:course.id, courseName:course.name, target:'start', result:'success', method:'development-test-all' });
+      if (!active.photoVerified) logEvent('photo_verified', { courseId:course.id, courseName:course.name, result:'success', method:'development-test-all' });
+      if (!active.finishVerified) logEvent('finish_verified', { courseId:course.id, courseName:course.name, target:'finish', result:'success', method:'development-test-all' });
+      updateActiveCourse({
+        startVerified:true,
+        photoVerified:true,
+        finishVerified:true,
+        photoName:'개발 모드 테스트',
+        startLocation:{ requestId:startRequestId, latitude:course.start[0], longitude:course.start[1], accuracyM:1 },
+        finishLocation:{ requestId:finishRequestId, latitude:course.end[0], longitude:course.end[1], accuracyM:1 },
+        photoMeta:{ requestId:photoRequestId, fileType:'image/jpeg', fileSize:1 }
+      });
+      state.gpsMessage = '개발 모드에서 모든 인증을 완료했습니다.';
+      state.gpsTone = '';
+      render();
+    }
+
+    async function handlePhotoSelection(input) {
+      const file = input.files && input.files[0];
+      if (!file) {
+        showToast('사진을 선택해 주세요.');
+        return;
+      }
+      if (!String(file.type).startsWith('image/')) {
+        input.value = '';
+        showToast('이미지 파일만 선택할 수 있습니다.');
+        return;
+      }
+      if (file.size < 1) {
+        input.value = '';
+        showToast('내용이 있는 사진 파일을 선택해 주세요.');
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        input.value = '';
+        showToast('사진 용량은 10MB 이하로 선택해 주세요.');
+        return;
+      }
+      if (state.photoPreviewUrl) URL.revokeObjectURL(state.photoPreviewUrl);
+      state.photoPreviewUrl = URL.createObjectURL(file);
+      const currentActive = getActiveCourse();
+      const photoRequestId = createId('verify');
+      if (state.backendAvailable && currentActive) {
+        try {
+          const syncedActive = await ensureBackendActivity(currentActive);
+          if (syncedActive && syncedActive.backendActivityId) {
+            await djangoRequest(
+              'activities/' + encodeURIComponent(syncedActive.backendActivityId) + '/verify-photo/',
+              { method:'POST', body:{ requestId:photoRequestId, fileType:file.type, fileSize:file.size } }
+            );
+          }
+        } catch (error) {
+          if (error && error.status) {
+            reportBackendSyncFailure(error);
+            render();
+            return;
+          }
+          reportBackendSyncFailure(error, '백엔드 연결이 끊겨 사진 인증 결과를 브라우저에만 저장했습니다.');
+        }
+      }
+      const active = updateActiveCourse({
+        photoVerified:true,
+        photoName:file.name.slice(0, 80),
+        photoMeta:{ requestId:photoRequestId, fileType:file.type, fileSize:file.size }
+      });
+      if (active) {
+        const course = courseById(active.courseId);
+        logEvent('photo_verified', { courseId:course.id, courseName:course.name, result:'success', fileType:file.type, fileSize:file.size });
+      }
+      render();
+      showToast('사진 인증이 완료되었습니다.');
+    }
+
+    function removePhoto() {
+      if (state.photoPreviewUrl) URL.revokeObjectURL(state.photoPreviewUrl);
+      state.photoPreviewUrl = '';
+      const beforeRemoval = getActiveCourse();
+      if (state.backendAvailable && beforeRemoval && beforeRemoval.backendActivityId) {
+        djangoRequest(
+          'activities/' + encodeURIComponent(beforeRemoval.backendActivityId) + '/verify-photo/',
+          { method:'DELETE' }
+        ).catch(error => reportBackendSyncFailure(error, '백엔드 연결이 끊겨 사진 삭제를 브라우저에만 반영했습니다.'));
+      }
+      const active = updateActiveCourse({ photoVerified:false, finishVerified:false, photoName:'', photoMeta:null, finishLocation:null });
+      if (active) {
+        const course = courseById(active.courseId);
+        logEvent('photo_verified', { courseId:course.id, courseName:course.name, result:'cancelled' });
+      }
+      render();
+      showToast('사진 인증을 취소했습니다.');
+    }
+
+    async function completeCourse() {
+      const active = getActiveCourse();
+      if (!active) {
+        showToast('진행 중인 코스가 없습니다.');
+        return;
+      }
+      if (!(active.startVerified && active.photoVerified && active.finishVerified)) {
+        showToast('출발 위치, 사진, 도착 위치 인증을 모두 완료해 주세요.');
+        return;
+      }
+      const course = courseById(active.courseId);
+      const records = getRecords();
+      let record = null;
+      let completedOnBackend = false;
+      if (state.backendAvailable) {
+        try {
+          const syncedActive = await ensureBackendActivity(active);
+          if (!syncedActive || !syncedActive.backendActivityId) throw new Error('backend-activity-missing');
+          const result = await djangoRequest(
+            'activities/' + encodeURIComponent(syncedActive.backendActivityId) + '/complete/',
+            { method:'POST', body:{} }
+          );
+          record = result && (result.completion || result.record);
+          completedOnBackend = Boolean(record);
+        } catch (error) {
+          if (error && error.status) {
+            reportBackendSyncFailure(error);
+            return;
+          }
+          reportBackendSyncFailure(error, '백엔드 연결이 끊겨 완주 기록을 브라우저에만 저장했습니다.');
+        }
+      }
+      const recordId = record && record.id ? String(record.id) : 'record_' + active.id;
+      record = records.find(item => item.id === recordId) || record;
+      if (!record) {
+        const completedAt = new Date().toISOString();
+        record = {
+          id: recordId,
+          activityId: active.id,
+          courseId: course.id,
+          courseName: course.name,
+          distance: course.distance,
+          startedAt: active.startedAt,
+          completedAt,
+          durationMs: Math.max(1000, new Date(completedAt).getTime() - new Date(active.startedAt).getTime()),
+          startVerified: true,
+          finishVerified: true,
+          photoVerified: true
+        };
+      }
+      if (!records.some(item => item.id === record.id)) records.unshift(record);
+      saveRecords(records);
+      if (!completedOnBackend) {
+        const pending = getPendingCompletions().filter(item => item.localRecordId !== record.id);
+        pending.push({ localRecordId:record.id, activity:Object.assign({}, active) });
+        savePendingCompletions(pending);
+      }
+      logEvent('course_completed', {
+        courseId:course.id, courseName:course.name, result:'success',
+        distanceKm:course.distance, durationMs:record.durationMs
+      });
+      state.lastRecord = record;
+      state.selectedCourseId = course.id;
+      writeStored(STORAGE_KEYS.LAST_RECORD, record.id);
+      saveActiveCourse(null);
+      if (state.photoPreviewUrl) URL.revokeObjectURL(state.photoPreviewUrl);
+      state.photoPreviewUrl = '';
+      state.gpsMessage = '';
+      state.gpsTone = '';
+      navigate('result', { courseId:course.id });
+    }
+
+    function openNicknameChange() {
+      const user = getUser();
+      if (!user) return;
+      openModal(
+        '<h2 id="modal-title">닉네임 변경</h2><p>홈과 나의 제주방에 표시할 이름을 입력해 주세요.</p>' +
+        '<form id="nickname-change-form" novalidate><div class="field"><label for="new-nickname">새 닉네임</label>' +
+        '<input class="input" id="new-nickname" name="nickname" type="text" maxlength="12" value="' + escapeHTML(user.nickname) + '" required>' +
+        '<p class="form-message" id="nickname-change-error" role="alert"></p></div>' +
+        '<div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">취소</button><button type="submit" class="btn btn-primary">변경하기</button></div></form>',
+        '#new-nickname'
+      );
+    }
+
+    function performPendingAction() {
+      const actionName = state.pendingConfirmAction;
+      closeModal();
+      if (actionName === 'replace-course') {
+        saveActiveCourse(null);
+        if (state.photoPreviewUrl) URL.revokeObjectURL(state.photoPreviewUrl);
+        state.photoPreviewUrl = '';
+        beginCourse(state.selectedCourseId, true);
+      } else if (actionName === 'stop-course') {
+        const active = getActiveCourse();
+        if (state.backendAvailable && active) {
+          stopBackendActivity(active).catch(error => reportBackendSyncFailure(error, '백엔드 연결이 끊겨 코스 중단을 브라우저에만 반영했습니다.'));
+        }
+        saveActiveCourse(null);
+        if (state.photoPreviewUrl) URL.revokeObjectURL(state.photoPreviewUrl);
+        state.photoPreviewUrl = '';
+        state.gpsMessage = '';
+        navigate('courses');
+        showToast('진행 중인 코스를 중단했습니다.');
+      } else if (actionName === 'reset-records') {
+        if (state.backendAvailable && state.backendProfile) {
+          djangoRequest('me/data/', { method:'DELETE' })
+            .catch(error => reportBackendSyncFailure(error, '백엔드 연결이 끊겨 기록 초기화를 브라우저에만 반영했습니다.'));
+        }
+        removeStored(STORAGE_KEYS.RECORDS);
+        removeStored(STORAGE_KEYS.ACTIVE);
+        removeStored(STORAGE_KEYS.PENDING_COMPLETIONS);
+        removeStored(STORAGE_KEYS.LAST_RECORD);
+        state.lastRecord = null;
+        if (state.photoPreviewUrl) URL.revokeObjectURL(state.photoPreviewUrl);
+        state.photoPreviewUrl = '';
+        render();
+        showToast('완주 기록과 진행 상태를 초기화했습니다.');
+      } else if (actionName === 'delete-nickname') {
+        const user = getUser();
+        if (state.backendAvailable && state.backendProfile) {
+          djangoRequest('me/nickname/', { method:'DELETE' })
+            .then(result => { if (result && result.user) state.backendProfile = result.user; })
+            .catch(error => reportBackendSyncFailure(error, '백엔드 연결이 끊겨 닉네임 삭제를 브라우저에만 반영했습니다.'));
+        }
+        if (user) {
+          writeStored(STORAGE_KEYS.USER, Object.assign({}, user, { nickname:'' }));
+        }
+        state.page = 'home';
+        cleanupTransientUI();
+        render();
+      } else if (actionName === 'delete-all') {
+        if (state.backendAvailable && state.backendProfile) {
+          djangoRequest('me/', { method:'DELETE' })
+            .catch(error => reportBackendSyncFailure(error, '백엔드 연결이 끊겨 서버 데이터 삭제를 완료하지 못했습니다.'));
+        }
+        Object.values(STORAGE_KEYS).forEach(removeStored);
+        try { sessionStorage.removeItem(SESSION_KEYS.ADMIN); } catch (error) { /* 세션 저장소 제한은 무시합니다. */ }
+        state.page = 'home';
+        state.backendProfile = null;
+        state.lastRecord = null;
+        state.gpsMessage = '';
+        if (state.photoPreviewUrl) URL.revokeObjectURL(state.photoPreviewUrl);
+        state.photoPreviewUrl = '';
+        cleanupTransientUI();
+        render();
+      }
+    }
+
+    async function handleClick(event) {
+      const control = event.target.closest('[data-action]');
+      if (!control) return;
+      const action = control.dataset.action;
+      if (action === 'directions') {
+        const restaurant = RESTAURANT_DATA.find(item => item.id === control.dataset.restaurantId);
+        if (restaurant) {
+          logEvent('directions_clicked', {
+            restaurantId:restaurant.id,
+            restaurantName:restaurant.name,
+            target:control.dataset.map,
+            destinationUrl:control.href,
+            result:'success'
+          });
+        }
+        return;
+      }
+      if (action === 'backdrop-close' && event.target !== control) return;
+      event.preventDefault();
+
+      try {
+        switch (action) {
+          case 'navigate':
+            navigate(control.dataset.page || 'home');
+            break;
+          case 'view-course': {
+            const course = courseById(control.dataset.courseId);
+            state.selectedCourseId = course.id;
+            logEvent('course_viewed', { courseId:course.id, courseName:course.name, result:'success' });
+            navigate('detail', { courseId:course.id });
+            break;
+          }
+          case 'start-course':
+            requestStartCourse(control.dataset.courseId);
+            break;
+          case 'resume-course':
+            resumeCourse();
+            break;
+          case 'filter-type':
+            state.filters.type = control.dataset.value || 'all';
+            render();
+            break;
+          case 'reset-filters':
+            state.filters = { type:'all', distance:'all', difficulty:'all' };
+            render();
+            break;
+          case 'request-location':
+            openLocationPurpose(control.dataset.target);
+            break;
+          case 'confirm-location':
+            verifyLocation(control.dataset.target);
+            break;
+          case 'test-location':
+            await testVerifyLocation(control.dataset.target);
+            break;
+          case 'test-complete-all':
+            await testCompleteAll();
+            break;
+          case 'remove-photo':
+            removePhoto();
+            break;
+          case 'stop-course':
+            openConfirm('코스를 중단할까요?', '현재 인증 진행 상태는 삭제되며 완주 기록에는 남지 않습니다.', '코스 중단하기', 'stop-course');
+            break;
+          case 'complete-course':
+            await completeCourse();
+            break;
+          case 'view-restaurants':
+            state.selectedCourseId = control.dataset.courseId || state.selectedCourseId;
+            navigate('restaurants', { courseId:state.selectedCourseId });
+            break;
+          case 'restaurant-click': {
+            const restaurant = RESTAURANT_DATA.find(item => item.id === control.dataset.restaurantId);
+            if (restaurant) {
+              logEvent('restaurant_clicked', { restaurantId:restaurant.id, restaurantName:restaurant.name, result:'success' });
+              showToast(restaurant.name + ' 관심 기록을 저장했습니다.');
+            }
+            break;
+          }
+          case 'change-nickname':
+            openNicknameChange();
+            break;
+          case 'delete-nickname':
+            openConfirm('닉네임을 삭제할까요?', '완주 기록과 익명 ID는 유지하고 닉네임 등록 화면부터 다시 시작합니다.', '닉네임 삭제', 'delete-nickname');
+            break;
+          case 'reset-records':
+            openConfirm('내 기록을 초기화할까요?', '완주 기록과 진행 중 코스가 삭제됩니다. 닉네임은 유지됩니다.', '기록 초기화', 'reset-records');
+            break;
+          case 'delete-all':
+            openConfirm('브라우저 저장 데이터를 삭제할까요?', '닉네임, 익명 ID, 진행 상태, 완주 기록과 로컬 통계가 모두 삭제됩니다. 되돌릴 수 없습니다.', '모두 삭제', 'delete-all');
+            break;
+          case 'admin-logout':
+            try { sessionStorage.removeItem(SESSION_KEYS.ADMIN); } catch (error) { /* 저장소 제한은 무시합니다. */ }
+            render();
+            showToast('관리자 화면에서 로그아웃했습니다.');
+            break;
+          case 'close-modal':
+          case 'backdrop-close':
+            closeModal();
+            break;
+          case 'confirm-pending':
+            performPendingAction();
+            break;
+        }
+      } catch (error) {
+        showToast('요청을 처리하지 못했습니다. 다시 시도해 주세요.');
+      }
+    }
+
+    function handleSubmit(event) {
+      if (event.target.id === 'nickname-form') {
+        event.preventDefault();
+        const input = event.target.elements.nickname;
+        const errorElement = document.getElementById('nickname-error');
+        const nickname = normalizeNickname(input.value);
+        if (nickname.length < 2) {
+          errorElement.textContent = '닉네임을 2자 이상 입력해 주세요.';
+          input.setAttribute('aria-invalid', 'true');
+          input.focus();
+          return;
+        }
+        const previousUser = readStored(STORAGE_KEYS.USER, null);
+        const isFirstRegistration = !(previousUser && typeof previousUser.id === 'string' && previousUser.id);
+        const user = {
+          id: isFirstRegistration ? createId('anon') : previousUser.id,
+          nickname,
+          createdAt: isFirstRegistration ? new Date().toISOString() : (previousUser.createdAt || new Date().toISOString()),
+          lastVisitedAt: new Date().toISOString()
+        };
+        writeStored(STORAGE_KEYS.USER, user);
+        if (state.backendAvailable) {
+          syncNicknameWithBackend(nickname)
+            .then(() => render())
+            .catch(error => reportBackendSyncFailure(error, '백엔드 연결이 끊겨 닉네임을 브라우저에만 저장했습니다.'));
+        }
+        if (isFirstRegistration) logEvent('user_registered', { result:'success' });
+        logEvent('user_visited', { result:'success', userAgent:navigator.userAgent.slice(0, 240) });
+        state.page = 'home';
+        render();
+        showToast(nickname + '님, 혼디길에 오신 것을 환영해요.');
+        return;
+      }
+
+      if (event.target.id === 'nickname-change-form') {
+        event.preventDefault();
+        const input = event.target.elements.nickname;
+        const nickname = normalizeNickname(input.value);
+        const errorElement = document.getElementById('nickname-change-error');
+        if (nickname.length < 2) {
+          errorElement.textContent = '닉네임을 2자 이상 입력해 주세요.';
+          input.focus();
+          return;
+        }
+        const user = getUser();
+        if (!user) return;
+        writeStored(STORAGE_KEYS.USER, Object.assign({}, user, { nickname }));
+        if (state.backendAvailable) {
+          syncNicknameWithBackend(nickname)
+            .then(() => render())
+            .catch(error => reportBackendSyncFailure(error, '백엔드 연결이 끊겨 변경한 닉네임을 브라우저에만 저장했습니다.'));
+        }
+        closeModal();
+        render();
+        showToast('닉네임을 변경했습니다.');
+        return;
+      }
+
+      if (event.target.id === 'admin-login-form') {
+        event.preventDefault();
+        const input = event.target.elements.password;
+        const errorElement = document.getElementById('admin-error');
+        if (input.value !== '0000') {
+          errorElement.textContent = '비밀번호가 맞지 않습니다.';
+          input.value = '';
+          input.focus();
+          return;
+        }
+        try { sessionStorage.setItem(SESSION_KEYS.ADMIN, 'true'); } catch (error) {
+          errorElement.textContent = '세션 저장을 사용할 수 없습니다. 브라우저 설정을 확인해 주세요.';
+          return;
+        }
+        render();
+        showToast('관리자 화면을 열었습니다.');
+      }
+    }
+
+    async function handleChange(event) {
+      const target = event.target;
+      if (target.matches('[data-filter]')) {
+        state.filters[target.dataset.filter] = target.value;
+        render();
+        return;
+      }
+      if (target.id === 'photo-input') {
+        await handlePhotoSelection(target);
+      }
+    }
+
+    function repairStoredData() {
+      Object.values(STORAGE_KEYS).forEach(key => {
+        try {
+          const value = localStorage.getItem(key);
+          if (value != null) JSON.parse(value);
+        } catch (error) {
+          removeStored(key);
+        }
+      });
+    }
+
+    function initializeApp() {
+      repairStoredData();
+      const user = getUser();
+      if (user) {
+        const updatedUser = Object.assign({}, user, { lastVisitedAt:new Date().toISOString() });
+        writeStored(STORAGE_KEYS.USER, updatedUser);
+        logEvent('user_visited', { result:'success', userAgent:navigator.userAgent.slice(0, 240) });
+        const active = getActiveCourse();
+        if (active) {
+          state.selectedCourseId = active.courseId;
+          state.page = 'progress';
+        }
+        state.lastRecord = getLastRecord();
+      }
+      render();
+      probeDjangoBackend().then(async available => {
+        if (available) {
+          try {
+            await syncDjangoBootstrap();
+            await flushEventQueue();
+          } catch (error) {
+            reportBackendSyncFailure(error, 'Django 백엔드 초기 동기화를 완료하지 못했습니다. 브라우저 저장 방식으로 계속 사용할 수 있습니다.');
+          }
+          render();
+        }
+      });
+    }
+
+    document.addEventListener('click', handleClick);
+    document.addEventListener('submit', handleSubmit);
+    document.addEventListener('change', handleChange);
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && modalRoot.innerHTML) closeModal();
+    });
+    window.addEventListener('online', () => {
+      probeDjangoBackend().then(async available => {
+        if (!available) return;
+        try {
+          await syncDjangoBootstrap();
+          await flushEventQueue();
+        } catch (error) {
+          reportBackendSyncFailure(error, '온라인 복귀 후 백엔드 동기화를 완료하지 못했습니다.');
+        }
+      });
+    });
+    window.addEventListener('beforeunload', () => {
+      if (state.photoPreviewUrl) URL.revokeObjectURL(state.photoPreviewUrl);
+    });
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializeApp, { once:true });
+    } else {
+      initializeApp();
+    }
+  })();
