@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-labelledby="dol-title dol-desc">
+  <title id="dol-title">혼디길 돌하르방</title>
+  <desc id="dol-desc">둥근 갓과 큰 코, 배 위에 포갠 손을 단순하고 친근하게 표현한 제주 돌하르방 일러스트</desc>
+
+  <ellipse cx="120" cy="280" rx="86" ry="12" fill="#25302c" opacity=".14"/>
+
+  <g stroke="#25302c" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M74 148c-13 18-16 54-20 107h132c-4-53-7-89-20-107z" fill="#596762"/>
+    <path d="M62 207c7-9 15-14 24-17m92 17c-7-9-15-14-24-17" fill="none" opacity=".65"/>
+
+    <path d="M68 88v30c0 30 20 51 52 51s52-21 52-51V88z" fill="#697771"/>
+    <path d="M69 107c-10-2-15 5-13 16 2 10 8 15 17 13m98-29c10-2 15 5 13 16-2 10-8 15-17 13" fill="#63716c"/>
+
+    <path d="M51 69c3-32 27-52 69-52s66 20 69 52z" fill="#4e5b57"/>
+    <path d="M43 70c0-8 6-14 14-14h126c8 0 14 6 14 14v3c0 9-7 16-16 16H59c-9 0-16-7-16-16z" fill="#596762"/>
+    <path d="M56 76h128" stroke="#e85d24" stroke-width="6" opacity=".92"/>
+
+    <path d="M84 108c7-7 17-7 24-2m24 0c7-5 17-5 24 2" fill="none"/>
+    <ellipse cx="96" cy="119" rx="6" ry="7" fill="#25302c" stroke="none"/>
+    <ellipse cx="144" cy="119" rx="6" ry="7" fill="#25302c" stroke="none"/>
+    <path d="M120 108c-3 12-7 27-8 37 4 5 12 5 17 0-1-11-5-26-9-37z" fill="#7d8984"/>
+    <path d="M103 153c10 6 24 6 34 0" fill="none"/>
+
+    <path d="M78 181c6 14 18 26 35 33l7-18c-12-5-20-12-25-23z" fill="#74807b"/>
+    <path d="M162 181c-6 14-18 26-35 33l-7-18c12-5 20-12 25-23z" fill="#74807b"/>
+    <path d="M101 207c11 5 27 5 38 0" fill="none" opacity=".75"/>
+
+    <path d="M50 253h140v17c0 8-6 14-14 14H64c-8 0-14-6-14-14z" fill="#45524f"/>
+    <path d="M66 267h108" stroke="#fffaf0" stroke-width="4" opacity=".24"/>
+  </g>
+
+  <g fill="#fffaf0" opacity=".18">
+    <circle cx="91" cy="38" r="4"/>
+    <circle cx="147" cy="42" r="3"/>
+    <circle cx="83" cy="138" r="3"/>
+    <circle cx="153" cy="144" r="4"/>
+    <circle cx="77" cy="224" r="4"/>
+    <circle cx="161" cy="237" r="3"/>
+  </g>
+  <g fill="#25302c" opacity=".17">
+    <circle cx="70" cy="53" r="3"/>
+    <circle cx="166" cy="59" r="4"/>
+    <circle cx="92" cy="93" r="3"/>
+    <circle cx="145" cy="183" r="3"/>
+    <circle cx="94" cy="239" r="3"/>
+  </g>
+</svg>
