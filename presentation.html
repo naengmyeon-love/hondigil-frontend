@@ -1,0 +1,937 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#fffaf0">
+  <meta name="description" content="혼디길 제주 러닝·트래킹 서비스 3분 소개 발표자료">
+  <title>혼디길 | 3분 서비스 소개</title>
+  <style>
+    :root {
+      --paper: #fffaf0;
+      --paper-deep: #f5efdf;
+      --surface: rgba(255, 255, 255, .9);
+      --ink: #25302c;
+      --muted: #66736d;
+      --line: rgba(69, 82, 79, .16);
+      --orange: #e85d24;
+      --orange-dark: #b83d0d;
+      --orange-soft: #fff0df;
+      --sea: #187a95;
+      --sea-soft: #e6f6f8;
+      --leaf: #477953;
+      --leaf-soft: #e9f4e8;
+      --basalt: #45524f;
+      --shadow: 0 24px 80px rgba(37, 48, 44, .16);
+      --shadow-soft: 0 12px 36px rgba(37, 48, 44, .1);
+      --radius: 2rem;
+      --font: Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { width: 100%; min-height: 100%; }
+    html { background: #17201d; }
+    body {
+      margin: 0;
+      overflow: hidden;
+      color: var(--ink);
+      background: #17201d;
+      font-family: var(--font);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, a { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, a:focus-visible {
+      outline: 3px solid rgba(24, 122, 149, .55);
+      outline-offset: 3px;
+    }
+    img { display: block; max-width: 100%; }
+
+    .deck {
+      position: relative;
+      width: 100vw;
+      height: 100svh;
+      min-height: 34rem;
+      overflow: hidden;
+      background: var(--paper);
+      isolation: isolate;
+    }
+    .deck::before {
+      content: "";
+      position: fixed;
+      z-index: 20;
+      top: 0;
+      left: 0;
+      width: var(--progress, 14.28%);
+      height: 4px;
+      background: var(--orange);
+      box-shadow: 0 0 18px rgba(232, 93, 36, .45);
+      transition: width .45s ease;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      align-items: center;
+      padding: clamp(4rem, 7vh, 6.5rem) clamp(3.25rem, 7vw, 8.5rem) clamp(4.5rem, 8vh, 7rem);
+      overflow: hidden;
+      visibility: hidden;
+      opacity: 0;
+      transform: translateX(2.5rem) scale(.992);
+      transition: opacity .38s ease, transform .48s cubic-bezier(.2, .78, .2, 1), visibility 0s .48s;
+      background:
+        radial-gradient(circle at 92% 3%, rgba(232, 93, 36, .12), transparent 24rem),
+        radial-gradient(circle at 1% 100%, rgba(24, 122, 149, .11), transparent 26rem),
+        var(--paper);
+    }
+    .slide.active {
+      z-index: 2;
+      visibility: visible;
+      opacity: 1;
+      transform: translateX(0) scale(1);
+      transition-delay: 0s;
+    }
+    .slide.leaving {
+      visibility: visible;
+      transform: translateX(-2.5rem) scale(.992);
+    }
+    .slide::after {
+      content: attr(data-index);
+      position: absolute;
+      right: clamp(2rem, 4vw, 4.5rem);
+      bottom: clamp(1.5rem, 3vh, 2.5rem);
+      color: rgba(37, 48, 44, .34);
+      font-size: .76rem;
+      font-weight: 900;
+      letter-spacing: .16em;
+    }
+
+    .slide-inner {
+      width: min(100%, 96rem);
+      margin: 0 auto;
+    }
+    .kicker {
+      display: flex;
+      align-items: center;
+      gap: .65rem;
+      margin: 0 0 .8rem;
+      color: var(--orange-dark);
+      font-size: clamp(.72rem, 1vw, .95rem);
+      font-weight: 900;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .kicker::before {
+      content: "";
+      width: 1.75rem;
+      height: 3px;
+      border-radius: 999px;
+      background: var(--orange);
+    }
+    h1, h2, h3, p { margin-top: 0; word-break: keep-all; overflow-wrap: break-word; }
+    h1, h2, h3 { line-height: 1.13; letter-spacing: -.055em; }
+    h1 { margin-bottom: 1.35rem; font-size: clamp(3.5rem, 7.3vw, 8.5rem); }
+    h2 { margin-bottom: 1rem; font-size: clamp(2.4rem, 4.5vw, 5.6rem); }
+    h3 { margin-bottom: .6rem; font-size: clamp(1.15rem, 1.7vw, 1.85rem); }
+    .lead {
+      max-width: 48rem;
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: clamp(1rem, 1.55vw, 1.65rem);
+      letter-spacing: -.025em;
+    }
+    .accent { color: var(--orange); }
+    .sea { color: var(--sea); }
+    .leaf { color: var(--leaf); }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 2.2rem;
+      padding: .45rem .82rem;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .7);
+      color: var(--muted);
+      font-size: clamp(.72rem, .92vw, .9rem);
+      font-weight: 850;
+    }
+
+    /* 01 · Cover */
+    .cover {
+      padding: 0;
+      align-items: stretch;
+      background: #20342b;
+    }
+    .cover::after { color: rgba(255, 255, 255, .55); }
+    .cover-media {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 63% center;
+      filter: saturate(.83) contrast(.98);
+    }
+    .cover-shade {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(28, 39, 35, .94) 0%, rgba(28, 39, 35, .79) 33%, rgba(28, 39, 35, .14) 72%),
+        linear-gradient(0deg, rgba(23, 32, 29, .58), transparent 42%);
+    }
+    .cover-content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      width: min(100%, 96rem);
+      height: 100%;
+      margin: 0 auto;
+      padding: clamp(4rem, 7vh, 7rem) clamp(3.25rem, 7vw, 8.5rem);
+      color: #fffdf7;
+    }
+    .brand-lockup {
+      display: flex;
+      align-items: center;
+      gap: .85rem;
+      margin-bottom: clamp(2.5rem, 7vh, 6rem);
+      font-size: clamp(1.25rem, 1.8vw, 2rem);
+      font-weight: 950;
+      letter-spacing: -.05em;
+    }
+    .brand-lockup img {
+      width: clamp(2.8rem, 4vw, 4.4rem);
+      height: clamp(2.8rem, 4vw, 4.4rem);
+      border-radius: 1rem;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, .2);
+    }
+    .cover h1 {
+      max-width: 9em;
+      margin-bottom: 1.4rem;
+      font-size: clamp(3.5rem, 6.2vw, 7.25rem);
+      text-shadow: 0 5px 28px rgba(0, 0, 0, .15);
+    }
+    .cover .lead { max-width: 34rem; color: rgba(255, 255, 255, .78); }
+    .cover-tags { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 2rem; }
+    .cover .tag { border-color: rgba(255,255,255,.22); background: rgba(28,39,35,.38); color: #fff; backdrop-filter: blur(8px); }
+
+    /* 02 · Problem */
+    .problem-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(32rem, .9fr);
+      gap: clamp(2rem, 6vw, 7rem);
+      align-items: center;
+    }
+    .question-line {
+      margin-top: 2rem;
+      color: var(--leaf);
+      font-size: clamp(1.05rem, 1.55vw, 1.55rem);
+      font-weight: 900;
+      letter-spacing: -.035em;
+    }
+    .pain-stack { display: grid; gap: 1rem; }
+    .pain-card {
+      position: relative;
+      display: grid;
+      grid-template-columns: 3.4rem 1fr;
+      gap: 1.1rem;
+      align-items: center;
+      padding: clamp(1rem, 1.5vw, 1.5rem);
+      border: 1px solid var(--line);
+      border-radius: 1.5rem;
+      background: var(--surface);
+      box-shadow: var(--shadow-soft);
+    }
+    .pain-card:nth-child(2) { transform: translateX(2.2rem); }
+    .pain-no {
+      display: grid;
+      place-items: center;
+      width: 3.4rem;
+      height: 3.4rem;
+      border-radius: 1.1rem;
+      background: var(--orange-soft);
+      color: var(--orange-dark);
+      font-size: 1rem;
+      font-weight: 950;
+    }
+    .pain-card h3 { margin: 0 0 .25rem; }
+    .pain-card p { margin: 0; color: var(--muted); font-size: clamp(.78rem, 1vw, 1rem); }
+
+    /* 03 · Solution */
+    .solution .slide-inner { align-self: center; }
+    .solution-title { display: flex; justify-content: space-between; gap: 2rem; align-items: end; }
+    .solution-title .lead { max-width: 34rem; padding-bottom: .65rem; text-align: right; }
+    .journey {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: clamp(1rem, 2vw, 2rem);
+      margin-top: clamp(2.5rem, 6vh, 5rem);
+    }
+    .journey::before {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      top: 2.35rem;
+      left: 15%;
+      right: 15%;
+      border-top: 3px dashed rgba(71, 121, 83, .3);
+    }
+    .journey-card {
+      min-height: clamp(14.5rem, 29vh, 20rem);
+      padding: clamp(1.4rem, 2.2vw, 2.2rem);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow-soft);
+    }
+    .journey-card:nth-child(2) { background: linear-gradient(155deg, #fff, var(--sea-soft)); }
+    .journey-card:nth-child(3) { background: linear-gradient(155deg, #fff, var(--leaf-soft)); }
+    .journey-icon {
+      display: grid;
+      place-items: center;
+      width: 4.8rem;
+      height: 4.8rem;
+      margin-bottom: 1.8rem;
+      border: 6px solid var(--paper);
+      border-radius: 1.55rem;
+      background: var(--orange);
+      color: #fff;
+      box-shadow: 0 9px 24px rgba(232, 93, 36, .22);
+      font-size: 2rem;
+    }
+    .journey-card:nth-child(2) .journey-icon { background: var(--sea); box-shadow: 0 9px 24px rgba(24, 122, 149, .2); }
+    .journey-card:nth-child(3) .journey-icon { background: var(--leaf); box-shadow: 0 9px 24px rgba(71, 121, 83, .2); }
+    .journey-step { margin: 0 0 .25rem; color: var(--muted); font-size: .78rem; font-weight: 900; letter-spacing: .1em; }
+    .journey-card p:last-child { margin: .9rem 0 0; color: var(--muted); font-size: clamp(.82rem, 1.04vw, 1.05rem); }
+
+    /* 04 · Product */
+    .product-layout {
+      display: grid;
+      grid-template-columns: minmax(0, .88fr) minmax(32rem, 1.12fr);
+      gap: clamp(2rem, 5vw, 6rem);
+      align-items: center;
+    }
+    .feature-list { display: grid; gap: .75rem; margin-top: 2rem; }
+    .feature {
+      display: grid;
+      grid-template-columns: 2rem 1fr;
+      gap: .8rem;
+      align-items: start;
+      padding: .75rem 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .feature:last-child { border-bottom: 0; }
+    .feature-mark {
+      display: grid;
+      place-items: center;
+      width: 2rem;
+      height: 2rem;
+      border-radius: .7rem;
+      background: var(--leaf-soft);
+      color: var(--leaf);
+      font-size: .9rem;
+      font-weight: 950;
+    }
+    .feature strong { display: block; margin-bottom: .15rem; font-size: clamp(.95rem, 1.17vw, 1.2rem); }
+    .feature span { color: var(--muted); font-size: clamp(.76rem, .92vw, .95rem); }
+    .device-stage {
+      position: relative;
+      display: grid;
+      place-items: center;
+      min-height: clamp(27rem, 62vh, 45rem);
+    }
+    .map-blob {
+      position: absolute;
+      inset: 7% 0 8% 12%;
+      overflow: hidden;
+      border-radius: 4rem 2rem 4rem 2rem;
+      background:
+        linear-gradient(29deg, transparent 48%, rgba(255,255,255,.75) 49% 51%, transparent 52%),
+        linear-gradient(150deg, #ccecf2 0 43%, #9fc8a4 43% 65%, #78a381 65%);
+      transform: rotate(2deg);
+    }
+    .route {
+      position: absolute;
+      left: 15%;
+      top: 44%;
+      width: 58%;
+      height: 34%;
+      border: .5rem solid var(--orange);
+      border-left-color: transparent;
+      border-bottom-color: transparent;
+      border-radius: 50%;
+      transform: rotate(-12deg);
+      filter: drop-shadow(0 3px 0 rgba(255,255,255,.75));
+    }
+    .pin {
+      position: absolute;
+      display: grid;
+      place-items: center;
+      width: 2.6rem;
+      height: 2.6rem;
+      border: 4px solid #fff;
+      border-radius: 50% 50% 50% 12%;
+      background: var(--sea);
+      color: #fff;
+      box-shadow: 0 6px 18px rgba(22, 57, 62, .24);
+      transform: rotate(-45deg);
+    }
+    .pin span { transform: rotate(45deg); font-size: 1rem; }
+    .pin.one { top: 25%; right: 16%; }
+    .pin.two { bottom: 20%; left: 13%; background: var(--orange); }
+    .phone {
+      position: relative;
+      z-index: 1;
+      width: min(22rem, 43vw);
+      padding: .7rem;
+      border: 1px solid rgba(255,255,255,.75);
+      border-radius: 2.6rem;
+      background: #21302b;
+      box-shadow: 0 30px 70px rgba(25, 40, 35, .28);
+      transform: rotate(-3deg);
+    }
+    .phone-screen {
+      overflow: hidden;
+      min-height: 31rem;
+      border-radius: 2.05rem;
+      background: var(--paper);
+    }
+    .phone-hero {
+      position: relative;
+      min-height: 9.6rem;
+      padding: 1.35rem;
+      background: linear-gradient(145deg, #dff5fb, #f8fbef);
+    }
+    .phone-hero::after { content: "🌅"; position: absolute; right: 1.1rem; bottom: .6rem; font-size: 4.7rem; }
+    .phone-hero .mini-brand { margin-bottom: 2.25rem; color: var(--orange-dark); font-size: .7rem; font-weight: 900; }
+    .phone-hero strong { position: relative; z-index: 1; display: block; max-width: 12rem; font-size: 1.28rem; line-height: 1.12; letter-spacing: -.05em; }
+    .phone-body { padding: 1.2rem; }
+    .phone-pills { display: flex; gap: .4rem; margin-bottom: .9rem; }
+    .phone-pill { padding: .35rem .55rem; border-radius: 999px; background: #fff; border: 1px solid var(--line); font-size: .6rem; font-weight: 800; }
+    .phone-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: .45rem; margin-bottom: .9rem; }
+    .phone-stat { padding: .65rem .4rem; border-radius: .85rem; background: #f3efe5; text-align: center; font-size: .58rem; color: var(--muted); }
+    .phone-stat b { display: block; margin-bottom: .1rem; color: var(--ink); font-size: .78rem; }
+    .phone-map { position: relative; height: 7.5rem; overflow: hidden; border-radius: 1.05rem; background: linear-gradient(145deg,#cdeaf0 0 45%,#a7c9ac 45%); }
+    .phone-map::before { content: ""; position: absolute; width: 75%; height: 75%; left: 8%; top: 9%; border: .35rem solid var(--orange); border-left-color: transparent; border-radius: 50%; transform: rotate(-14deg); }
+    .phone-cta { margin-top: .85rem; padding: .8rem; border-radius: .9rem; background: var(--orange); color: #fff; text-align: center; font-size: .72rem; font-weight: 900; }
+
+    /* 05 · Growth */
+    .growth-layout {
+      display: grid;
+      grid-template-columns: minmax(29rem, 1.05fr) minmax(0, .95fr);
+      gap: clamp(2rem, 6vw, 7rem);
+      align-items: center;
+    }
+    .growth-visual {
+      position: relative;
+      min-height: clamp(26rem, 62vh, 43rem);
+      border: 1px solid var(--line);
+      border-radius: 3rem;
+      background: linear-gradient(160deg, #fff, #eff7ee 60%, #e3f2f2);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .growth-visual::before {
+      content: "";
+      position: absolute;
+      left: -12%;
+      right: -12%;
+      bottom: -26%;
+      height: 58%;
+      border-radius: 50% 50% 0 0;
+      background: var(--leaf);
+      box-shadow: 0 -1.4rem 0 #83af7d;
+    }
+    .growth-orbit {
+      position: absolute;
+      inset: 10% 10% 21%;
+      border: 2px dashed rgba(71, 121, 83, .28);
+      border-radius: 50%;
+      transform: rotate(-8deg);
+    }
+    .growth-item {
+      position: absolute;
+      z-index: 1;
+      display: grid;
+      place-items: center;
+      width: clamp(7rem, 11vw, 11rem);
+      aspect-ratio: 1;
+      padding: 1rem;
+      border: 1px solid rgba(69,82,79,.13);
+      border-radius: 2rem;
+      background: rgba(255,255,255,.92);
+      box-shadow: var(--shadow-soft);
+      text-align: center;
+    }
+    .growth-item img { width: 62%; height: 62%; object-fit: contain; }
+    .growth-item span { margin-top: .35rem; font-size: clamp(.62rem, .82vw, .85rem); font-weight: 900; }
+    .growth-item.stone { left: 9%; bottom: 17%; transform: rotate(-5deg); }
+    .growth-item.seed { top: 9%; left: 38%; transform: rotate(3deg); }
+    .growth-item.room { right: 6%; bottom: 25%; transform: rotate(6deg); }
+    .room-icon { font-size: clamp(3.6rem, 6vw, 6.2rem); line-height: 1; }
+    .growth-copy .lead { margin-bottom: 2rem; }
+    .metric-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .metric {
+      padding: 1.3rem;
+      border: 1px solid var(--line);
+      border-radius: 1.35rem;
+      background: rgba(255,255,255,.78);
+    }
+    .metric b { display: block; margin-bottom: .25rem; color: var(--orange); font-size: clamp(1.55rem, 2.3vw, 2.6rem); letter-spacing: -.05em; }
+    .metric span { color: var(--muted); font-size: clamp(.74rem, .95vw, .96rem); }
+
+    /* 06 · System */
+    .system-title { display: grid; grid-template-columns: 1fr .8fr; gap: 2rem; align-items: end; }
+    .system-title .lead { justify-self: end; max-width: 34rem; padding-bottom: .7rem; text-align: right; }
+    .architecture {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: clamp(.75rem, 1.6vw, 1.5rem);
+      margin-top: clamp(2.4rem, 6vh, 5rem);
+    }
+    .arch-card {
+      position: relative;
+      min-height: clamp(14.5rem, 30vh, 21rem);
+      padding: clamp(1.2rem, 1.8vw, 1.9rem);
+      border: 1px solid var(--line);
+      border-radius: 1.65rem;
+      background: rgba(255,255,255,.84);
+      box-shadow: var(--shadow-soft);
+    }
+    .arch-card:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      z-index: 2;
+      top: 50%;
+      right: calc(clamp(.75rem, 1.6vw, 1.5rem) * -.78);
+      display: grid;
+      place-items: center;
+      width: 1.75rem;
+      height: 1.75rem;
+      border-radius: 50%;
+      background: var(--paper);
+      color: var(--leaf);
+      font-weight: 950;
+      transform: translate(50%, -50%);
+    }
+    .arch-card.optional { border-style: dashed; background: rgba(230,246,248,.58); }
+    .arch-icon { margin-bottom: 1.5rem; font-size: clamp(1.9rem, 2.6vw, 3rem); }
+    .arch-card p { margin: .8rem 0 0; color: var(--muted); font-size: clamp(.74rem, .9vw, .92rem); }
+    .arch-label { position: absolute; left: 1.3rem; bottom: 1.25rem; color: var(--leaf); font-size: .66rem; font-weight: 950; letter-spacing: .08em; text-transform: uppercase; }
+    .optional .arch-label { color: var(--sea); }
+
+    /* 07 · Closing */
+    .closing {
+      color: #fffdf7;
+      background:
+        radial-gradient(circle at 86% 18%, rgba(232, 93, 36, .25), transparent 24rem),
+        radial-gradient(circle at 12% 90%, rgba(24, 122, 149, .23), transparent 30rem),
+        #20342b;
+    }
+    .closing::after { color: rgba(255, 255, 255, .5); }
+    .closing .slide-inner { text-align: center; transform: translateY(-2.5rem); }
+    .closing .kicker { justify-content: center; color: #ffb17f; }
+    .closing h2 { max-width: 13ch; margin: 0 auto 1.4rem; font-size: clamp(3rem, 5.8vw, 7.2rem); }
+    .closing .lead { max-width: 42rem; margin: 0 auto; color: rgba(255,255,255,.72); }
+    .closing-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: .75rem; margin-top: 2.3rem; }
+    .closing-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 3.4rem;
+      padding: .85rem 1.4rem;
+      border-radius: 1rem;
+      background: var(--orange);
+      color: #fff;
+      font-weight: 900;
+      text-decoration: none;
+      box-shadow: 0 12px 28px rgba(232, 93, 36, .24);
+    }
+    .closing-note { margin: 1.4rem 0 0; color: rgba(255,255,255,.54); font-size: .78rem; }
+    .closing-mark {
+      width: clamp(5rem, 8vw, 8rem);
+      margin: 0 auto 1.8rem;
+      border-radius: 2rem;
+      box-shadow: 0 18px 42px rgba(0,0,0,.22);
+    }
+
+    /* Controls & notes */
+    .controls {
+      position: fixed;
+      z-index: 50;
+      left: 50%;
+      bottom: max(1rem, env(safe-area-inset-bottom));
+      display: flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .38rem;
+      border: 1px solid rgba(255,255,255,.4);
+      border-radius: 999px;
+      background: rgba(31, 43, 39, .82);
+      box-shadow: 0 10px 30px rgba(0,0,0,.2);
+      backdrop-filter: blur(12px);
+      transform: translateX(-50%);
+      transition: opacity .2s ease;
+    }
+    .controls button {
+      display: grid;
+      place-items: center;
+      min-width: 2.45rem;
+      height: 2.45rem;
+      padding: 0 .7rem;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: #fff;
+      cursor: pointer;
+    }
+    .controls button:hover { background: rgba(255,255,255,.12); }
+    .controls button:disabled { opacity: .32; cursor: default; }
+    .counter { min-width: 3.4rem; color: rgba(255,255,255,.75); text-align: center; font-size: .75rem; font-variant-numeric: tabular-nums; }
+    .keyboard-hint {
+      position: fixed;
+      z-index: 30;
+      right: clamp(1.5rem, 3vw, 3rem);
+      top: clamp(1.2rem, 2.5vh, 2.2rem);
+      display: flex;
+      gap: .45rem;
+      color: rgba(37,48,44,.42);
+      font-size: .68rem;
+      font-weight: 800;
+    }
+    .cover .keyboard-hint, .closing .keyboard-hint { color: rgba(255,255,255,.58); }
+    .key { padding: .2rem .42rem; border: 1px solid currentColor; border-radius: .42rem; }
+    .notes-panel {
+      position: fixed;
+      z-index: 60;
+      right: 1rem;
+      bottom: 5rem;
+      width: min(28rem, calc(100vw - 2rem));
+      padding: 1.25rem 1.35rem;
+      border: 1px solid rgba(255,255,255,.36);
+      border-radius: 1.2rem;
+      background: rgba(25, 34, 31, .94);
+      color: #fff;
+      box-shadow: 0 22px 60px rgba(0,0,0,.3);
+      backdrop-filter: blur(14px);
+      visibility: hidden;
+      opacity: 0;
+      transform: translateY(.75rem);
+      transition: .2s ease;
+    }
+    .notes-panel.open { visibility: visible; opacity: 1; transform: translateY(0); }
+    .notes-panel strong { display: block; margin-bottom: .55rem; color: #ffb17f; font-size: .72rem; letter-spacing: .08em; }
+    .notes-panel p { margin: 0; color: rgba(255,255,255,.82); font-size: .9rem; line-height: 1.7; }
+    .speaker-note { display: none; }
+
+    @media (max-width: 900px) {
+      .deck { min-height: 40rem; }
+      .slide { padding: 4.3rem 1.4rem 5.5rem; overflow-y: auto; }
+      .slide-inner { margin: auto; }
+      .problem-layout, .product-layout, .growth-layout { grid-template-columns: 1fr; gap: 2rem; }
+      .problem-layout { align-content: center; }
+      .pain-stack { grid-template-columns: repeat(3, 1fr); }
+      .pain-card { grid-template-columns: 1fr; align-content: start; }
+      .pain-card:nth-child(2) { transform: none; }
+      .journey { gap: .65rem; }
+      .journey-card { min-height: 13rem; padding: 1.1rem; }
+      .journey-icon { width: 3.6rem; height: 3.6rem; margin-bottom: 1rem; border-width: 4px; font-size: 1.5rem; }
+      .product-layout { grid-template-columns: .85fr 1.15fr; }
+      .product-layout h2 { font-size: clamp(2rem, 6vw, 3.8rem); }
+      .feature-list { margin-top: 1rem; }
+      .feature { padding: .45rem 0; }
+      .device-stage { min-height: 28rem; }
+      .phone { width: min(19rem, 43vw); }
+      .phone-screen { min-height: 27rem; }
+      .phone-map { height: 5rem; }
+      .growth-layout { grid-template-columns: .95fr 1.05fr; }
+      .growth-visual { min-height: 27rem; }
+      .architecture { grid-template-columns: repeat(2, 1fr); }
+      .arch-card { min-height: 10rem; }
+      .arch-card:nth-child(2)::after { display: none; }
+      .system-title { grid-template-columns: 1fr; }
+      .system-title .lead { justify-self: start; padding: 0; text-align: left; }
+    }
+
+    @media (max-width: 640px) {
+      body { overflow-x: hidden; overflow-y: auto; }
+      .deck { min-height: 100svh; height: auto; }
+      .slide { position: relative; display: none; min-height: 100svh; }
+      .slide.active { display: grid; }
+      h1 { font-size: clamp(3rem, 17vw, 5rem); }
+      h2 { font-size: clamp(2.2rem, 11vw, 3.5rem); }
+      .cover { min-height: 100svh; padding: 0; }
+      .cover-content { padding: 4rem 1.5rem 6rem; }
+      .cover h1 { max-width: 7.8em; }
+      .cover-media { object-position: 68% center; }
+      .cover-shade { background: linear-gradient(90deg, rgba(28,39,35,.94), rgba(28,39,35,.45)), linear-gradient(0deg,rgba(23,32,29,.7),transparent 50%); }
+      .problem-layout, .product-layout, .growth-layout { grid-template-columns: 1fr; }
+      .pain-stack, .journey, .architecture { grid-template-columns: 1fr; }
+      .pain-card { grid-template-columns: 3.2rem 1fr; }
+      .journey::before, .arch-card::after { display: none !important; }
+      .journey-card { min-height: 0; }
+      .device-stage { min-height: 31rem; }
+      .phone { width: 18rem; }
+      .growth-visual { min-height: 26rem; }
+      .growth-item { width: 7rem; }
+      .metric-pair { grid-template-columns: 1fr; }
+      .system-title { grid-template-columns: 1fr; }
+      .keyboard-hint { display: none; }
+      .controls { bottom: max(.7rem, env(safe-area-inset-bottom)); }
+      .closing .slide-inner { transform: none; }
+      .slide::after { display: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+    }
+
+    @media print {
+      @page { size: 16in 9in; margin: 0; }
+      body { overflow: visible; background: #fff; }
+      .deck { height: auto; min-height: 0; overflow: visible; }
+      .deck::before, .controls, .keyboard-hint, .notes-panel { display: none !important; }
+      .slide, .slide.active {
+        position: relative;
+        display: grid;
+        width: 16in;
+        height: 9in;
+        padding: .65in 1in .75in;
+        page-break-after: always;
+        visibility: visible;
+        opacity: 1;
+        transform: none;
+      }
+      .cover { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <main class="deck" id="deck" aria-label="혼디길 서비스 소개 발표자료">
+    <section class="slide cover active" data-index="01 / 07" aria-hidden="false">
+      <img class="cover-media" src="./static/assets/hondigil-jeju-hero.webp" alt="제주 오름과 돌담길을 달리는 러너">
+      <div class="cover-shade" aria-hidden="true"></div>
+      <div class="cover-content">
+        <div class="brand-lockup"><img src="./static/assets/hondigil-mark.svg" alt=""><span>혼디길</span></div>
+        <p class="kicker">Jeju running &amp; trekking</p>
+        <h1>걷고 달릴수록<br><span class="accent">나의 제주</span>가 자라요</h1>
+        <p class="lead">제주 코스 완주부터 기록, 성장, 로컬 발견까지 하나로 잇는 모바일 웹 서비스</p>
+        <div class="cover-tags" aria-label="서비스 핵심 키워드">
+          <span class="tag">러닝·트래킹</span><span class="tag">완주 기록</span><span class="tag">제주방 성장</span><span class="tag">로컬 발견</span>
+        </div>
+      </div>
+      <aside class="speaker-note">안녕하세요. 제가 소개할 서비스는 ‘혼디길’입니다. 제주어로 ‘함께’를 뜻하는 혼디처럼, 제주의 길과 기록, 그리고 로컬 경험을 한 흐름으로 연결한 러닝·트래킹 서비스입니다.</aside>
+    </section>
+
+    <section class="slide" data-index="02 / 07" aria-hidden="true">
+      <div class="slide-inner problem-layout">
+        <div>
+          <p class="kicker">Problem</p>
+          <h2>좋은 길을 찾은 뒤에도<br><span class="accent">탐색은 계속</span>됩니다</h2>
+          <p class="lead">코스를 고르고, 현장에서 안전하게 움직이고, 완주 뒤 무엇을 할지까지 정보가 여러 곳에 흩어져 있습니다.</p>
+          <p class="question-line">“한 번에 이어지는 제주 경험은 없을까?”</p>
+        </div>
+        <div class="pain-stack" aria-label="사용자 문제 세 가지">
+          <article class="pain-card"><div class="pain-no">01</div><div><h3>코스 정보의 파편화</h3><p>거리·난이도·안전 정보가 제각각</p></div></article>
+          <article class="pain-card"><div class="pain-no">02</div><div><h3>완주 동기의 단절</h3><p>기록은 남아도 다음 행동으로 이어지지 않음</p></div></article>
+          <article class="pain-card"><div class="pain-no">03</div><div><h3>로컬 경험과의 거리</h3><p>좋은 코스와 주변 장소를 따로 검색</p></div></article>
+        </div>
+      </div>
+      <aside class="speaker-note">기존에는 코스의 거리와 난이도, 안전 정보를 따로 확인하고, 완주 뒤 갈 장소도 다시 검색해야 합니다. 기록도 숫자로만 남기 쉬워 다음 활동의 동기가 약합니다. 혼디길은 이 끊어진 경험을 하나로 잇는 데서 시작했습니다.</aside>
+    </section>
+
+    <section class="slide solution" data-index="03 / 07" aria-hidden="true">
+      <div class="slide-inner">
+        <div class="solution-title">
+          <div><p class="kicker">Solution</p><h2>한 번의 완주를<br><span class="leaf">하나의 제주 경험</span>으로</h2></div>
+          <p class="lead">선택 → 활동 → 보상의 짧고 분명한 흐름으로 첫 방문도 쉽게 시작합니다.</p>
+        </div>
+        <div class="journey">
+          <article class="journey-card"><div class="journey-icon">🗺️</div><p class="journey-step">STEP 01</p><h3>내 길을 골라요</h3><p>10개 제주 코스를 유형·지역·거리·난이도로 탐색합니다.</p></article>
+          <article class="journey-card"><div class="journey-icon">📍</div><p class="journey-step">STEP 02</p><h3>안전하게 걸어요</h3><p>실제 보행 경로와 준비물, GPS 인증으로 활동을 안내합니다.</p></article>
+          <article class="journey-card"><div class="journey-icon">🌱</div><p class="journey-step">STEP 03</p><h3>나의 제주를 키워요</h3><p>완주 기록은 제주방의 성장과 주변 로컬 발견으로 이어집니다.</p></article>
+        </div>
+      </div>
+      <aside class="speaker-note">사용 흐름은 세 단계입니다. 먼저 10개 코스 중 나에게 맞는 길을 고릅니다. 현장에서는 실제 보행 경로와 GPS 인증으로 출발과 도착을 확인합니다. 마지막으로 완주 기록이 제주방의 성장과 주변 로컬 장소 추천으로 이어집니다.</aside>
+    </section>
+
+    <section class="slide" data-index="04 / 07" aria-hidden="true">
+      <div class="slide-inner product-layout">
+        <div>
+          <p class="kicker">Core experience</p>
+          <h2>현장에서 필요한 정보만<br><span class="sea">한 화면에</span></h2>
+          <p class="lead">보기 좋은 코스 카드에서 실제 활동과 완주까지 끊김 없이 이어집니다.</p>
+          <div class="feature-list">
+            <div class="feature"><span class="feature-mark">✓</span><div><strong>OpenStreetMap 보행 경로</strong><span>경로선과 실제 좌표 기반 주변 장소</span></div></div>
+            <div class="feature"><span class="feature-mark">✓</span><div><strong>출발·도착 GPS 인증</strong><span>권한 거부와 오차 상황도 친절하게 안내</span></div></div>
+            <div class="feature"><span class="feature-mark">✓</span><div><strong>식당·카페·주차장 연결</strong><span>코스 전후의 선택을 한 화면에서 해결</span></div></div>
+          </div>
+        </div>
+        <div class="device-stage" aria-label="혼디길 코스 상세 화면 예시">
+          <div class="map-blob" aria-hidden="true"><span class="route"></span><span class="pin one"><span>☕</span></span><span class="pin two"><span>🍚</span></span></div>
+          <div class="phone">
+            <div class="phone-screen">
+              <div class="phone-hero"><div class="mini-brand">혼디길 · 애월</div><strong>애월 노을<br>해안길</strong></div>
+              <div class="phone-body">
+                <div class="phone-pills"><span class="phone-pill">러닝</span><span class="phone-pill">초급</span><span class="phone-pill">해안</span></div>
+                <div class="phone-stats"><div class="phone-stat"><b>5.0 km</b>거리</div><div class="phone-stat"><b>48분</b>예상</div><div class="phone-stat"><b>노을</b>추천</div></div>
+                <div class="phone-map" aria-hidden="true"></div>
+                <div class="phone-cta">이 코스 시작하기</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <aside class="speaker-note">핵심 화면은 현장 사용에 집중했습니다. 코스 상세에서 거리와 소요 시간, 준비물과 안전 정보를 바로 확인하고, 지도에서는 보행 경로와 식당·카페·주차장을 함께 봅니다. GPS 권한이 없거나 오차가 커도 사용자가 다음 행동을 알 수 있게 안내합니다.</aside>
+    </section>
+
+    <section class="slide" data-index="05 / 07" aria-hidden="true">
+      <div class="slide-inner growth-layout">
+        <div class="growth-visual" aria-label="완주 기록에 따라 성장하는 제주방">
+          <div class="growth-orbit" aria-hidden="true"></div>
+          <div class="growth-item stone"><img src="./static/assets/dol-hareubang.svg" alt="돌하르방"><span>완주가 쌓일수록</span></div>
+          <div class="growth-item seed"><img src="./static/assets/seed.svg" alt="귤나무 씨앗"><span>거리가 늘수록</span></div>
+          <div class="growth-item room"><div class="room-icon" aria-hidden="true">🏡</div><span>제주방이 성장</span></div>
+        </div>
+        <div class="growth-copy">
+          <p class="kicker">Motivation</p>
+          <h2>기록은 숫자보다<br><span class="accent">기억에 남아야</span> 합니다</h2>
+          <p class="lead">완주 횟수로 돌하르방이, 누적 거리로 귤나무가 자라며 나만의 제주방이 완성됩니다.</p>
+          <div class="metric-pair">
+            <div class="metric"><b>완주 횟수</b><span>돌하르방 레벨과 경험치</span></div>
+            <div class="metric"><b>누적 거리</b><span>귤나무의 성장 단계</span></div>
+          </div>
+        </div>
+      </div>
+      <aside class="speaker-note">혼디길의 차별점은 기록을 감정적인 보상으로 바꾼다는 점입니다. 완주 횟수에 따라 돌하르방이 성장하고, 누적 거리에 따라 귤나무가 자랍니다. 사용자는 숫자 목록이 아니라 ‘내가 만든 제주방’을 보며 다음 코스를 시작할 이유를 얻습니다.</aside>
+    </section>
+
+    <section class="slide" data-index="06 / 07" aria-hidden="true">
+      <div class="slide-inner">
+        <div class="system-title">
+          <div><p class="kicker">Reliable by design</p><h2>가볍게 시작하고<br><span class="leaf">안전하게 확장</span>합니다</h2></div>
+          <p class="lead">정적 배포만으로 핵심 경험을 제공하고, 필요할 때 서버와 운영 데이터 수집을 연결합니다.</p>
+        </div>
+        <div class="architecture" aria-label="혼디길 기술 구성">
+          <article class="arch-card"><div class="arch-icon">📱</div><h3>모바일 웹</h3><p>설치 없이 링크로 바로 시작하는 반응형 인터페이스</p><span class="arch-label">HTML · CSS · JS</span></article>
+          <article class="arch-card"><div class="arch-icon">💾</div><h3>로컬 우선</h3><p>네트워크가 불안해도 기록 흐름과 화면 상태를 유지</p><span class="arch-label">localStorage</span></article>
+          <article class="arch-card"><div class="arch-icon">🛡️</div><h3>서버 동기화</h3><p>세션·검증·관리 기능은 Django API로 안전하게 확장</p><span class="arch-label">Django REST</span></article>
+          <article class="arch-card optional"><div class="arch-icon">📊</div><h3>운영 인사이트</h3><p>필요한 이벤트만 선택적으로 수집하고 재전송을 관리</p><span class="arch-label">Optional · Sheets</span></article>
+        </div>
+      </div>
+      <aside class="speaker-note">구현은 정적 웹을 중심으로 설계했습니다. 그래서 GitHub Pages에서도 핵심 화면과 로컬 기록이 동작하고, 네트워크가 불안해도 흐름을 유지합니다. 서버가 연결되면 Django가 세션과 검증, 동기화를 담당하고, 운영 이벤트 수집은 선택적으로 확장할 수 있습니다.</aside>
+    </section>
+
+    <section class="slide closing" data-index="07 / 07" aria-hidden="true">
+      <div class="slide-inner">
+        <img class="closing-mark" src="./static/assets/hondigil-mark.svg" alt="혼디길">
+        <p class="kicker">One more path, one more Jeju</p>
+        <h2>제주를 <span class="accent">소비하는 여행</span>에서<br>나만의 제주를 <span class="accent">쌓는 여행</span>으로</h2>
+        <p class="lead">혼디길은 길을 추천하는 데서 끝나지 않고, 다시 걷고 싶은 이유를 만듭니다.</p>
+        <div class="closing-actions"><a class="closing-link" href="./index.html" target="_blank" rel="noopener">혼디길 직접 보기 →</a></div>
+        <p class="closing-note">감사합니다 · 질문을 받겠습니다</p>
+      </div>
+      <aside class="speaker-note">혼디길은 제주 코스를 추천하는 서비스에서 끝나지 않습니다. 한 번의 활동이 나만의 제주를 쌓는 경험이 되고, 다시 걷고 싶은 이유가 되도록 만들었습니다. 제주를 소비하는 여행에서 나만의 제주를 쌓는 여행으로, 혼디길입니다. 감사합니다.</aside>
+    </section>
+
+    <div class="keyboard-hint" aria-hidden="true"><span class="key">←</span><span class="key">→</span><span>이동</span><span class="key">N</span><span>노트</span><span class="key">F</span><span>전체화면</span></div>
+    <nav class="controls" aria-label="슬라이드 조작">
+      <button id="prevBtn" type="button" aria-label="이전 슬라이드">←</button>
+      <span class="counter" id="counter" aria-live="polite">1 / 7</span>
+      <button id="nextBtn" type="button" aria-label="다음 슬라이드">→</button>
+      <button id="notesBtn" type="button" aria-label="발표자 노트 열기" aria-pressed="false">N</button>
+      <button id="fullscreenBtn" type="button" aria-label="전체 화면으로 보기">⛶</button>
+    </nav>
+    <aside class="notes-panel" id="notesPanel" aria-live="polite"><strong id="notesTitle">발표자 노트 · 1 / 7</strong><p id="notesText"></p></aside>
+  </main>
+
+  <script>
+    (() => {
+      'use strict';
+      const deck = document.getElementById('deck');
+      const slides = [...document.querySelectorAll('.slide')];
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      const notesBtn = document.getElementById('notesBtn');
+      const fullscreenBtn = document.getElementById('fullscreenBtn');
+      const counter = document.getElementById('counter');
+      const notesPanel = document.getElementById('notesPanel');
+      const notesTitle = document.getElementById('notesTitle');
+      const notesText = document.getElementById('notesText');
+      const parsedHash = Number.parseInt(location.hash.slice(1), 10);
+      let current = Number.isFinite(parsedHash) ? Math.min(Math.max(parsedHash - 1, 0), slides.length - 1) : 0;
+      let touchStartX = null;
+
+      function update(next, direction = 1) {
+        const target = Math.min(Math.max(next, 0), slides.length - 1);
+        slides.forEach((slide, index) => {
+          slide.classList.toggle('active', index === target);
+          slide.classList.toggle('leaving', index !== target && ((direction > 0 && index < target) || (direction < 0 && index > target)));
+          slide.setAttribute('aria-hidden', String(index !== target));
+        });
+        current = target;
+        counter.textContent = `${current + 1} / ${slides.length}`;
+        prevBtn.disabled = current === 0;
+        nextBtn.disabled = current === slides.length - 1;
+        deck.style.setProperty('--progress', `${((current + 1) / slides.length) * 100}%`);
+        const note = slides[current].querySelector('.speaker-note');
+        notesTitle.textContent = `발표자 노트 · ${current + 1} / ${slides.length}`;
+        notesText.textContent = note ? note.textContent.trim() : '';
+        const newHash = `#${current + 1}`;
+        if (location.hash !== newHash) history.replaceState(null, '', newHash);
+      }
+
+      function move(step) { update(current + step, step); }
+      function toggleNotes(force) {
+        const open = typeof force === 'boolean' ? force : !notesPanel.classList.contains('open');
+        notesPanel.classList.toggle('open', open);
+        notesBtn.setAttribute('aria-pressed', String(open));
+        notesBtn.setAttribute('aria-label', open ? '발표자 노트 닫기' : '발표자 노트 열기');
+      }
+      async function toggleFullscreen() {
+        try {
+          if (!document.fullscreenElement && document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
+          else if (document.exitFullscreen) await document.exitFullscreen();
+        } catch (_) {
+          fullscreenBtn.setAttribute('title', '이 브라우저에서는 전체 화면을 사용할 수 없습니다.');
+        }
+      }
+
+      prevBtn.addEventListener('click', () => move(-1));
+      nextBtn.addEventListener('click', () => move(1));
+      notesBtn.addEventListener('click', () => toggleNotes());
+      fullscreenBtn.addEventListener('click', toggleFullscreen);
+      window.addEventListener('hashchange', () => {
+        const page = Number.parseInt(location.hash.slice(1), 10);
+        if (Number.isFinite(page)) update(page - 1, page - 1 >= current ? 1 : -1);
+      });
+      window.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowRight' || event.key === 'PageDown' || event.key === ' ') { event.preventDefault(); move(1); }
+        else if (event.key === 'ArrowLeft' || event.key === 'PageUp') { event.preventDefault(); move(-1); }
+        else if (event.key === 'Home') { event.preventDefault(); update(0, -1); }
+        else if (event.key === 'End') { event.preventDefault(); update(slides.length - 1, 1); }
+        else if (event.key.toLowerCase() === 'n') toggleNotes();
+        else if (event.key.toLowerCase() === 'f') toggleFullscreen();
+        else if (event.key === 'Escape') toggleNotes(false);
+      });
+      deck.addEventListener('touchstart', (event) => { touchStartX = event.changedTouches[0].clientX; }, {passive: true});
+      deck.addEventListener('touchend', (event) => {
+        if (touchStartX === null) return;
+        const delta = event.changedTouches[0].clientX - touchStartX;
+        if (Math.abs(delta) > 50) move(delta < 0 ? 1 : -1);
+        touchStartX = null;
+      }, {passive: true});
+      document.addEventListener('fullscreenchange', () => {
+        fullscreenBtn.textContent = document.fullscreenElement ? '×' : '⛶';
+        fullscreenBtn.setAttribute('aria-label', document.fullscreenElement ? '전체 화면 종료' : '전체 화면으로 보기');
+      });
+
+      update(current, 1);
+    })();
+  </script>
+</body>
+</html>
