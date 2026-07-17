@@ -2,2721 +2,936 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#C84A00">
-  <meta name="description" content="제주에서 가볍게 걷고 달린 뒤 완주 기록과 로컬 맛집을 만나는 혼디길">
-  <title>혼디길 | 제주 걷기와 러닝</title>
-  <link rel="preconnect" href="https://cdn.jsdelivr.net">
-  <link rel="preconnect" href="https://unpkg.com">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#fffaf0">
+  <meta name="description" content="혼디길 제주 러닝·트래킹 서비스 3분 소개 발표자료">
+  <title>혼디길 | 3분 서비스 소개</title>
   <style>
     :root {
-      --primary: #c84a00;
-      --primary-hover: #a83d00;
-      --primary-light: #fff0e6;
-      --secondary: #165a46;
-      --accent: #f3b61f;
-      --background: #f7f6f2;
-      --surface: #ffffff;
-      --border: #d8d5cd;
-      --text-primary: #22211f;
-      --text-secondary: #5f5c56;
-      --success: #16734f;
-      --warning: #9c5c00;
-      --error: #b3261e;
-      --radius: 12px;
-      --shadow: 0 4px 16px rgba(35, 30, 20, 0.08);
-      --content-width: 1040px;
+      --paper: #fffaf0;
+      --paper-deep: #f5efdf;
+      --surface: rgba(255, 255, 255, .9);
+      --ink: #25302c;
+      --muted: #66736d;
+      --line: rgba(69, 82, 79, .16);
+      --orange: #e85d24;
+      --orange-dark: #b83d0d;
+      --orange-soft: #fff0df;
+      --sea: #187a95;
+      --sea-soft: #e6f6f8;
+      --leaf: #477953;
+      --leaf-soft: #e9f4e8;
+      --basalt: #45524f;
+      --shadow: 0 24px 80px rgba(37, 48, 44, .16);
+      --shadow-soft: 0 12px 36px rgba(37, 48, 44, .1);
+      --radius: 2rem;
+      --font: Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
     }
 
-    *, *::before, *::after { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; min-height: 100%; }
+    html { background: #17201d; }
     body {
       margin: 0;
-      min-width: 320px;
-      background: var(--background);
-      color: var(--text-primary);
-      font-family: Pretendard Variable, Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      font-size: 16px;
-      line-height: 1.6;
+      overflow: hidden;
+      color: var(--ink);
+      background: #17201d;
+      font-family: var(--font);
+      line-height: 1.5;
       -webkit-font-smoothing: antialiased;
     }
-    button, input, select { font: inherit; }
-    button, a { -webkit-tap-highlight-color: transparent; }
+    button, a { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, a:focus-visible {
+      outline: 3px solid rgba(24, 122, 149, .55);
+      outline-offset: 3px;
+    }
     img { display: block; max-width: 100%; }
-    a { color: var(--secondary); text-underline-offset: 3px; }
-    button { cursor: pointer; }
-    button:disabled { cursor: not-allowed; opacity: 0.55; }
-    :focus-visible { outline: 3px solid var(--secondary); outline-offset: 3px; }
-    [hidden] { display: none !important; }
 
-    .skip-link {
-      position: fixed; z-index: 5000; left: 16px; top: 16px; transform: translateY(-220%); white-space: nowrap;
-      padding: 12px 16px; background: var(--text-primary); color: #fff;
-      border-radius: 8px; font-weight: 800;
+    .deck {
+      position: relative;
+      width: 100vw;
+      height: 100svh;
+      min-height: 34rem;
+      overflow: hidden;
+      background: var(--paper);
+      isolation: isolate;
     }
-    .skip-link:focus { transform: none; }
-    .app { min-height: 100vh; }
-    .site-header {
-      position: sticky; z-index: 900; top: 0;
-      background: rgba(255,255,255,0.97); border-bottom: 1px solid var(--border);
+    .deck::before {
+      content: "";
+      position: fixed;
+      z-index: 20;
+      top: 0;
+      left: 0;
+      width: var(--progress, 14.28%);
+      height: 4px;
+      background: var(--orange);
+      box-shadow: 0 0 18px rgba(232, 93, 36, .45);
+      transition: width .45s ease;
     }
-    .header-inner {
-      width: min(100% - 32px, var(--content-width)); min-height: 64px; margin: 0 auto;
-      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      align-items: center;
+      padding: clamp(4rem, 7vh, 6.5rem) clamp(3.25rem, 7vw, 8.5rem) clamp(4.5rem, 8vh, 7rem);
+      overflow: hidden;
+      visibility: hidden;
+      opacity: 0;
+      transform: translateX(2.5rem) scale(.992);
+      transition: opacity .38s ease, transform .48s cubic-bezier(.2, .78, .2, 1), visibility 0s .48s;
+      background:
+        radial-gradient(circle at 92% 3%, rgba(232, 93, 36, .12), transparent 24rem),
+        radial-gradient(circle at 1% 100%, rgba(24, 122, 149, .11), transparent 26rem),
+        var(--paper);
     }
-    .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--text-primary); text-decoration: none; font-size: 22px; font-weight: 900; }
-    .brand-mark { width: 30px; height: 30px; border-radius: 50%; background: var(--primary); position: relative; flex: 0 0 auto; }
-    .brand-mark::after { content: ""; position: absolute; width: 9px; height: 5px; right: 1px; top: -2px; border-radius: 8px 2px; background: var(--secondary); transform: rotate(-22deg); }
-    .header-user { color: var(--text-secondary); font-size: 15px; white-space: nowrap; }
-    .desktop-nav { display: none; align-items: center; gap: 4px; }
-    .desktop-nav button { min-height: 44px; border: 0; border-radius: 8px; padding: 8px 14px; background: transparent; color: var(--text-secondary); font-weight: 700; }
-    .desktop-nav button[aria-current="page"] { background: var(--primary-light); color: var(--primary); }
-
-    .main { width: min(100% - 32px, var(--content-width)); margin: 0 auto; padding: 24px 0 calc(112px + env(safe-area-inset-bottom)); }
-    .page { animation: page-in 0.18s ease-out; }
-    @keyframes page-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-    .page-header { margin-bottom: 24px; }
-    .eyebrow { margin: 0 0 4px; color: var(--primary); font-size: 15px; font-weight: 850; letter-spacing: -0.01em; }
-    h1, h2, h3, p { overflow-wrap: anywhere; }
-    h1 { margin: 0; font-size: clamp(28px, 7vw, 44px); line-height: 1.2; letter-spacing: -0.035em; }
-    h2 { margin: 0; font-size: clamp(23px, 5vw, 32px); line-height: 1.3; letter-spacing: -0.025em; }
-    h3 { margin: 0; font-size: 19px; line-height: 1.4; letter-spacing: -0.015em; }
-    .lead { margin: 12px 0 0; color: var(--text-secondary); font-size: 17px; }
-    .section { margin-top: 32px; }
-    .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
-    .section-heading p { margin: 0; color: var(--text-secondary); }
-
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-    .card-body { padding: 16px; }
-    .card-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
-    .image-wrap { position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: #e5e2da; }
-    .image-wrap img { width: 100%; height: 100%; object-fit: cover; }
-    .image-label { position: absolute; left: 12px; top: 12px; padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,0.94); color: var(--text-primary); font-weight: 800; font-size: 14px; }
-    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
-    .chip { display: inline-flex; align-items: center; min-height: 32px; padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px; background: var(--background); color: var(--text-secondary); font-size: 14px; font-weight: 700; }
-    .chip.primary { background: var(--primary-light); border-color: #f3c5aa; color: var(--primary); }
-    .course-description { margin: 0 0 16px; color: var(--text-secondary); }
-    .meta-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 16px 0; }
-    .meta-item { padding: 12px; border-radius: 8px; background: var(--background); }
-    .meta-item dt { color: var(--text-secondary); font-size: 14px; }
-    .meta-item dd { margin: 2px 0 0; font-weight: 800; }
-
-    .btn { min-height: 48px; border-radius: 10px; border: 1px solid transparent; padding: 11px 18px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-align: center; text-decoration: none; font-weight: 850; transition: background-color .2s ease, border-color .2s ease, color .2s ease; }
-    .btn-primary { background: var(--primary); color: #fff; }
-    .btn-primary:hover { background: var(--primary-hover); }
-    .btn-secondary { background: var(--surface); color: var(--secondary); border-color: var(--secondary); }
-    .btn-secondary:hover { background: #edf5f1; }
-    .btn-text { background: transparent; color: var(--secondary); border-color: transparent; }
-    .btn-danger { background: var(--surface); color: var(--error); border-color: var(--error); }
-    .btn-block { width: 100%; }
-    .button-row { display: flex; flex-wrap: wrap; gap: 8px; }
-    .button-row .btn { flex: 1 1 180px; }
-
-    .hero { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
-    .hero-copy { padding: 24px; }
-    .hero-copy .lead { max-width: 620px; }
-    .hero-copy .btn { margin-top: 24px; width: 100%; }
-    .hero-image { min-height: 220px; background: #dfe5df; }
-    .hero-image img { width: 100%; height: 100%; min-height: 220px; object-fit: cover; }
-    .summary-card { padding: 20px; display: grid; gap: 16px; }
-    .summary-number { display: block; color: var(--primary); font-size: 30px; font-weight: 900; line-height: 1; }
-    .empty-state { padding: 32px 20px; border: 1px dashed var(--border); border-radius: var(--radius); background: var(--surface); text-align: center; color: var(--text-secondary); }
-    .empty-state h3 { color: var(--text-primary); margin-bottom: 8px; }
-
-    .filter-panel { padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 24px; }
-    .filter-label { display: block; margin-bottom: 8px; font-weight: 850; }
-    .filter-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-    .filter-chip { min-height: 44px; padding: 8px 14px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text-secondary); font-weight: 750; }
-    .filter-chip[aria-pressed="true"] { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
-    .filter-selects { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 16px; }
-    .field label { display: block; margin-bottom: 6px; font-weight: 800; }
-    .input, .select { width: 100%; min-height: 52px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text-primary); padding: 12px 14px; }
-    .input:focus, .select:focus { border-color: var(--secondary); }
-    .help { margin: 6px 0 0; color: var(--text-secondary); font-size: 15px; }
-
-    .detail-hero { margin: -24px -16px 0; }
-    .detail-hero .image-wrap { aspect-ratio: 4 / 3; }
-    .detail-content { max-width: 820px; margin: 0 auto; }
-    .detail-title { margin-top: 24px; }
-    .info-block { padding: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
-    .info-block + .info-block { margin-top: 16px; }
-    .info-block h3 { margin-bottom: 8px; }
-    .info-block p, .info-block ul { margin: 0; color: var(--text-secondary); }
-    .info-block ul { padding-left: 22px; }
-    .map-shell { min-height: 330px; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: #e7ebe7; position: relative; }
-    #course-map { width: 100%; min-height: 330px; }
-    .map-fallback { min-height: 330px; padding: 24px; display: grid; place-items: center; text-align: center; color: var(--text-secondary); }
-    .sticky-action { position: sticky; bottom: calc(80px + env(safe-area-inset-bottom)); z-index: 700; margin-top: 24px; padding: 12px; border: 1px solid var(--border); border-radius: 14px; background: rgba(255,255,255,0.97); box-shadow: var(--shadow); }
-
-    .progress-hero { padding: 24px; background: var(--secondary); color: #fff; border-radius: 16px; }
-    .progress-hero .eyebrow { color: #dff4eb; }
-    .progress-time { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 20px; }
-    .progress-time div { padding: 12px; border: 1px solid rgba(255,255,255,.35); border-radius: 8px; }
-    .progress-time span { display: block; color: #e4f2ed; font-size: 14px; }
-    .progress-time strong { display: block; margin-top: 2px; font-size: 20px; }
-    .step-list { display: grid; gap: 12px; }
-    .step-card { padding: 18px; display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: start; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
-    .step-number { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: var(--background); border: 1px solid var(--border); font-weight: 900; }
-    .step-card.complete { border-color: var(--success); }
-    .step-card.complete .step-number { background: var(--success); border-color: var(--success); color: #fff; }
-    .step-card.current { border-width: 2px; border-color: var(--primary); }
-    .step-card p { margin: 4px 0 0; color: var(--text-secondary); }
-    .status-box { margin-top: 16px; padding: 14px; border-left: 4px solid var(--secondary); background: #edf5f1; border-radius: 8px; }
-    .status-box.error { border-color: var(--error); background: #fff0ef; color: var(--error); }
-    .status-box.warning { border-color: var(--warning); background: #fff8e8; color: #704200; }
-    .verification-actions { display: grid; gap: 8px; margin-top: 16px; }
-    .photo-preview { margin-top: 16px; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-    .photo-preview img { width: 100%; max-height: 420px; object-fit: cover; }
-    .photo-preview-footer { padding: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-    .file-input { position: absolute; inline-size: 1px; block-size: 1px; opacity: 0; pointer-events: none; }
-
-    .result-banner { padding: 28px 24px; background: var(--primary-light); border: 1px solid #f0b996; border-radius: 16px; text-align: center; }
-    .result-badge { display: inline-flex; min-height: 36px; align-items: center; padding: 6px 12px; background: var(--primary); color: #fff; border-radius: 999px; font-weight: 850; }
-    .result-banner h1 { margin-top: 12px; }
-    .check-list { display: grid; gap: 8px; margin: 16px 0 0; padding: 0; list-style: none; }
-    .check-list li { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--border); }
-    .check-list strong { color: var(--success); }
-
-    .restaurant-card .card-body { display: grid; gap: 12px; }
-    .restaurant-actions { display: grid; grid-template-columns: 1fr; gap: 8px; }
-    .profile-card { padding: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; }
-    .profile-id { color: var(--text-secondary); }
-    .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-    .stat-card { padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
-    .stat-card span { display: block; color: var(--text-secondary); font-size: 14px; }
-    .stat-card strong { display: block; margin-top: 4px; font-size: 24px; }
-    .record-list { display: grid; gap: 12px; }
-    .record-item { padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
-    .record-item p { margin: 6px 0 0; color: var(--text-secondary); }
-    .settings-list { display: grid; gap: 12px; }
-    .setting-card { padding: 20px; display: grid; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
-
-    .admin-warning { padding: 16px; border: 1px solid #e2b36d; background: #fff8e8; border-radius: var(--radius); color: #674200; }
-    .admin-login { max-width: 520px; margin: 32px auto; }
-    .admin-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
-    table { width: 100%; border-collapse: collapse; min-width: 600px; }
-    th, td { padding: 12px 14px; border-bottom: 1px solid var(--border); text-align: left; }
-    th { background: var(--background); color: var(--text-secondary); font-size: 14px; }
-    tr:last-child td { border-bottom: 0; }
-
-    .bottom-nav { position: fixed; z-index: 1000; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(4, 1fr); padding: 7px 8px calc(7px + env(safe-area-inset-bottom)); background: rgba(255,255,255,.98); border-top: 1px solid var(--border); }
-    .bottom-nav button { min-height: 58px; border: 0; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: transparent; color: var(--text-secondary); font-size: 13px; font-weight: 750; }
-    .bottom-nav button[aria-current="page"] { color: var(--primary); background: var(--primary-light); }
-    .nav-icon { position: relative; width: 22px; height: 20px; display: block; }
-    .nav-icon.home::before { content: ""; position: absolute; left: 4px; bottom: 1px; width: 14px; height: 12px; border: 2px solid currentColor; border-top: 0; border-radius: 2px; }
-    .nav-icon.home::after { content: ""; position: absolute; left: 4px; top: 1px; width: 13px; height: 13px; border-left: 2px solid currentColor; border-top: 2px solid currentColor; transform: rotate(45deg); border-radius: 2px; }
-    .nav-icon.courses::before { content: ""; position: absolute; left: 2px; top: 3px; width: 18px; height: 2px; background: currentColor; box-shadow: 0 6px 0 currentColor, 0 12px 0 currentColor; }
-    .nav-icon.room::before { content: ""; position: absolute; left: 7px; top: 0; width: 8px; height: 8px; border: 2px solid currentColor; border-radius: 50%; }
-    .nav-icon.room::after { content: ""; position: absolute; left: 3px; bottom: 0; width: 16px; height: 8px; border: 2px solid currentColor; border-bottom: 0; border-radius: 12px 12px 0 0; }
-    .nav-icon.more::before { content: ""; position: absolute; left: 1px; top: 8px; width: 4px; height: 4px; border-radius: 50%; background: currentColor; box-shadow: 8px 0 0 currentColor, 16px 0 0 currentColor; }
-
-    .onboarding { min-height: 100vh; display: grid; place-items: center; padding: 32px 16px; background: var(--background); }
-    .onboarding-card { width: min(100%, 560px); background: var(--surface); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; box-shadow: var(--shadow); }
-    .onboarding-image { height: 220px; }
-    .onboarding-image img { width: 100%; height: 100%; object-fit: cover; }
-    .onboarding-copy { padding: 24px; }
-    .onboarding-copy .brand { margin-bottom: 24px; }
-    .onboarding-copy form { margin-top: 24px; }
-    .form-message { min-height: 24px; margin: 8px 0 0; color: var(--error); font-weight: 700; }
-
-    .modal-backdrop { position: fixed; z-index: 3000; inset: 0; padding: 16px; display: grid; place-items: center; background: rgba(20,20,18,.58); }
-    .modal { width: min(100%, 520px); max-height: min(720px, 90vh); overflow-y: auto; padding: 24px; background: var(--surface); border-radius: 16px; box-shadow: 0 16px 44px rgba(0,0,0,.25); }
-    .modal p { color: var(--text-secondary); }
-    .modal-actions { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 24px; }
-    .toast { position: fixed; z-index: 4000; left: 50%; bottom: calc(92px + env(safe-area-inset-bottom)); width: min(calc(100% - 32px), 520px); transform: translateX(-50%); padding: 14px 16px; border-radius: 10px; background: var(--text-primary); color: #fff; text-align: center; font-weight: 750; box-shadow: var(--shadow); }
-
-    @media (min-width: 640px) {
-      .main { padding-top: 32px; }
-      .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .filter-selects { grid-template-columns: repeat(2, 1fr); }
-      .hero { display: grid; grid-template-columns: 1.05fr .95fr; }
-      .hero-copy { padding: 32px; align-self: center; }
-      .hero-copy .btn { width: auto; }
-      .hero-image, .hero-image img { min-height: 360px; }
-      .detail-hero { margin: 0; border-radius: 16px; overflow: hidden; }
-      .detail-hero .image-wrap { aspect-ratio: 16 / 8; }
-      .restaurant-actions { grid-template-columns: repeat(2, 1fr); }
-      .stat-grid { grid-template-columns: repeat(4, 1fr); }
-      .modal-actions { grid-template-columns: repeat(2, 1fr); }
+    .slide.active {
+      z-index: 2;
+      visibility: visible;
+      opacity: 1;
+      transform: translateX(0) scale(1);
+      transition-delay: 0s;
     }
-    @media (min-width: 860px) {
-      .desktop-nav { display: flex; }
-      .header-user { display: none; }
-      .bottom-nav { display: none; }
-      .main { padding-bottom: 64px; }
-      .sticky-action { bottom: 16px; }
-      .toast { bottom: 32px; }
-      .card-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .detail-content { padding-top: 8px; }
+    .slide.leaving {
+      visibility: visible;
+      transform: translateX(-2.5rem) scale(.992);
     }
+    .slide::after {
+      content: attr(data-index);
+      position: absolute;
+      right: clamp(2rem, 4vw, 4.5rem);
+      bottom: clamp(1.5rem, 3vh, 2.5rem);
+      color: rgba(37, 48, 44, .34);
+      font-size: .76rem;
+      font-weight: 900;
+      letter-spacing: .16em;
+    }
+
+    .slide-inner {
+      width: min(100%, 96rem);
+      margin: 0 auto;
+    }
+    .kicker {
+      display: flex;
+      align-items: center;
+      gap: .65rem;
+      margin: 0 0 .8rem;
+      color: var(--orange-dark);
+      font-size: clamp(.72rem, 1vw, .95rem);
+      font-weight: 900;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .kicker::before {
+      content: "";
+      width: 1.75rem;
+      height: 3px;
+      border-radius: 999px;
+      background: var(--orange);
+    }
+    h1, h2, h3, p { margin-top: 0; word-break: keep-all; overflow-wrap: break-word; }
+    h1, h2, h3 { line-height: 1.13; letter-spacing: -.055em; }
+    h1 { margin-bottom: 1.35rem; font-size: clamp(3.5rem, 7.3vw, 8.5rem); }
+    h2 { margin-bottom: 1rem; font-size: clamp(2.4rem, 4.5vw, 5.6rem); }
+    h3 { margin-bottom: .6rem; font-size: clamp(1.15rem, 1.7vw, 1.85rem); }
+    .lead {
+      max-width: 48rem;
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: clamp(1rem, 1.55vw, 1.65rem);
+      letter-spacing: -.025em;
+    }
+    .accent { color: var(--orange); }
+    .sea { color: var(--sea); }
+    .leaf { color: var(--leaf); }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 2.2rem;
+      padding: .45rem .82rem;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .7);
+      color: var(--muted);
+      font-size: clamp(.72rem, .92vw, .9rem);
+      font-weight: 850;
+    }
+
+    /* 01 · Cover */
+    .cover {
+      padding: 0;
+      align-items: stretch;
+      background: #20342b;
+    }
+    .cover::after { color: rgba(255, 255, 255, .55); }
+    .cover-media {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 63% center;
+      filter: saturate(.83) contrast(.98);
+    }
+    .cover-shade {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(28, 39, 35, .94) 0%, rgba(28, 39, 35, .79) 33%, rgba(28, 39, 35, .14) 72%),
+        linear-gradient(0deg, rgba(23, 32, 29, .58), transparent 42%);
+    }
+    .cover-content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      width: min(100%, 96rem);
+      height: 100%;
+      margin: 0 auto;
+      padding: clamp(4rem, 7vh, 7rem) clamp(3.25rem, 7vw, 8.5rem);
+      color: #fffdf7;
+    }
+    .brand-lockup {
+      display: flex;
+      align-items: center;
+      gap: .85rem;
+      margin-bottom: clamp(2.5rem, 7vh, 6rem);
+      font-size: clamp(1.25rem, 1.8vw, 2rem);
+      font-weight: 950;
+      letter-spacing: -.05em;
+    }
+    .brand-lockup img {
+      width: clamp(2.8rem, 4vw, 4.4rem);
+      height: clamp(2.8rem, 4vw, 4.4rem);
+      border-radius: 1rem;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, .2);
+    }
+    .cover h1 {
+      max-width: 9em;
+      margin-bottom: 1.4rem;
+      font-size: clamp(3.5rem, 6.2vw, 7.25rem);
+      text-shadow: 0 5px 28px rgba(0, 0, 0, .15);
+    }
+    .cover .lead { max-width: 34rem; color: rgba(255, 255, 255, .78); }
+    .cover-tags { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 2rem; }
+    .cover .tag { border-color: rgba(255,255,255,.22); background: rgba(28,39,35,.38); color: #fff; backdrop-filter: blur(8px); }
+
+    /* 02 · Problem */
+    .problem-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(32rem, .9fr);
+      gap: clamp(2rem, 6vw, 7rem);
+      align-items: center;
+    }
+    .question-line {
+      margin-top: 2rem;
+      color: var(--leaf);
+      font-size: clamp(1.05rem, 1.55vw, 1.55rem);
+      font-weight: 900;
+      letter-spacing: -.035em;
+    }
+    .pain-stack { display: grid; gap: 1rem; }
+    .pain-card {
+      position: relative;
+      display: grid;
+      grid-template-columns: 3.4rem 1fr;
+      gap: 1.1rem;
+      align-items: center;
+      padding: clamp(1rem, 1.5vw, 1.5rem);
+      border: 1px solid var(--line);
+      border-radius: 1.5rem;
+      background: var(--surface);
+      box-shadow: var(--shadow-soft);
+    }
+    .pain-card:nth-child(2) { transform: translateX(2.2rem); }
+    .pain-no {
+      display: grid;
+      place-items: center;
+      width: 3.4rem;
+      height: 3.4rem;
+      border-radius: 1.1rem;
+      background: var(--orange-soft);
+      color: var(--orange-dark);
+      font-size: 1rem;
+      font-weight: 950;
+    }
+    .pain-card h3 { margin: 0 0 .25rem; }
+    .pain-card p { margin: 0; color: var(--muted); font-size: clamp(.78rem, 1vw, 1rem); }
+
+    /* 03 · Solution */
+    .solution .slide-inner { align-self: center; }
+    .solution-title { display: flex; justify-content: space-between; gap: 2rem; align-items: end; }
+    .solution-title .lead { max-width: 34rem; padding-bottom: .65rem; text-align: right; }
+    .journey {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: clamp(1rem, 2vw, 2rem);
+      margin-top: clamp(2.5rem, 6vh, 5rem);
+    }
+    .journey::before {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      top: 2.35rem;
+      left: 15%;
+      right: 15%;
+      border-top: 3px dashed rgba(71, 121, 83, .3);
+    }
+    .journey-card {
+      min-height: clamp(14.5rem, 29vh, 20rem);
+      padding: clamp(1.4rem, 2.2vw, 2.2rem);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow-soft);
+    }
+    .journey-card:nth-child(2) { background: linear-gradient(155deg, #fff, var(--sea-soft)); }
+    .journey-card:nth-child(3) { background: linear-gradient(155deg, #fff, var(--leaf-soft)); }
+    .journey-icon {
+      display: grid;
+      place-items: center;
+      width: 4.8rem;
+      height: 4.8rem;
+      margin-bottom: 1.8rem;
+      border: 6px solid var(--paper);
+      border-radius: 1.55rem;
+      background: var(--orange);
+      color: #fff;
+      box-shadow: 0 9px 24px rgba(232, 93, 36, .22);
+      font-size: 2rem;
+    }
+    .journey-card:nth-child(2) .journey-icon { background: var(--sea); box-shadow: 0 9px 24px rgba(24, 122, 149, .2); }
+    .journey-card:nth-child(3) .journey-icon { background: var(--leaf); box-shadow: 0 9px 24px rgba(71, 121, 83, .2); }
+    .journey-step { margin: 0 0 .25rem; color: var(--muted); font-size: .78rem; font-weight: 900; letter-spacing: .1em; }
+    .journey-card p:last-child { margin: .9rem 0 0; color: var(--muted); font-size: clamp(.82rem, 1.04vw, 1.05rem); }
+
+    /* 04 · Product */
+    .product-layout {
+      display: grid;
+      grid-template-columns: minmax(0, .88fr) minmax(32rem, 1.12fr);
+      gap: clamp(2rem, 5vw, 6rem);
+      align-items: center;
+    }
+    .feature-list { display: grid; gap: .75rem; margin-top: 2rem; }
+    .feature {
+      display: grid;
+      grid-template-columns: 2rem 1fr;
+      gap: .8rem;
+      align-items: start;
+      padding: .75rem 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .feature:last-child { border-bottom: 0; }
+    .feature-mark {
+      display: grid;
+      place-items: center;
+      width: 2rem;
+      height: 2rem;
+      border-radius: .7rem;
+      background: var(--leaf-soft);
+      color: var(--leaf);
+      font-size: .9rem;
+      font-weight: 950;
+    }
+    .feature strong { display: block; margin-bottom: .15rem; font-size: clamp(.95rem, 1.17vw, 1.2rem); }
+    .feature span { color: var(--muted); font-size: clamp(.76rem, .92vw, .95rem); }
+    .device-stage {
+      position: relative;
+      display: grid;
+      place-items: center;
+      min-height: clamp(27rem, 62vh, 45rem);
+    }
+    .map-blob {
+      position: absolute;
+      inset: 7% 0 8% 12%;
+      overflow: hidden;
+      border-radius: 4rem 2rem 4rem 2rem;
+      background:
+        linear-gradient(29deg, transparent 48%, rgba(255,255,255,.75) 49% 51%, transparent 52%),
+        linear-gradient(150deg, #ccecf2 0 43%, #9fc8a4 43% 65%, #78a381 65%);
+      transform: rotate(2deg);
+    }
+    .route {
+      position: absolute;
+      left: 15%;
+      top: 44%;
+      width: 58%;
+      height: 34%;
+      border: .5rem solid var(--orange);
+      border-left-color: transparent;
+      border-bottom-color: transparent;
+      border-radius: 50%;
+      transform: rotate(-12deg);
+      filter: drop-shadow(0 3px 0 rgba(255,255,255,.75));
+    }
+    .pin {
+      position: absolute;
+      display: grid;
+      place-items: center;
+      width: 2.6rem;
+      height: 2.6rem;
+      border: 4px solid #fff;
+      border-radius: 50% 50% 50% 12%;
+      background: var(--sea);
+      color: #fff;
+      box-shadow: 0 6px 18px rgba(22, 57, 62, .24);
+      transform: rotate(-45deg);
+    }
+    .pin span { transform: rotate(45deg); font-size: 1rem; }
+    .pin.one { top: 25%; right: 16%; }
+    .pin.two { bottom: 20%; left: 13%; background: var(--orange); }
+    .phone {
+      position: relative;
+      z-index: 1;
+      width: min(22rem, 43vw);
+      padding: .7rem;
+      border: 1px solid rgba(255,255,255,.75);
+      border-radius: 2.6rem;
+      background: #21302b;
+      box-shadow: 0 30px 70px rgba(25, 40, 35, .28);
+      transform: rotate(-3deg);
+    }
+    .phone-screen {
+      overflow: hidden;
+      min-height: 31rem;
+      border-radius: 2.05rem;
+      background: var(--paper);
+    }
+    .phone-hero {
+      position: relative;
+      min-height: 9.6rem;
+      padding: 1.35rem;
+      background: linear-gradient(145deg, #dff5fb, #f8fbef);
+    }
+    .phone-hero::after { content: "🌅"; position: absolute; right: 1.1rem; bottom: .6rem; font-size: 4.7rem; }
+    .phone-hero .mini-brand { margin-bottom: 2.25rem; color: var(--orange-dark); font-size: .7rem; font-weight: 900; }
+    .phone-hero strong { position: relative; z-index: 1; display: block; max-width: 12rem; font-size: 1.28rem; line-height: 1.12; letter-spacing: -.05em; }
+    .phone-body { padding: 1.2rem; }
+    .phone-pills { display: flex; gap: .4rem; margin-bottom: .9rem; }
+    .phone-pill { padding: .35rem .55rem; border-radius: 999px; background: #fff; border: 1px solid var(--line); font-size: .6rem; font-weight: 800; }
+    .phone-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: .45rem; margin-bottom: .9rem; }
+    .phone-stat { padding: .65rem .4rem; border-radius: .85rem; background: #f3efe5; text-align: center; font-size: .58rem; color: var(--muted); }
+    .phone-stat b { display: block; margin-bottom: .1rem; color: var(--ink); font-size: .78rem; }
+    .phone-map { position: relative; height: 7.5rem; overflow: hidden; border-radius: 1.05rem; background: linear-gradient(145deg,#cdeaf0 0 45%,#a7c9ac 45%); }
+    .phone-map::before { content: ""; position: absolute; width: 75%; height: 75%; left: 8%; top: 9%; border: .35rem solid var(--orange); border-left-color: transparent; border-radius: 50%; transform: rotate(-14deg); }
+    .phone-cta { margin-top: .85rem; padding: .8rem; border-radius: .9rem; background: var(--orange); color: #fff; text-align: center; font-size: .72rem; font-weight: 900; }
+
+    /* 05 · Growth */
+    .growth-layout {
+      display: grid;
+      grid-template-columns: minmax(29rem, 1.05fr) minmax(0, .95fr);
+      gap: clamp(2rem, 6vw, 7rem);
+      align-items: center;
+    }
+    .growth-visual {
+      position: relative;
+      min-height: clamp(26rem, 62vh, 43rem);
+      border: 1px solid var(--line);
+      border-radius: 3rem;
+      background: linear-gradient(160deg, #fff, #eff7ee 60%, #e3f2f2);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .growth-visual::before {
+      content: "";
+      position: absolute;
+      left: -12%;
+      right: -12%;
+      bottom: -26%;
+      height: 58%;
+      border-radius: 50% 50% 0 0;
+      background: var(--leaf);
+      box-shadow: 0 -1.4rem 0 #83af7d;
+    }
+    .growth-orbit {
+      position: absolute;
+      inset: 10% 10% 21%;
+      border: 2px dashed rgba(71, 121, 83, .28);
+      border-radius: 50%;
+      transform: rotate(-8deg);
+    }
+    .growth-item {
+      position: absolute;
+      z-index: 1;
+      display: grid;
+      place-items: center;
+      width: clamp(7rem, 11vw, 11rem);
+      aspect-ratio: 1;
+      padding: 1rem;
+      border: 1px solid rgba(69,82,79,.13);
+      border-radius: 2rem;
+      background: rgba(255,255,255,.92);
+      box-shadow: var(--shadow-soft);
+      text-align: center;
+    }
+    .growth-item img { width: 62%; height: 62%; object-fit: contain; }
+    .growth-item span { margin-top: .35rem; font-size: clamp(.62rem, .82vw, .85rem); font-weight: 900; }
+    .growth-item.stone { left: 9%; bottom: 17%; transform: rotate(-5deg); }
+    .growth-item.seed { top: 9%; left: 38%; transform: rotate(3deg); }
+    .growth-item.room { right: 6%; bottom: 25%; transform: rotate(6deg); }
+    .room-icon { font-size: clamp(3.6rem, 6vw, 6.2rem); line-height: 1; }
+    .growth-copy .lead { margin-bottom: 2rem; }
+    .metric-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .metric {
+      padding: 1.3rem;
+      border: 1px solid var(--line);
+      border-radius: 1.35rem;
+      background: rgba(255,255,255,.78);
+    }
+    .metric b { display: block; margin-bottom: .25rem; color: var(--orange); font-size: clamp(1.55rem, 2.3vw, 2.6rem); letter-spacing: -.05em; }
+    .metric span { color: var(--muted); font-size: clamp(.74rem, .95vw, .96rem); }
+
+    /* 06 · System */
+    .system-title { display: grid; grid-template-columns: 1fr .8fr; gap: 2rem; align-items: end; }
+    .system-title .lead { justify-self: end; max-width: 34rem; padding-bottom: .7rem; text-align: right; }
+    .architecture {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: clamp(.75rem, 1.6vw, 1.5rem);
+      margin-top: clamp(2.4rem, 6vh, 5rem);
+    }
+    .arch-card {
+      position: relative;
+      min-height: clamp(14.5rem, 30vh, 21rem);
+      padding: clamp(1.2rem, 1.8vw, 1.9rem);
+      border: 1px solid var(--line);
+      border-radius: 1.65rem;
+      background: rgba(255,255,255,.84);
+      box-shadow: var(--shadow-soft);
+    }
+    .arch-card:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      z-index: 2;
+      top: 50%;
+      right: calc(clamp(.75rem, 1.6vw, 1.5rem) * -.78);
+      display: grid;
+      place-items: center;
+      width: 1.75rem;
+      height: 1.75rem;
+      border-radius: 50%;
+      background: var(--paper);
+      color: var(--leaf);
+      font-weight: 950;
+      transform: translate(50%, -50%);
+    }
+    .arch-card.optional { border-style: dashed; background: rgba(230,246,248,.58); }
+    .arch-icon { margin-bottom: 1.5rem; font-size: clamp(1.9rem, 2.6vw, 3rem); }
+    .arch-card p { margin: .8rem 0 0; color: var(--muted); font-size: clamp(.74rem, .9vw, .92rem); }
+    .arch-label { position: absolute; left: 1.3rem; bottom: 1.25rem; color: var(--leaf); font-size: .66rem; font-weight: 950; letter-spacing: .08em; text-transform: uppercase; }
+    .optional .arch-label { color: var(--sea); }
+
+    /* 07 · Closing */
+    .closing {
+      color: #fffdf7;
+      background:
+        radial-gradient(circle at 86% 18%, rgba(232, 93, 36, .25), transparent 24rem),
+        radial-gradient(circle at 12% 90%, rgba(24, 122, 149, .23), transparent 30rem),
+        #20342b;
+    }
+    .closing::after { color: rgba(255, 255, 255, .5); }
+    .closing .slide-inner { text-align: center; transform: translateY(-2.5rem); }
+    .closing .kicker { justify-content: center; color: #ffb17f; }
+    .closing h2 { max-width: 13ch; margin: 0 auto 1.4rem; font-size: clamp(3rem, 5.8vw, 7.2rem); }
+    .closing .lead { max-width: 42rem; margin: 0 auto; color: rgba(255,255,255,.72); }
+    .closing-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: .75rem; margin-top: 2.3rem; }
+    .closing-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 3.4rem;
+      padding: .85rem 1.4rem;
+      border-radius: 1rem;
+      background: var(--orange);
+      color: #fff;
+      font-weight: 900;
+      text-decoration: none;
+      box-shadow: 0 12px 28px rgba(232, 93, 36, .24);
+    }
+    .closing-note { margin: 1.4rem 0 0; color: rgba(255,255,255,.54); font-size: .78rem; }
+    .closing-mark {
+      width: clamp(5rem, 8vw, 8rem);
+      margin: 0 auto 1.8rem;
+      border-radius: 2rem;
+      box-shadow: 0 18px 42px rgba(0,0,0,.22);
+    }
+
+    /* Controls & notes */
+    .controls {
+      position: fixed;
+      z-index: 50;
+      left: 50%;
+      bottom: max(1rem, env(safe-area-inset-bottom));
+      display: flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .38rem;
+      border: 1px solid rgba(255,255,255,.4);
+      border-radius: 999px;
+      background: rgba(31, 43, 39, .82);
+      box-shadow: 0 10px 30px rgba(0,0,0,.2);
+      backdrop-filter: blur(12px);
+      transform: translateX(-50%);
+      transition: opacity .2s ease;
+    }
+    .controls button {
+      display: grid;
+      place-items: center;
+      min-width: 2.45rem;
+      height: 2.45rem;
+      padding: 0 .7rem;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: #fff;
+      cursor: pointer;
+    }
+    .controls button:hover { background: rgba(255,255,255,.12); }
+    .controls button:disabled { opacity: .32; cursor: default; }
+    .counter { min-width: 3.4rem; color: rgba(255,255,255,.75); text-align: center; font-size: .75rem; font-variant-numeric: tabular-nums; }
+    .keyboard-hint {
+      position: fixed;
+      z-index: 30;
+      right: clamp(1.5rem, 3vw, 3rem);
+      top: clamp(1.2rem, 2.5vh, 2.2rem);
+      display: flex;
+      gap: .45rem;
+      color: rgba(37,48,44,.42);
+      font-size: .68rem;
+      font-weight: 800;
+    }
+    .cover .keyboard-hint, .closing .keyboard-hint { color: rgba(255,255,255,.58); }
+    .key { padding: .2rem .42rem; border: 1px solid currentColor; border-radius: .42rem; }
+    .notes-panel {
+      position: fixed;
+      z-index: 60;
+      right: 1rem;
+      bottom: 5rem;
+      width: min(28rem, calc(100vw - 2rem));
+      padding: 1.25rem 1.35rem;
+      border: 1px solid rgba(255,255,255,.36);
+      border-radius: 1.2rem;
+      background: rgba(25, 34, 31, .94);
+      color: #fff;
+      box-shadow: 0 22px 60px rgba(0,0,0,.3);
+      backdrop-filter: blur(14px);
+      visibility: hidden;
+      opacity: 0;
+      transform: translateY(.75rem);
+      transition: .2s ease;
+    }
+    .notes-panel.open { visibility: visible; opacity: 1; transform: translateY(0); }
+    .notes-panel strong { display: block; margin-bottom: .55rem; color: #ffb17f; font-size: .72rem; letter-spacing: .08em; }
+    .notes-panel p { margin: 0; color: rgba(255,255,255,.82); font-size: .9rem; line-height: 1.7; }
+    .speaker-note { display: none; }
+
+    @media (max-width: 900px) {
+      .deck { min-height: 40rem; }
+      .slide { padding: 4.3rem 1.4rem 5.5rem; overflow-y: auto; }
+      .slide-inner { margin: auto; }
+      .problem-layout, .product-layout, .growth-layout { grid-template-columns: 1fr; gap: 2rem; }
+      .problem-layout { align-content: center; }
+      .pain-stack { grid-template-columns: repeat(3, 1fr); }
+      .pain-card { grid-template-columns: 1fr; align-content: start; }
+      .pain-card:nth-child(2) { transform: none; }
+      .journey { gap: .65rem; }
+      .journey-card { min-height: 13rem; padding: 1.1rem; }
+      .journey-icon { width: 3.6rem; height: 3.6rem; margin-bottom: 1rem; border-width: 4px; font-size: 1.5rem; }
+      .product-layout { grid-template-columns: .85fr 1.15fr; }
+      .product-layout h2 { font-size: clamp(2rem, 6vw, 3.8rem); }
+      .feature-list { margin-top: 1rem; }
+      .feature { padding: .45rem 0; }
+      .device-stage { min-height: 28rem; }
+      .phone { width: min(19rem, 43vw); }
+      .phone-screen { min-height: 27rem; }
+      .phone-map { height: 5rem; }
+      .growth-layout { grid-template-columns: .95fr 1.05fr; }
+      .growth-visual { min-height: 27rem; }
+      .architecture { grid-template-columns: repeat(2, 1fr); }
+      .arch-card { min-height: 10rem; }
+      .arch-card:nth-child(2)::after { display: none; }
+      .system-title { grid-template-columns: 1fr; }
+      .system-title .lead { justify-self: start; padding: 0; text-align: left; }
+    }
+
+    @media (max-width: 640px) {
+      body { overflow-x: hidden; overflow-y: auto; }
+      .deck { min-height: 100svh; height: auto; }
+      .slide { position: relative; display: none; min-height: 100svh; }
+      .slide.active { display: grid; }
+      h1 { font-size: clamp(3rem, 17vw, 5rem); }
+      h2 { font-size: clamp(2.2rem, 11vw, 3.5rem); }
+      .cover { min-height: 100svh; padding: 0; }
+      .cover-content { padding: 4rem 1.5rem 6rem; }
+      .cover h1 { max-width: 7.8em; }
+      .cover-media { object-position: 68% center; }
+      .cover-shade { background: linear-gradient(90deg, rgba(28,39,35,.94), rgba(28,39,35,.45)), linear-gradient(0deg,rgba(23,32,29,.7),transparent 50%); }
+      .problem-layout, .product-layout, .growth-layout { grid-template-columns: 1fr; }
+      .pain-stack, .journey, .architecture { grid-template-columns: 1fr; }
+      .pain-card { grid-template-columns: 3.2rem 1fr; }
+      .journey::before, .arch-card::after { display: none !important; }
+      .journey-card { min-height: 0; }
+      .device-stage { min-height: 31rem; }
+      .phone { width: 18rem; }
+      .growth-visual { min-height: 26rem; }
+      .growth-item { width: 7rem; }
+      .metric-pair { grid-template-columns: 1fr; }
+      .system-title { grid-template-columns: 1fr; }
+      .keyboard-hint { display: none; }
+      .controls { bottom: max(.7rem, env(safe-area-inset-bottom)); }
+      .closing .slide-inner { transform: none; }
+      .slide::after { display: none; }
+    }
+
     @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+    }
+
+    @media print {
+      @page { size: 16in 9in; margin: 0; }
+      body { overflow: visible; background: #fff; }
+      .deck { height: auto; min-height: 0; overflow: visible; }
+      .deck::before, .controls, .keyboard-hint, .notes-panel { display: none !important; }
+      .slide, .slide.active {
+        position: relative;
+        display: grid;
+        width: 16in;
+        height: 9in;
+        padding: .65in 1in .75in;
+        page-break-after: always;
+        visibility: visible;
+        opacity: 1;
+        transform: none;
+      }
+      .cover { padding: 0; }
     }
   </style>
 </head>
 <body>
-  <a class="skip-link" href="#main-content">본문으로 바로가기</a>
-  <div id="app" class="app"></div>
-  <div id="modal-root"></div>
-  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous" defer></script>
+  <main class="deck" id="deck" aria-label="혼디길 서비스 소개 발표자료">
+    <section class="slide cover active" data-index="01 / 07" aria-hidden="false">
+      <img class="cover-media" src="./static/assets/hondigil-jeju-hero.webp" alt="제주 오름과 돌담길을 달리는 러너">
+      <div class="cover-shade" aria-hidden="true"></div>
+      <div class="cover-content">
+        <div class="brand-lockup"><img src="./static/assets/hondigil-mark.svg" alt=""><span>혼디길</span></div>
+        <p class="kicker">Jeju running &amp; trekking</p>
+        <h1>걷고 달릴수록<br><span class="accent">나의 제주</span>가 자라요</h1>
+        <p class="lead">제주 코스 완주부터 기록, 성장, 로컬 발견까지 하나로 잇는 모바일 웹 서비스</p>
+        <div class="cover-tags" aria-label="서비스 핵심 키워드">
+          <span class="tag">러닝·트래킹</span><span class="tag">완주 기록</span><span class="tag">제주방 성장</span><span class="tag">로컬 발견</span>
+        </div>
+      </div>
+      <aside class="speaker-note">안녕하세요. 제가 소개할 서비스는 ‘혼디길’입니다. 제주어로 ‘함께’를 뜻하는 혼디처럼, 제주의 길과 기록, 그리고 로컬 경험을 한 흐름으로 연결한 러닝·트래킹 서비스입니다.</aside>
+    </section>
+
+    <section class="slide" data-index="02 / 07" aria-hidden="true">
+      <div class="slide-inner problem-layout">
+        <div>
+          <p class="kicker">Problem</p>
+          <h2>좋은 길을 찾은 뒤에도<br><span class="accent">탐색은 계속</span>됩니다</h2>
+          <p class="lead">코스를 고르고, 현장에서 안전하게 움직이고, 완주 뒤 무엇을 할지까지 정보가 여러 곳에 흩어져 있습니다.</p>
+          <p class="question-line">“한 번에 이어지는 제주 경험은 없을까?”</p>
+        </div>
+        <div class="pain-stack" aria-label="사용자 문제 세 가지">
+          <article class="pain-card"><div class="pain-no">01</div><div><h3>코스 정보의 파편화</h3><p>거리·난이도·안전 정보가 제각각</p></div></article>
+          <article class="pain-card"><div class="pain-no">02</div><div><h3>완주 동기의 단절</h3><p>기록은 남아도 다음 행동으로 이어지지 않음</p></div></article>
+          <article class="pain-card"><div class="pain-no">03</div><div><h3>로컬 경험과의 거리</h3><p>좋은 코스와 주변 장소를 따로 검색</p></div></article>
+        </div>
+      </div>
+      <aside class="speaker-note">기존에는 코스의 거리와 난이도, 안전 정보를 따로 확인하고, 완주 뒤 갈 장소도 다시 검색해야 합니다. 기록도 숫자로만 남기 쉬워 다음 활동의 동기가 약합니다. 혼디길은 이 끊어진 경험을 하나로 잇는 데서 시작했습니다.</aside>
+    </section>
+
+    <section class="slide solution" data-index="03 / 07" aria-hidden="true">
+      <div class="slide-inner">
+        <div class="solution-title">
+          <div><p class="kicker">Solution</p><h2>한 번의 완주를<br><span class="leaf">하나의 제주 경험</span>으로</h2></div>
+          <p class="lead">선택 → 활동 → 보상의 짧고 분명한 흐름으로 첫 방문도 쉽게 시작합니다.</p>
+        </div>
+        <div class="journey">
+          <article class="journey-card"><div class="journey-icon">🗺️</div><p class="journey-step">STEP 01</p><h3>내 길을 골라요</h3><p>10개 제주 코스를 유형·지역·거리·난이도로 탐색합니다.</p></article>
+          <article class="journey-card"><div class="journey-icon">📍</div><p class="journey-step">STEP 02</p><h3>안전하게 걸어요</h3><p>실제 보행 경로와 준비물, GPS 인증으로 활동을 안내합니다.</p></article>
+          <article class="journey-card"><div class="journey-icon">🌱</div><p class="journey-step">STEP 03</p><h3>나의 제주를 키워요</h3><p>완주 기록은 제주방의 성장과 주변 로컬 발견으로 이어집니다.</p></article>
+        </div>
+      </div>
+      <aside class="speaker-note">사용 흐름은 세 단계입니다. 먼저 10개 코스 중 나에게 맞는 길을 고릅니다. 현장에서는 실제 보행 경로와 GPS 인증으로 출발과 도착을 확인합니다. 마지막으로 완주 기록이 제주방의 성장과 주변 로컬 장소 추천으로 이어집니다.</aside>
+    </section>
+
+    <section class="slide" data-index="04 / 07" aria-hidden="true">
+      <div class="slide-inner product-layout">
+        <div>
+          <p class="kicker">Core experience</p>
+          <h2>현장에서 필요한 정보만<br><span class="sea">한 화면에</span></h2>
+          <p class="lead">보기 좋은 코스 카드에서 실제 활동과 완주까지 끊김 없이 이어집니다.</p>
+          <div class="feature-list">
+            <div class="feature"><span class="feature-mark">✓</span><div><strong>OpenStreetMap 보행 경로</strong><span>경로선과 실제 좌표 기반 주변 장소</span></div></div>
+            <div class="feature"><span class="feature-mark">✓</span><div><strong>출발·도착 GPS 인증</strong><span>권한 거부와 오차 상황도 친절하게 안내</span></div></div>
+            <div class="feature"><span class="feature-mark">✓</span><div><strong>식당·카페·주차장 연결</strong><span>코스 전후의 선택을 한 화면에서 해결</span></div></div>
+          </div>
+        </div>
+        <div class="device-stage" aria-label="혼디길 코스 상세 화면 예시">
+          <div class="map-blob" aria-hidden="true"><span class="route"></span><span class="pin one"><span>☕</span></span><span class="pin two"><span>🍚</span></span></div>
+          <div class="phone">
+            <div class="phone-screen">
+              <div class="phone-hero"><div class="mini-brand">혼디길 · 애월</div><strong>애월 노을<br>해안길</strong></div>
+              <div class="phone-body">
+                <div class="phone-pills"><span class="phone-pill">러닝</span><span class="phone-pill">초급</span><span class="phone-pill">해안</span></div>
+                <div class="phone-stats"><div class="phone-stat"><b>5.0 km</b>거리</div><div class="phone-stat"><b>48분</b>예상</div><div class="phone-stat"><b>노을</b>추천</div></div>
+                <div class="phone-map" aria-hidden="true"></div>
+                <div class="phone-cta">이 코스 시작하기</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <aside class="speaker-note">핵심 화면은 현장 사용에 집중했습니다. 코스 상세에서 거리와 소요 시간, 준비물과 안전 정보를 바로 확인하고, 지도에서는 보행 경로와 식당·카페·주차장을 함께 봅니다. GPS 권한이 없거나 오차가 커도 사용자가 다음 행동을 알 수 있게 안내합니다.</aside>
+    </section>
+
+    <section class="slide" data-index="05 / 07" aria-hidden="true">
+      <div class="slide-inner growth-layout">
+        <div class="growth-visual" aria-label="완주 기록에 따라 성장하는 제주방">
+          <div class="growth-orbit" aria-hidden="true"></div>
+          <div class="growth-item stone"><img src="./static/assets/dol-hareubang.svg" alt="돌하르방"><span>완주가 쌓일수록</span></div>
+          <div class="growth-item seed"><img src="./static/assets/seed.svg" alt="귤나무 씨앗"><span>거리가 늘수록</span></div>
+          <div class="growth-item room"><div class="room-icon" aria-hidden="true">🏡</div><span>제주방이 성장</span></div>
+        </div>
+        <div class="growth-copy">
+          <p class="kicker">Motivation</p>
+          <h2>기록은 숫자보다<br><span class="accent">기억에 남아야</span> 합니다</h2>
+          <p class="lead">완주 횟수로 돌하르방이, 누적 거리로 귤나무가 자라며 나만의 제주방이 완성됩니다.</p>
+          <div class="metric-pair">
+            <div class="metric"><b>완주 횟수</b><span>돌하르방 레벨과 경험치</span></div>
+            <div class="metric"><b>누적 거리</b><span>귤나무의 성장 단계</span></div>
+          </div>
+        </div>
+      </div>
+      <aside class="speaker-note">혼디길의 차별점은 기록을 감정적인 보상으로 바꾼다는 점입니다. 완주 횟수에 따라 돌하르방이 성장하고, 누적 거리에 따라 귤나무가 자랍니다. 사용자는 숫자 목록이 아니라 ‘내가 만든 제주방’을 보며 다음 코스를 시작할 이유를 얻습니다.</aside>
+    </section>
+
+    <section class="slide" data-index="06 / 07" aria-hidden="true">
+      <div class="slide-inner">
+        <div class="system-title">
+          <div><p class="kicker">Reliable by design</p><h2>가볍게 시작하고<br><span class="leaf">안전하게 확장</span>합니다</h2></div>
+          <p class="lead">정적 배포만으로 핵심 경험을 제공하고, 필요할 때 서버와 운영 데이터 수집을 연결합니다.</p>
+        </div>
+        <div class="architecture" aria-label="혼디길 기술 구성">
+          <article class="arch-card"><div class="arch-icon">📱</div><h3>모바일 웹</h3><p>설치 없이 링크로 바로 시작하는 반응형 인터페이스</p><span class="arch-label">HTML · CSS · JS</span></article>
+          <article class="arch-card"><div class="arch-icon">💾</div><h3>로컬 우선</h3><p>네트워크가 불안해도 기록 흐름과 화면 상태를 유지</p><span class="arch-label">localStorage</span></article>
+          <article class="arch-card"><div class="arch-icon">🛡️</div><h3>서버 동기화</h3><p>세션·검증·관리 기능은 Django API로 안전하게 확장</p><span class="arch-label">Django REST</span></article>
+          <article class="arch-card optional"><div class="arch-icon">📊</div><h3>운영 인사이트</h3><p>필요한 이벤트만 선택적으로 수집하고 재전송을 관리</p><span class="arch-label">Optional · Sheets</span></article>
+        </div>
+      </div>
+      <aside class="speaker-note">구현은 정적 웹을 중심으로 설계했습니다. 그래서 GitHub Pages에서도 핵심 화면과 로컬 기록이 동작하고, 네트워크가 불안해도 흐름을 유지합니다. 서버가 연결되면 Django가 세션과 검증, 동기화를 담당하고, 운영 이벤트 수집은 선택적으로 확장할 수 있습니다.</aside>
+    </section>
+
+    <section class="slide closing" data-index="07 / 07" aria-hidden="true">
+      <div class="slide-inner">
+        <img class="closing-mark" src="./static/assets/hondigil-mark.svg" alt="혼디길">
+        <p class="kicker">One more path, one more Jeju</p>
+        <h2>제주를 <span class="accent">소비하는 여행</span>에서<br>나만의 제주를 <span class="accent">쌓는 여행</span>으로</h2>
+        <p class="lead">혼디길은 길을 추천하는 데서 끝나지 않고, 다시 걷고 싶은 이유를 만듭니다.</p>
+        <div class="closing-actions"><a class="closing-link" href="./hondigil-frontend-pre0910-publish/index.html" target="_blank" rel="noopener">혼디길 직접 보기 →</a></div>
+        <p class="closing-note">감사합니다 · 질문을 받겠습니다</p>
+      </div>
+      <aside class="speaker-note">혼디길은 제주 코스를 추천하는 서비스에서 끝나지 않습니다. 한 번의 활동이 나만의 제주를 쌓는 경험이 되고, 다시 걷고 싶은 이유가 되도록 만들었습니다. 제주를 소비하는 여행에서 나만의 제주를 쌓는 여행으로, 혼디길입니다. 감사합니다.</aside>
+    </section>
+
+    <div class="keyboard-hint" aria-hidden="true"><span class="key">←</span><span class="key">→</span><span>이동</span><span class="key">N</span><span>노트</span><span class="key">F</span><span>전체화면</span></div>
+    <nav class="controls" aria-label="슬라이드 조작">
+      <button id="prevBtn" type="button" aria-label="이전 슬라이드">←</button>
+      <span class="counter" id="counter" aria-live="polite">1 / 7</span>
+      <button id="nextBtn" type="button" aria-label="다음 슬라이드">→</button>
+      <button id="notesBtn" type="button" aria-label="발표자 노트 열기" aria-pressed="false">N</button>
+      <button id="fullscreenBtn" type="button" aria-label="전체 화면으로 보기">⛶</button>
+    </nav>
+    <aside class="notes-panel" id="notesPanel" aria-live="polite"><strong id="notesTitle">발표자 노트 · 1 / 7</strong><p id="notesText"></p></aside>
+  </main>
+
   <script>
-  (() => {
-    'use strict';
+    (() => {
+      'use strict';
+      const deck = document.getElementById('deck');
+      const slides = [...document.querySelectorAll('.slide')];
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      const notesBtn = document.getElementById('notesBtn');
+      const fullscreenBtn = document.getElementById('fullscreenBtn');
+      const counter = document.getElementById('counter');
+      const notesPanel = document.getElementById('notesPanel');
+      const notesTitle = document.getElementById('notesTitle');
+      const notesText = document.getElementById('notesText');
+      const parsedHash = Number.parseInt(location.hash.slice(1), 10);
+      let current = Number.isFinite(parsedHash) ? Math.min(Math.max(parsedHash - 1, 0), slides.length - 1) : 0;
+      let touchStartX = null;
 
-    // 실제 운영 전 이 설정만 수정하면 개발 기능과 외부 전송을 한곳에서 제어할 수 있습니다.
-    const APP_CONFIG = Object.freeze({
-      APPS_SCRIPT_URL: '',
-      DJANGO_API_URL: '/api/v1',
-      DEVELOPMENT_MODE: false,
-      ALLOW_LOCATION_TEST: false,
-      ADMIN_ENABLED: false,
-      GPS_RADIUS_METERS: 300,
-      DATA_SYNC_ENABLED: true
-    });
-
-    // 이 파일에서 사용하는 브라우저 저장 키입니다. 혼디길 데이터만 선택적으로 지울 수 있게 접두사를 통일합니다.
-    const STORAGE_KEYS = Object.freeze({
-      USER: 'hondigil:user',
-      ACTIVE: 'hondigil:active-course',
-      RECORDS: 'hondigil:records',
-      EVENTS: 'hondigil:events',
-      METRICS: 'hondigil:metrics',
-      QUEUE: 'hondigil:sync-queue',
-      PENDING_COMPLETIONS: 'hondigil:pending-completions',
-      LAST_RECORD: 'hondigil:last-record-id'
-    });
-
-    const SESSION_KEYS = Object.freeze({
-      ADMIN: 'hondigil:admin-session'
-    });
-
-    const PHOTO_URLS = Object.freeze({
-      FOREST: 'https://images.unsplash.com/photo-1670983245322-212a4b009cb9?auto=format&fit=crop&w=1400&q=80',
-      OLD_FOREST: 'https://images.unsplash.com/photo-1662564882361-6fe6eabb8da2?auto=format&fit=crop&w=1400&q=80',
-      COAST: 'https://images.unsplash.com/photo-1562680802-9cf8b15f419d?auto=format&fit=crop&w=1400&q=80'
-    });
-
-    // 외부 API 없이 테스트할 수 있는 제주 샘플 코스입니다.
-    let COURSE_DATA = Object.freeze([
-      {
-        id: 'saryeoni',
-        name: '사려니숲 초보길',
-        type: 'walk',
-        typeLabel: '걷기',
-        distance: 6.2,
-        durationMin: 120,
-        difficulty: '쉬움',
-        region: '제주시 조천읍',
-        description: '삼나무 향을 따라 완만한 숲길을 걷는 입문 코스입니다. 그늘이 많아 천천히 걷기 좋습니다.',
-        image: PHOTO_URLS.FOREST,
-        imageAlt: '나무가 우거진 제주 사려니숲의 흙길',
-        startName: '사려니숲길 붉은오름 입구',
-        endName: '사려니숲길 북쪽 쉼터',
-        start: [33.4086, 126.6414],
-        end: [33.4223, 126.6261],
-        route: [[33.4086,126.6414],[33.4108,126.6389],[33.4131,126.6368],[33.4162,126.6339],[33.4193,126.6301],[33.4223,126.6261]],
-        caution: '비 온 뒤에는 흙길이 미끄러울 수 있습니다. 입장 가능 시간과 통제 여부를 현장에서 확인해 주세요.',
-        supplies: ['미끄럼 방지 운동화', '물 500mL 이상', '얇은 겉옷']
-      },
-      {
-        id: 'aewol-handam',
-        name: '애월 한담 바다산책',
-        type: 'walk',
-        typeLabel: '걷기',
-        distance: 4.6,
-        durationMin: 90,
-        difficulty: '쉬움',
-        region: '제주시 애월읍',
-        description: '곽지에서 한담까지 검은 현무암 해안과 푸른 바다를 가까이 보는 편안한 왕복 산책길입니다.',
-        image: PHOTO_URLS.COAST,
-        imageAlt: '제주의 검은 현무암과 푸른 바다가 보이는 해안',
-        startName: '곽지해수욕장 동쪽',
-        endName: '한담해안산책로 전망대',
-        start: [33.4508, 126.3046],
-        end: [33.4594, 126.3106],
-        route: [[33.4508,126.3046],[33.4525,126.3052],[33.4540,126.3066],[33.4558,126.3073],[33.4578,126.3089],[33.4594,126.3106]],
-        caution: '파도가 높은 날에는 해안 가까운 구간을 피하고, 젖은 현무암 위로 내려가지 마세요.',
-        supplies: ['바람막이', '햇빛 가리개', '물']
-      },
-      {
-        id: 'seongsan-run',
-        name: '성산 해맞이 러닝',
-        type: 'run',
-        typeLabel: '러닝',
-        distance: 5.4,
-        durationMin: 45,
-        difficulty: '보통',
-        region: '서귀포시 성산읍',
-        description: '성산일출봉과 바다를 바라보며 달리는 평지 중심 코스입니다. 이른 아침에 특히 여유롭습니다.',
-        image: PHOTO_URLS.COAST,
-        imageAlt: '성산일출봉 주변의 바다와 해안 절벽',
-        startName: '성산포항 공영주차장',
-        endName: '광치기해변 북쪽',
-        start: [33.4701, 126.9286],
-        end: [33.4521, 126.9235],
-        route: [[33.4701,126.9286],[33.4668,126.9310],[33.4627,126.9301],[33.4588,126.9279],[33.4552,126.9258],[33.4521,126.9235]],
-        caution: '관광객과 차량이 많은 시간에는 속도를 줄이고, 해안도로 횡단 시 신호를 확인해 주세요.',
-        supplies: ['러닝화', '반사 소재 의류', '휴대용 물']
-      },
-      {
-        id: 'bijarim',
-        name: '비자림 숨고르기길',
-        type: 'walk',
-        typeLabel: '걷기',
-        distance: 3.2,
-        durationMin: 70,
-        difficulty: '쉬움',
-        region: '제주시 구좌읍',
-        description: '오래된 비자나무 사이를 천천히 걸으며 호흡을 고르는 짧은 숲 코스입니다.',
-        image: PHOTO_URLS.OLD_FOREST,
-        imageAlt: '햇빛이 스며드는 제주의 오래된 숲',
-        startName: '비자림 매표소 앞',
-        endName: '새천년 비자나무 쉼터',
-        start: [33.4912, 126.8115],
-        end: [33.4873, 126.8090],
-        route: [[33.4912,126.8115],[33.4901,126.8101],[33.4892,126.8088],[33.4882,126.8081],[33.4873,126.8090]],
-        caution: '관람로 밖으로 벗어나지 말고, 숲 보호를 위해 음식물은 지정 장소에서만 드세요.',
-        supplies: ['편한 운동화', '작은 물병', '우천 시 우산']
-      },
-      {
-        id: 'hamdeok-gimnyeong',
-        name: '함덕 바다빛 러닝',
-        type: 'run',
-        typeLabel: '러닝',
-        distance: 7.8,
-        durationMin: 60,
-        difficulty: '보통',
-        region: '제주시 조천읍',
-        description: '함덕의 밝은 바다와 낮은 해안도로를 잇는 왕복 러닝 코스입니다. 중간 쉼터가 충분합니다.',
-        image: PHOTO_URLS.COAST,
-        imageAlt: '제주 동쪽 해안의 푸른 바다 풍경',
-        startName: '함덕해수욕장 서우봉 입구',
-        endName: '북촌포구 방파제 앞',
-        start: [33.5433, 126.6695],
-        end: [33.5488, 126.6898],
-        route: [[33.5433,126.6695],[33.5451,126.6736],[33.5463,126.6780],[33.5477,126.6822],[33.5484,126.6864],[33.5488,126.6898]],
-        caution: '일부 구간은 보행자와 함께 사용합니다. 야간에는 조명이 약한 곳이 있어 밝은 옷을 권합니다.',
-        supplies: ['쿠션 좋은 러닝화', '반사 밴드', '물']
-      },
-      {
-        id: 'olle-seven',
-        name: '올레 7코스 맛보기',
-        type: 'walk',
-        typeLabel: '걷기',
-        distance: 8.4,
-        durationMin: 170,
-        difficulty: '보통',
-        region: '서귀포시',
-        description: '외돌개에서 법환포구까지 바다와 마을을 번갈아 만나는 올레길 핵심 구간입니다.',
-        image: PHOTO_URLS.COAST,
-        imageAlt: '제주 서귀포의 바다와 바위 절벽',
-        startName: '외돌개 주차장',
-        endName: '법환포구',
-        start: [33.2400, 126.5457],
-        end: [33.2372, 126.5153],
-        route: [[33.2400,126.5457],[33.2385,126.5402],[33.2375,126.5342],[33.2367,126.5280],[33.2366,126.5214],[33.2372,126.5153]],
-        caution: '돌길과 계단이 섞여 있습니다. 해가 지기 전에 도착할 수 있도록 충분한 시간을 잡아 주세요.',
-        supplies: ['발목을 잡아주는 신발', '물 1L', '간단한 간식']
-      }
-    ]);
-
-    let RESTAURANT_DATA = Object.freeze([
-      { id:'saryeoni-bapsang', courseIds:['saryeoni','bijarim'], name:'교래 돌담밥상', category:'제주 가정식', distance:'차량 9분', hours:'11:00–19:30', description:'제철 나물과 제주 돼지 수육을 단정하게 내는 작은 마을 식당입니다.', menu:'돔베고기 정식', query:'제주 교래 돌담밥상', lat:33.4364, lng:126.6763 },
-      { id:'songdang-noodle', courseIds:['saryeoni','bijarim'], name:'송당 메밀집', category:'메밀 요리', distance:'차량 12분', hours:'10:30–18:00', description:'메밀 향이 또렷한 따뜻한 국수와 담백한 전을 맛볼 수 있습니다.', menu:'제주 메밀국수', query:'제주 송당 메밀국수', lat:33.4710, lng:126.7800 },
-      { id:'aewol-sea-table', courseIds:['aewol-handam'], name:'애월 바당식탁', category:'해산물 한식', distance:'도보 8분', hours:'11:30–20:00', description:'한담 바다 가까이에서 제철 생선과 톳 반찬을 내는 소규모 식당입니다.', menu:'옥돔구이 한상', query:'제주 애월 바당식탁', lat:33.4612, lng:126.3123 },
-      { id:'aewol-millet', courseIds:['aewol-handam'], name:'곽지 보리부엌', category:'보리밥', distance:'도보 12분', hours:'11:00–18:30', description:'구수한 보리밥과 직접 무친 계절 나물을 편안하게 즐기는 동네 밥집입니다.', menu:'제주 나물 보리밥', query:'제주 곽지 보리밥', lat:33.4492, lng:126.3070 },
-      { id:'seongsan-soup', courseIds:['seongsan-run'], name:'성산 해녀국', category:'제주 향토음식', distance:'도보 7분', hours:'07:30–17:00', description:'달리기 뒤 따뜻하게 속을 채우기 좋은 성게 미역국과 보말죽을 냅니다.', menu:'성게 미역국', query:'제주 성산 성게미역국', lat:33.4682, lng:126.9312 },
-      { id:'seongsan-fish', courseIds:['seongsan-run'], name:'광치기 생선방', category:'생선구이', distance:'차량 6분', hours:'11:00–20:30', description:'동쪽 바다에서 난 생선을 주문 즉시 구워 주는 가족 운영 식당입니다.', menu:'갈치구이', query:'제주 광치기 생선구이', lat:33.4527, lng:126.9191 },
-      { id:'hamdeok-noodle', courseIds:['hamdeok-gimnyeong'], name:'함덕 고기국수집', category:'제주 국수', distance:'도보 6분', hours:'10:00–20:00', description:'진한 육수와 부드러운 돼지고기를 든든하게 담아내는 동네 국수집입니다.', menu:'고기국수', query:'제주 함덕 고기국수', lat:33.5418, lng:126.6680 },
-      { id:'beophwan-seafood', courseIds:['olle-seven'], name:'법환 해녀밥상', category:'해산물', distance:'도보 9분', hours:'11:00–19:00', description:'법환포구 가까이에서 소라와 문어, 미역을 활용한 한 상을 만듭니다.', menu:'해녀 모둠밥상', query:'제주 법환포구 해산물', lat:33.2378, lng:126.5168 }
-    ]);
-
-    const ALLOWED_EVENT_TYPES = new Set([
-      'user_registered', 'user_visited', 'course_viewed', 'course_started',
-      'start_verified', 'finish_verified', 'photo_verified', 'course_completed',
-      'restaurant_clicked', 'directions_clicked'
-    ]);
-
-    const appElement = document.getElementById('app');
-    const modalRoot = document.getElementById('modal-root');
-    const toastElement = document.getElementById('toast');
-
-    const state = {
-      page: 'home',
-      selectedCourseId: COURSE_DATA[0].id,
-      filters: { type: 'all', distance: 'all', difficulty: 'all' },
-      lastRecord: null,
-      photoPreviewUrl: '',
-      gpsMessage: '',
-      gpsTone: '',
-      map: null,
-      elapsedTimer: null,
-      toastTimer: null,
-      syncInFlight: null,
-      backendAvailable: false,
-      backendProfile: null,
-      csrfToken: '',
-      activitySyncPromise: null,
-      pendingConfirmAction: '',
-      returnFocus: null
-    };
-
-    function safeParse(rawValue, fallback) {
-      if (!rawValue) return fallback;
-      try {
-        return JSON.parse(rawValue);
-      } catch (error) {
-        return fallback;
-      }
-    }
-
-    function readStored(key, fallback) {
-      try {
-        return safeParse(localStorage.getItem(key), fallback);
-      } catch (error) {
-        return fallback;
-      }
-    }
-
-    function writeStored(key, value) {
-      try {
-        localStorage.setItem(key, JSON.stringify(value));
-        return true;
-      } catch (error) {
-        showToast('브라우저 저장 공간을 사용할 수 없습니다. 저장 설정을 확인해 주세요.');
-        return false;
-      }
-    }
-
-    function removeStored(key) {
-      try { localStorage.removeItem(key); } catch (error) { /* 저장소가 막혀도 화면 사용은 계속합니다. */ }
-    }
-
-    function createId(prefix) {
-      let value = '';
-      try {
-        value = crypto.randomUUID();
-      } catch (error) {
-        value = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12);
-      }
-      return prefix + '_' + value;
-    }
-
-    function escapeHTML(value) {
-      return String(value == null ? '' : value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-    }
-
-    function normalizeNickname(value) {
-      return String(value || '')
-        .replace(/[\u0000-\u001f\u007f]/g, '')
-        .replace(/\s+/g, ' ')
-        .trim()
-        .slice(0, 12);
-    }
-
-    function getUser() {
-      const value = readStored(STORAGE_KEYS.USER, null);
-      if (!value || typeof value !== 'object' || typeof value.nickname !== 'string' || !value.nickname.trim()) return null;
-      const validAnonymousId = typeof value.id === 'string' && /^[A-Za-z0-9._:-]{8,100}$/.test(value.id);
-      const normalized = {
-        id: validAnonymousId ? value.id : createId('anon'),
-        nickname: normalizeNickname(value.nickname),
-        createdAt: value.createdAt || new Date().toISOString(),
-        lastVisitedAt: value.lastVisitedAt || new Date().toISOString()
-      };
-      if (normalized.nickname.length < 2) return null;
-      if (normalized.id !== value.id || normalized.nickname !== value.nickname) {
-        writeStored(STORAGE_KEYS.USER, normalized);
-      }
-      return normalized;
-    }
-
-    function getActiveCourse() {
-      const value = readStored(STORAGE_KEYS.ACTIVE, null);
-      if (!value || !value.courseId || !COURSE_DATA.some(course => course.id === value.courseId)) return null;
-      const parsedStart = new Date(value.startedAt);
-      const normalized = {
-        id: String(value.id || createId('activity')),
-        backendActivityId: typeof value.backendActivityId === 'string' ? value.backendActivityId : '',
-        courseId: value.courseId,
-        startedAt: Number.isNaN(parsedStart.getTime()) ? new Date().toISOString() : parsedStart.toISOString(),
-        startVerified: value.startVerified === true,
-        finishVerified: value.finishVerified === true,
-        photoVerified: value.photoVerified === true,
-        photoName: typeof value.photoName === 'string' ? value.photoName : '',
-        startLocation: value.startLocation && Number.isFinite(Number(value.startLocation.latitude)) && Number.isFinite(Number(value.startLocation.longitude))
-          ? Object.assign({}, value.startLocation) : null,
-        finishLocation: value.finishLocation && Number.isFinite(Number(value.finishLocation.latitude)) && Number.isFinite(Number(value.finishLocation.longitude))
-          ? Object.assign({}, value.finishLocation) : null,
-        photoMeta: value.photoMeta && String(value.photoMeta.fileType || '').startsWith('image/') && Number(value.photoMeta.fileSize) > 0
-          ? { requestId:String(value.photoMeta.requestId || createId('verify')), fileType:String(value.photoMeta.fileType), fileSize:Number(value.photoMeta.fileSize) }
-          : null,
-        currentStep: value.startVerified === true
-          ? (value.photoVerified === true ? (value.finishVerified === true ? 'complete' : 'finish') : 'photo')
-          : 'start'
-      };
-      if (!value.id || normalized.backendActivityId !== (value.backendActivityId || '') || normalized.startedAt !== value.startedAt ||
-          normalized.startVerified !== value.startVerified ||
-          normalized.finishVerified !== value.finishVerified ||
-          normalized.photoVerified !== value.photoVerified) {
-        writeStored(STORAGE_KEYS.ACTIVE, normalized);
-      }
-      return normalized;
-    }
-
-    function saveActiveCourse(value) {
-      if (!value) {
-        removeStored(STORAGE_KEYS.ACTIVE);
-        return;
-      }
-      writeStored(STORAGE_KEYS.ACTIVE, value);
-    }
-
-    function updateActiveCourse(changes) {
-      const active = getActiveCourse();
-      if (!active) return null;
-      const next = Object.assign({}, active, changes);
-      if (next.startVerified && next.photoVerified && next.finishVerified) next.currentStep = 'complete';
-      else if (next.startVerified && next.photoVerified) next.currentStep = 'finish';
-      else if (next.startVerified) next.currentStep = 'photo';
-      else next.currentStep = 'start';
-      saveActiveCourse(next);
-      return next;
-    }
-
-    function getRecords() {
-      const value = readStored(STORAGE_KEYS.RECORDS, []);
-      if (!Array.isArray(value)) return [];
-      return value.reduce((records, item) => {
-        if (!item || typeof item !== 'object' || typeof item.id !== 'string' || typeof item.courseId !== 'string') return records;
-        const course = COURSE_DATA.find(candidate => candidate.id === item.courseId);
-        if (!course) return records;
-        const distance = Number(item.distance);
-        const durationMs = Number(item.durationMs);
-        const completedAt = new Date(item.completedAt);
-        const startedAt = new Date(item.startedAt);
-        if (!Number.isFinite(distance) || distance < 0 || !Number.isFinite(durationMs) || durationMs < 0 || Number.isNaN(completedAt.getTime()) ||
-            item.startVerified !== true || item.finishVerified !== true || item.photoVerified !== true) return records;
-        records.push({
-          id: item.id,
-          activityId: typeof item.activityId === 'string' ? item.activityId : '',
-          courseId: course.id,
-          courseName: typeof item.courseName === 'string' && item.courseName ? item.courseName.slice(0, 120) : course.name,
-          distance,
-          durationMs,
-          startedAt: Number.isNaN(startedAt.getTime()) ? completedAt.toISOString() : startedAt.toISOString(),
-          completedAt: completedAt.toISOString(),
-          startVerified: item.startVerified === true,
-          finishVerified: item.finishVerified === true,
-          photoVerified: item.photoVerified === true
+      function update(next, direction = 1) {
+        const target = Math.min(Math.max(next, 0), slides.length - 1);
+        slides.forEach((slide, index) => {
+          slide.classList.toggle('active', index === target);
+          slide.classList.toggle('leaving', index !== target && ((direction > 0 && index < target) || (direction < 0 && index > target)));
+          slide.setAttribute('aria-hidden', String(index !== target));
         });
-        return records;
-      }, []);
-    }
-
-    function saveRecords(records) {
-      const unique = [];
-      const ids = new Set();
-      records.forEach(record => {
-        if (!record || !record.id || ids.has(record.id)) return;
-        ids.add(record.id);
-        unique.push(record);
-      });
-      writeStored(STORAGE_KEYS.RECORDS, unique.slice(0, 100));
-    }
-
-    function getPendingCompletions() {
-      const value = readStored(STORAGE_KEYS.PENDING_COMPLETIONS, []);
-      if (!Array.isArray(value)) return [];
-      return value.filter(item => item && typeof item.localRecordId === 'string' && item.activity && item.activity.courseId);
-    }
-
-    function savePendingCompletions(items) {
-      writeStored(STORAGE_KEYS.PENDING_COMPLETIONS, items.slice(-20));
-    }
-
-    function getEvents() {
-      const value = readStored(STORAGE_KEYS.EVENTS, []);
-      return Array.isArray(value) ? value.filter(item => item && item.requestId && item.eventType) : [];
-    }
-
-    function saveEvents(events) {
-      writeStored(STORAGE_KEYS.EVENTS, events.slice(-500));
-    }
-
-    function getSyncQueue() {
-      const value = readStored(STORAGE_KEYS.QUEUE, []);
-      if (!Array.isArray(value)) return [];
-      return value.filter(event => event && typeof event === 'object' &&
-        event.schemaVersion === 1 &&
-        typeof event.requestId === 'string' && /^[A-Za-z0-9._:-]{8,100}$/.test(event.requestId) &&
-        ALLOWED_EVENT_TYPES.has(event.eventType) &&
-        typeof event.anonymousId === 'string' && /^[A-Za-z0-9._:-]{8,100}$/.test(event.anonymousId) &&
-        !Number.isNaN(new Date(event.occurredAt).getTime()) &&
-        event.data && typeof event.data === 'object' && !Array.isArray(event.data));
-    }
-
-    function createEmptyMetrics() {
-      return {
-        schemaVersion: 1,
-        eventCounts: {},
-        users: [],
-        dailyVisitors: {},
-        courseStarts: {},
-        courseCompletes: {},
-        locationAttempts: 0,
-        locationSuccesses: 0,
-        photoAttempts: 0,
-        photoSuccesses: 0
-      };
-    }
-
-    function applyEventToMetrics(metrics, event) {
-      if (!metrics.eventCounts || typeof metrics.eventCounts !== 'object') metrics.eventCounts = {};
-      if (!Array.isArray(metrics.users)) metrics.users = [];
-      if (!metrics.dailyVisitors || typeof metrics.dailyVisitors !== 'object') metrics.dailyVisitors = {};
-      if (!metrics.courseStarts || typeof metrics.courseStarts !== 'object') metrics.courseStarts = {};
-      if (!metrics.courseCompletes || typeof metrics.courseCompletes !== 'object') metrics.courseCompletes = {};
-      const type = event.eventType;
-      metrics.eventCounts[type] = Number(metrics.eventCounts[type] || 0) + 1;
-      if (event.anonymousId && !metrics.users.includes(event.anonymousId)) {
-        metrics.users.push(event.anonymousId);
-        metrics.users = metrics.users.slice(-200);
+        current = target;
+        counter.textContent = `${current + 1} / ${slides.length}`;
+        prevBtn.disabled = current === 0;
+        nextBtn.disabled = current === slides.length - 1;
+        deck.style.setProperty('--progress', `${((current + 1) / slides.length) * 100}%`);
+        const note = slides[current].querySelector('.speaker-note');
+        notesTitle.textContent = `발표자 노트 · ${current + 1} / ${slides.length}`;
+        notesText.textContent = note ? note.textContent.trim() : '';
+        const newHash = `#${current + 1}`;
+        if (location.hash !== newHash) history.replaceState(null, '', newHash);
       }
-      if (type === 'user_visited' && event.anonymousId) {
-        const dateKey = localDateKey(event.occurredAt);
-        if (dateKey) {
-          const visitors = Array.isArray(metrics.dailyVisitors[dateKey]) ? metrics.dailyVisitors[dateKey] : [];
-          if (!visitors.includes(event.anonymousId)) visitors.push(event.anonymousId);
-          metrics.dailyVisitors[dateKey] = visitors.slice(-200);
-          const recentDates = Object.keys(metrics.dailyVisitors).sort().slice(-45);
-          Object.keys(metrics.dailyVisitors).forEach(key => {
-            if (!recentDates.includes(key)) delete metrics.dailyVisitors[key];
-          });
-        }
+
+      function move(step) { update(current + step, step); }
+      function toggleNotes(force) {
+        const open = typeof force === 'boolean' ? force : !notesPanel.classList.contains('open');
+        notesPanel.classList.toggle('open', open);
+        notesBtn.setAttribute('aria-pressed', String(open));
+        notesBtn.setAttribute('aria-label', open ? '발표자 노트 닫기' : '발표자 노트 열기');
       }
-      const courseId = event.data && event.data.courseId;
-      if (type === 'course_started' && courseId) {
-        metrics.courseStarts[courseId] = Number(metrics.courseStarts[courseId] || 0) + 1;
-      }
-      if (type === 'course_completed' && courseId) {
-        metrics.courseCompletes[courseId] = Number(metrics.courseCompletes[courseId] || 0) + 1;
-      }
-      if (type === 'start_verified' || type === 'finish_verified') {
-        metrics.locationAttempts = Number(metrics.locationAttempts || 0) + 1;
-        if (event.data && event.data.result === 'success') metrics.locationSuccesses = Number(metrics.locationSuccesses || 0) + 1;
-      }
-      if (type === 'photo_verified') {
-        metrics.photoAttempts = Number(metrics.photoAttempts || 0) + 1;
-        if (event.data && event.data.result === 'success') metrics.photoSuccesses = Number(metrics.photoSuccesses || 0) + 1;
-      }
-      return metrics;
-    }
-
-    function getMetricsRollup() {
-      const stored = readStored(STORAGE_KEYS.METRICS, null);
-      if (stored && stored.schemaVersion === 1 && stored.eventCounts && stored.dailyVisitors && stored.courseStarts && stored.courseCompletes) {
-        return stored;
-      }
-      const rebuilt = getEvents().reduce(applyEventToMetrics, createEmptyMetrics());
-      writeStored(STORAGE_KEYS.METRICS, rebuilt);
-      return rebuilt;
-    }
-
-    function updateMetricsRollup(event) {
-      const metrics = getMetricsRollup();
-      applyEventToMetrics(metrics, event);
-      writeStored(STORAGE_KEYS.METRICS, metrics);
-    }
-
-    function courseById(courseId) {
-      return COURSE_DATA.find(course => course.id === courseId) || COURSE_DATA[0];
-    }
-
-    function restaurantsForCourse(courseId) {
-      return RESTAURANT_DATA.filter(restaurant => restaurant.courseIds.includes(courseId));
-    }
-
-    function formatDate(value, includeTime) {
-      const date = new Date(value);
-      if (Number.isNaN(date.getTime())) return '-';
-      return new Intl.DateTimeFormat('ko-KR', {
-        year: 'numeric', month: 'long', day: 'numeric',
-        hour: includeTime ? '2-digit' : undefined,
-        minute: includeTime ? '2-digit' : undefined
-      }).format(date);
-    }
-
-    function localDateKey(value) {
-      const date = new Date(value);
-      if (Number.isNaN(date.getTime())) return '';
-      return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
-    }
-
-    function formatClock(value) {
-      const date = new Date(value);
-      if (Number.isNaN(date.getTime())) return '-';
-      return new Intl.DateTimeFormat('ko-KR', { hour: '2-digit', minute: '2-digit' }).format(date);
-    }
-
-    function formatDuration(milliseconds) {
-      const totalSeconds = Math.max(0, Math.floor(Number(milliseconds || 0) / 1000));
-      const hours = Math.floor(totalSeconds / 3600);
-      const minutes = Math.floor((totalSeconds % 3600) / 60);
-      const seconds = totalSeconds % 60;
-      return [hours, minutes, seconds].map(number => String(number).padStart(2, '0')).join(':');
-    }
-
-    function formatCourseDuration(minutes) {
-      const hours = Math.floor(minutes / 60);
-      const rest = minutes % 60;
-      if (!hours) return rest + '분';
-      return hours + '시간' + (rest ? ' ' + rest + '분' : '');
-    }
-
-    function maskAnonymousId(value) {
-      const clean = String(value || '');
-      if (clean.length < 10) return clean;
-      return clean.slice(0, 8) + '••••' + clean.slice(-4);
-    }
-
-    function eventLabel(type) {
-      const labels = {
-        user_registered:'최초 등록', user_visited:'접속', course_viewed:'코스 상세 조회',
-        course_started:'코스 시작', start_verified:'출발 위치 인증', finish_verified:'도착 위치 인증',
-        photo_verified:'사진 인증', course_completed:'코스 완주',
-        restaurant_clicked:'맛집 보기', directions_clicked:'길찾기'
-      };
-      return labels[type] || type;
-    }
-
-    function logEvent(eventType, data) {
-      if (!ALLOWED_EVENT_TYPES.has(eventType)) return null;
-      const user = getUser();
-      const event = {
-        schemaVersion: 1,
-        requestId: createId('req'),
-        eventType,
-        anonymousId: user ? user.id : '',
-        nickname: user ? user.nickname : '',
-        occurredAt: new Date().toISOString(),
-        data: Object.assign({ page: state.page }, data || {})
-      };
-      const events = getEvents();
-      updateMetricsRollup(event);
-      events.push(event);
-      saveEvents(events);
-      if (APP_CONFIG.DATA_SYNC_ENABLED && (APP_CONFIG.DJANGO_API_URL || APP_CONFIG.APPS_SCRIPT_URL)) {
-        const nextQueue = getSyncQueue();
-        nextQueue.push(event);
-        writeStored(STORAGE_KEYS.QUEUE, nextQueue.slice(-200));
-        flushEventQueue();
-      }
-      return event;
-    }
-
-    function flushEventQueue() {
-      if (state.syncInFlight) return state.syncInFlight;
-      state.syncInFlight = flushEventQueueInternal()
-        .catch(() => undefined)
-        .finally(() => { state.syncInFlight = null; });
-      return state.syncInFlight;
-    }
-
-    async function flushEventQueueInternal() {
-      const endpoint = state.backendAvailable
-        ? APP_CONFIG.DJANGO_API_URL.replace(/\/$/, '') + '/events/'
-        : APP_CONFIG.APPS_SCRIPT_URL;
-      if (!APP_CONFIG.DATA_SYNC_ENABLED || !endpoint || !navigator.onLine) return;
-      // 새 이벤트가 전송 중 추가돼도 덮어쓰지 않도록 매 묶음마다 최신 큐를 다시 읽습니다.
-      for (let batchIndex = 0; batchIndex < 10; batchIndex += 1) {
-        const queue = getSyncQueue();
-        if (!queue.length) return;
-        const batch = queue.slice(0, 20);
-        const succeededIds = new Set();
-        let failed = false;
-        for (const event of batch) {
-          try {
-            const response = await fetch(endpoint, {
-              method: 'POST',
-              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-              credentials: state.backendAvailable ? 'include' : 'omit',
-              body: JSON.stringify(event)
-            });
-            if (!response.ok) throw new Error('network-response');
-            const responseText = await response.text();
-            const result = JSON.parse(responseText);
-            if (!result || result.ok !== true) throw new Error('server-rejected');
-            succeededIds.add(event.requestId);
-          } catch (error) {
-            failed = true;
-          }
-        }
-        const latestQueue = getSyncQueue();
-        const preserved = latestQueue.filter(event => !succeededIds.has(event.requestId));
-        writeStored(STORAGE_KEYS.QUEUE, preserved);
-        // 실패한 요청은 다음 온라인 복귀나 접속 때 같은 requestId로 다시 시도합니다.
-        if (failed || preserved.length === 0) return;
-      }
-    }
-
-    async function probeDjangoBackend() {
-      if (!APP_CONFIG.DJANGO_API_URL || location.protocol === 'file:') return false;
-      try {
-        const endpoint = APP_CONFIG.DJANGO_API_URL.replace(/\/$/, '') + '/health/';
-        const response = await fetch(endpoint, {
-          method: 'GET',
-          credentials: 'include',
-          headers: { 'Accept': 'application/json' }
-        });
-        const result = await response.json();
-        state.backendAvailable = response.ok && result && result.ok === true;
-      } catch (error) {
-        state.backendAvailable = false;
-      }
-      return state.backendAvailable;
-    }
-
-    function djangoApiUrl(path) {
-      return APP_CONFIG.DJANGO_API_URL.replace(/\/$/, '') + '/' + String(path || '').replace(/^\//, '');
-    }
-
-    async function djangoRequest(path, options) {
-      const requestOptions = options || {};
-      const method = String(requestOptions.method || 'GET').toUpperCase();
-      const headers = Object.assign({ 'Accept':'application/json' }, requestOptions.headers || {});
-      const fetchOptions = { method, headers, credentials:'include' };
-      if (!['GET', 'HEAD', 'OPTIONS'].includes(method) && state.csrfToken) {
-        headers['X-CSRFToken'] = state.csrfToken;
-      }
-      if (Object.prototype.hasOwnProperty.call(requestOptions, 'body')) {
-        headers['Content-Type'] = 'application/json;charset=utf-8';
-        fetchOptions.body = JSON.stringify(requestOptions.body == null ? {} : requestOptions.body);
-      }
-      let response;
-      try {
-        response = await fetch(djangoApiUrl(path), fetchOptions);
-      } catch (error) {
-        state.backendAvailable = false;
-        throw error;
-      }
-      let payload = null;
-      if (response.status !== 204) {
-        const responseText = await response.text();
-        if (responseText) {
-          try { payload = JSON.parse(responseText); } catch (error) { payload = null; }
-        }
-      }
-      if (!response.ok) {
-        const error = new Error(payload && payload.message ? payload.message : '백엔드 요청을 처리하지 못했습니다.');
-        error.status = response.status;
-        error.code = payload && payload.code ? payload.code : 'REQUEST_FAILED';
-        throw error;
-      }
-      return payload;
-    }
-
-    function applyBackendDatasets(payload) {
-      if (Array.isArray(payload.courses) && payload.courses.length && payload.courses.every(course => course && course.id)) {
-        COURSE_DATA = Object.freeze(payload.courses.map(course => Object.freeze(Object.assign({}, course, {
-          start: Array.isArray(course.start) ? course.start.slice(0, 2) : [],
-          end: Array.isArray(course.end) ? course.end.slice(0, 2) : [],
-          route: Array.isArray(course.route) ? course.route.map(point => Array.isArray(point) ? point.slice(0, 2) : point) : [],
-          supplies: Array.isArray(course.supplies) ? course.supplies.slice() : []
-        }))));
-      }
-      if (Array.isArray(payload.restaurants) && payload.restaurants.length && payload.restaurants.every(restaurant => restaurant && restaurant.id)) {
-        RESTAURANT_DATA = Object.freeze(payload.restaurants.map(restaurant => Object.freeze(Object.assign({}, restaurant, {
-          courseIds: Array.isArray(restaurant.courseIds) ? restaurant.courseIds.slice() : []
-        }))));
-      }
-      if (!COURSE_DATA.some(course => course.id === state.selectedCourseId)) {
-        state.selectedCourseId = COURSE_DATA[0].id;
-      }
-    }
-
-    function localUserFromBackend(serverUser, fallbackUser) {
-      const fallback = fallbackUser || {};
-      return {
-        id: String(serverUser.anonymousId || serverUser.id || fallback.id || createId('anon')),
-        nickname: normalizeNickname(serverUser.nickname || fallback.nickname || ''),
-        createdAt: serverUser.createdAt || fallback.createdAt || new Date().toISOString(),
-        lastVisitedAt: serverUser.lastVisitedAt || fallback.lastVisitedAt || new Date().toISOString()
-      };
-    }
-
-    function localActivityFromBackend(serverActivity, existingActivity) {
-      const existing = existingActivity && existingActivity.courseId === serverActivity.courseId ? existingActivity : null;
-      return {
-        id: existing ? existing.id : 'activity_' + serverActivity.id,
-        backendActivityId: String(serverActivity.id),
-        courseId: serverActivity.courseId,
-        startedAt: serverActivity.startedAt || (existing && existing.startedAt) || new Date().toISOString(),
-        startVerified: serverActivity.startVerified === true,
-        finishVerified: serverActivity.finishVerified === true,
-        photoVerified: serverActivity.photoVerified === true,
-        photoName: existing && serverActivity.photoVerified ? existing.photoName : '',
-        startLocation: existing ? existing.startLocation : null,
-        finishLocation: existing ? existing.finishLocation : null,
-        photoMeta: existing ? existing.photoMeta : null,
-        currentStep: serverActivity.currentStep || 'start'
-      };
-    }
-
-    async function syncPendingActivityProgress(localActivity, serverActivity) {
-      let local = Object.assign({}, localActivity);
-      let server = serverActivity;
-      const basePath = 'activities/' + encodeURIComponent(server.id) + '/';
-      if (local.startVerified && !server.startVerified) {
-        if (local.startLocation) {
-          const result = await djangoRequest(basePath + 'verify-location/', {
-            method:'POST',
-            body:Object.assign({}, local.startLocation, { target:'start' })
-          });
-          server = result.activity || server;
-          if (result.verified !== true) local.startVerified = false;
-        } else {
-          local.startVerified = false;
-        }
-      }
-      if (local.photoVerified && !server.photoVerified) {
-        if ((server.startVerified || local.startVerified) && local.photoMeta) {
-          const result = await djangoRequest(basePath + 'verify-photo/', {
-            method:'POST', body:Object.assign({}, local.photoMeta)
-          });
-          server = result.activity || server;
-        } else {
-          local.photoVerified = false;
-          local.finishVerified = false;
-        }
-      }
-      if (local.finishVerified && !server.finishVerified) {
-        if ((server.startVerified || local.startVerified) && (server.photoVerified || local.photoVerified) && local.finishLocation) {
-          const result = await djangoRequest(basePath + 'verify-location/', {
-            method:'POST',
-            body:Object.assign({}, local.finishLocation, { target:'finish' })
-          });
-          server = result.activity || server;
-          if (result.verified !== true) local.finishVerified = false;
-        } else {
-          local.finishVerified = false;
-        }
-      }
-      return { localActivity:local, serverActivity:server };
-    }
-
-    async function syncPendingCompletions() {
-      const pending = getPendingCompletions();
-      if (!pending.length || !state.backendAvailable) return;
-      const remaining = [];
-      for (let index = 0; index < pending.length; index += 1) {
-        const item = pending[index];
+      async function toggleFullscreen() {
         try {
-          let serverActivity = null;
-          if (item.activity.backendActivityId) {
-            try {
-              const detail = await djangoRequest('activities/' + encodeURIComponent(item.activity.backendActivityId) + '/');
-              serverActivity = detail && detail.activity;
-            } catch (error) {
-              if (!error || error.status !== 404) throw error;
-            }
-          }
-          if (!serverActivity) {
-            const activeResult = await djangoRequest('activities/active/');
-            const currentServerActivity = activeResult && activeResult.activity;
-            if (currentServerActivity && currentServerActivity.courseId !== item.activity.courseId) {
-              remaining.push(item);
-              continue;
-            }
-            if (currentServerActivity) {
-              serverActivity = currentServerActivity;
-            } else {
-              const created = await djangoRequest('activities/', { method:'POST', body:{ courseId:item.activity.courseId } });
-              serverActivity = created && created.activity;
-            }
-          }
-          if (!serverActivity) {
-            remaining.push(item);
-            continue;
-          }
-          const progress = await syncPendingActivityProgress(item.activity, serverActivity);
-          const verified = progress.serverActivity;
-          if (!(verified.startVerified && verified.photoVerified && verified.finishVerified)) {
-            remaining.push(item);
-            continue;
-          }
-          const completed = await djangoRequest(
-            'activities/' + encodeURIComponent(verified.id) + '/complete/',
-            { method:'POST', body:{} }
-          );
-          const serverRecord = completed && (completed.completion || completed.record);
-          if (!serverRecord) {
-            remaining.push(item);
-            continue;
-          }
-          const records = getRecords().filter(record => record.id !== item.localRecordId && record.id !== serverRecord.id);
-          records.unshift(serverRecord);
-          saveRecords(records);
-          if (readStored(STORAGE_KEYS.LAST_RECORD, '') === item.localRecordId) {
-            writeStored(STORAGE_KEYS.LAST_RECORD, serverRecord.id);
-          }
-        } catch (error) {
-          savePendingCompletions(remaining.concat(pending.slice(index)));
-          throw error;
+          if (!document.fullscreenElement && document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
+          else if (document.exitFullscreen) await document.exitFullscreen();
+        } catch (_) {
+          fullscreenBtn.setAttribute('title', '이 브라우저에서는 전체 화면을 사용할 수 없습니다.');
         }
       }
-      savePendingCompletions(remaining);
-    }
 
-    function mergeBackendRecords(completions) {
-      if (!Array.isArray(completions)) return;
-      saveRecords(completions.concat(getRecords()));
-      state.lastRecord = getLastRecord();
-    }
-
-    async function syncNicknameWithBackend(nickname) {
-      if (!state.backendAvailable) return null;
-      const path = state.backendProfile ? 'me/' : 'session/';
-      const method = state.backendProfile ? 'PATCH' : 'POST';
-      const result = await djangoRequest(path, { method, body:{ nickname } });
-      if (!result || !result.user) return null;
-      state.backendProfile = result.user;
-      const localUser = localUserFromBackend(result.user, getUser());
-      if (localUser.nickname.length >= 2) writeStored(STORAGE_KEYS.USER, localUser);
-      return localUser;
-    }
-
-    async function syncStartedActivity(localActivityId, courseId, replaceExisting) {
-      if (!state.backendAvailable) return getActiveCourse();
-      if (state.activitySyncPromise) {
-        await state.activitySyncPromise;
-        const alreadySynced = getActiveCourse();
-        if (alreadySynced && alreadySynced.id === localActivityId && alreadySynced.backendActivityId) return alreadySynced;
-      }
-      const task = (async () => {
-        const user = getUser();
-        if (!state.backendProfile && user) await syncNicknameWithBackend(user.nickname);
-        let result;
-        try {
-          result = await djangoRequest('activities/', { method:'POST', body:{ courseId } });
-        } catch (error) {
-          if (error.code !== 'ACTIVE_ACTIVITY_EXISTS') throw error;
-          const currentResult = await djangoRequest('activities/active/');
-          const serverActive = currentResult && currentResult.activity;
-          if (serverActive && serverActive.courseId === courseId) {
-            result = { activity:serverActive };
-          } else if (replaceExisting && serverActive) {
-            await djangoRequest('activities/' + encodeURIComponent(serverActive.id) + '/', { method:'DELETE' });
-            result = await djangoRequest('activities/', { method:'POST', body:{ courseId } });
-          } else {
-            throw error;
-          }
-        }
-        const currentLocal = getActiveCourse();
-        if (result && result.activity && currentLocal && currentLocal.id === localActivityId) {
-          const progress = await syncPendingActivityProgress(currentLocal, result.activity);
-          const merged = localActivityFromBackend(progress.serverActivity, progress.localActivity);
-          saveActiveCourse(merged);
-          return merged;
-        }
-        return currentLocal;
-      })();
-      state.activitySyncPromise = task;
-      try {
-        return await task;
-      } finally {
-        if (state.activitySyncPromise === task) state.activitySyncPromise = null;
-      }
-    }
-
-    async function ensureBackendActivity(active) {
-      if (!state.backendAvailable || !active) return active;
-      if (active.backendActivityId) return active;
-      return syncStartedActivity(active.id, active.courseId, false);
-    }
-
-    async function stopBackendActivity(active) {
-      if (!state.backendAvailable || !active) return;
-      if (state.activitySyncPromise) {
-        try { await state.activitySyncPromise; } catch (error) { /* 아래 조회로 현재 서버 상태를 다시 확인합니다. */ }
-      }
-      let backendActivityId = active.backendActivityId;
-      if (!backendActivityId) {
-        const result = await djangoRequest('activities/active/');
-        if (result && result.activity && result.activity.courseId === active.courseId) backendActivityId = result.activity.id;
-      }
-      if (backendActivityId) {
-        await djangoRequest('activities/' + encodeURIComponent(backendActivityId) + '/', { method:'DELETE' });
-      }
-    }
-
-    function reportBackendSyncFailure(error, offlineMessage) {
-      if (!error || !error.status) {
-        state.backendAvailable = false;
-        showToast(offlineMessage || '백엔드 연결이 끊겨 브라우저에만 저장했습니다.');
-        return;
-      }
-      showToast(error.message || '백엔드에서 요청을 처리하지 못했습니다.');
-    }
-
-    async function syncDjangoBootstrap() {
-      const payload = await djangoRequest('bootstrap/');
-      if (!payload || payload.ok !== true) throw new Error('invalid-bootstrap');
-      state.backendAvailable = true;
-      state.csrfToken = String(payload.csrfToken || '');
-      applyBackendDatasets(payload);
-
-      let localUser = getUser();
-      if (payload.user) {
-        state.backendProfile = payload.user;
-        if (localUser && localUser.nickname && localUser.nickname !== payload.user.nickname) {
-          localUser = await syncNicknameWithBackend(localUser.nickname);
-        } else if (!localUser && normalizeNickname(payload.user.nickname).length >= 2) {
-          localUser = localUserFromBackend(payload.user, null);
-          writeStored(STORAGE_KEYS.USER, localUser);
-        } else if (localUser) {
-          localUser = localUserFromBackend(payload.user, localUser);
-          writeStored(STORAGE_KEYS.USER, localUser);
-        }
-      } else if (localUser) {
-        state.backendProfile = null;
-        localUser = await syncNicknameWithBackend(localUser.nickname);
-      } else {
-        state.backendProfile = null;
-      }
-
-      if (localUser) {
-        await syncPendingCompletions();
-        const localActive = getActiveCourse();
-        const activeResult = await djangoRequest('activities/active/');
-        const serverActive = activeResult && activeResult.activity;
-        if (serverActive) {
-          if (!localActive) {
-            saveActiveCourse(localActivityFromBackend(serverActive, null));
-          } else if (localActive.courseId === serverActive.courseId) {
-            const progress = await syncPendingActivityProgress(localActive, serverActive);
-            saveActiveCourse(localActivityFromBackend(progress.serverActivity, progress.localActivity));
-          } else {
-            const localStarted = new Date(localActive.startedAt).getTime();
-            const serverStarted = new Date(serverActive.startedAt).getTime();
-            if (Number.isFinite(localStarted) && localStarted > serverStarted) {
-              await syncStartedActivity(localActive.id, localActive.courseId, true);
-            } else {
-              saveActiveCourse(localActivityFromBackend(serverActive, null));
-            }
-          }
-        } else if (localActive) {
-          await syncStartedActivity(localActive.id, localActive.courseId, false);
-        }
-        mergeBackendRecords(payload.completions);
-        const active = getActiveCourse();
-        if (active) {
-          state.selectedCourseId = active.courseId;
-          if (state.page === 'home') state.page = 'progress';
-        }
-      }
-      render();
-      return true;
-    }
-
-    function buildShell(content, activePage, showNavigation) {
-      const user = getUser();
-      const navPages = ['home', 'courses', 'room', 'more'];
-      const navItems = [
-        { page:'home', label:'홈', icon:'home' },
-        { page:'courses', label:'코스', icon:'courses' },
-        { page:'room', label:'나의 제주방', icon:'room' },
-        { page:'more', label:'더보기', icon:'more' }
-      ];
-      const desktopNav = navItems.map(item =>
-        '<button type="button" data-action="navigate" data-page="' + item.page + '"' +
-        (activePage === item.page ? ' aria-current="page"' : '') + '>' + item.label + '</button>'
-      ).join('');
-      const bottomNav = navItems.map(item =>
-        '<button type="button" data-action="navigate" data-page="' + item.page + '"' +
-        (activePage === item.page ? ' aria-current="page"' : '') + '>' +
-        '<span class="nav-icon ' + item.icon + '" aria-hidden="true"></span><span>' + item.label + '</span></button>'
-      ).join('');
-      return '<header class="site-header"><div class="header-inner">' +
-        '<button type="button" class="brand btn-text" data-action="navigate" data-page="home" aria-label="혼디길 홈으로">' +
-        '<span class="brand-mark" aria-hidden="true"></span><span>혼디길</span></button>' +
-        '<nav class="desktop-nav" aria-label="주요 메뉴">' + desktopNav + '</nav>' +
-        '<span class="header-user">' + escapeHTML(user ? user.nickname : '') + '님</span></div></header>' +
-        '<main id="main-content" class="main" tabindex="-1">' + content + '</main>' +
-        (showNavigation === false ? '' : '<nav class="bottom-nav" aria-label="하단 주요 메뉴">' + bottomNav + '</nav>');
-    }
-
-    function navigate(page, options) {
-      cleanupTransientUI();
-      state.page = page;
-      if (options && options.courseId) state.selectedCourseId = options.courseId;
-      render();
-      window.scrollTo({ top: 0, behavior: 'auto' });
-      window.setTimeout(() => {
-        const main = document.getElementById('main-content');
-        if (main) main.focus({ preventScroll: true });
-      }, 0);
-    }
-
-    function cleanupTransientUI() {
-      if (state.map) {
-        try { state.map.remove(); } catch (error) { /* 이미 제거된 지도는 무시합니다. */ }
-        state.map = null;
-      }
-      if (state.elapsedTimer) {
-        clearInterval(state.elapsedTimer);
-        state.elapsedTimer = null;
-      }
-    }
-
-    function showToast(message) {
-      if (!toastElement) return;
-      toastElement.textContent = message;
-      toastElement.hidden = false;
-      if (state.toastTimer) clearTimeout(state.toastTimer);
-      state.toastTimer = window.setTimeout(() => { toastElement.hidden = true; }, 3200);
-    }
-
-    function openModal(html, focusSelector) {
-      state.returnFocus = document.activeElement;
-      modalRoot.innerHTML = '<div class="modal-backdrop" data-action="backdrop-close">' +
-        '<section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">' + html + '</section></div>';
-      window.setTimeout(() => {
-        const target = modalRoot.querySelector(focusSelector || 'button, input');
-        if (target) target.focus();
-      }, 0);
-    }
-
-    function closeModal() {
-      modalRoot.innerHTML = '';
-      state.pendingConfirmAction = '';
-      if (state.returnFocus && typeof state.returnFocus.focus === 'function') {
-        state.returnFocus.focus();
-      }
-      state.returnFocus = null;
-    }
-
-    function openConfirm(title, description, confirmLabel, actionName) {
-      state.pendingConfirmAction = actionName;
-      openModal(
-        '<h2 id="modal-title">' + escapeHTML(title) + '</h2>' +
-        '<p>' + escapeHTML(description) + '</p>' +
-        '<div class="modal-actions">' +
-        '<button type="button" class="btn btn-secondary" data-action="close-modal">취소</button>' +
-        '<button type="button" class="btn ' + (actionName === 'delete-all' ? 'btn-danger' : 'btn-primary') + '" data-action="confirm-pending">' + escapeHTML(confirmLabel) + '</button></div>',
-        '[data-action="close-modal"]'
-      );
-    }
-
-    function render() {
-      const user = getUser();
-      if (!user) {
-        cleanupTransientUI();
-        appElement.innerHTML = renderOnboarding();
-        document.title = '혼디길 시작하기';
-        return;
-      }
-
-      let pageContent = '';
-      let activeNavigation = state.page;
-      let showNavigation = true;
-      switch (state.page) {
-        case 'courses':
-          pageContent = renderCourses();
-          document.title = '코스 찾기 | 혼디길';
-          break;
-        case 'detail':
-          pageContent = renderCourseDetail();
-          activeNavigation = 'courses';
-          showNavigation = false;
-          document.title = courseById(state.selectedCourseId).name + ' | 혼디길';
-          break;
-        case 'progress':
-          pageContent = renderCourseProgress();
-          activeNavigation = 'courses';
-          showNavigation = false;
-          document.title = '코스 진행 | 혼디길';
-          break;
-        case 'result':
-          pageContent = renderCompletionResult();
-          activeNavigation = 'room';
-          showNavigation = false;
-          document.title = '완주 결과 | 혼디길';
-          break;
-        case 'restaurants':
-          pageContent = renderRestaurants();
-          activeNavigation = 'room';
-          showNavigation = false;
-          document.title = '주변 로컬 맛집 | 혼디길';
-          break;
-        case 'room':
-          pageContent = renderMyRoom();
-          document.title = '나의 제주방 | 혼디길';
-          break;
-        case 'more':
-          pageContent = renderMore();
-          document.title = '더보기 | 혼디길';
-          break;
-        case 'admin':
-          pageContent = renderAdmin();
-          activeNavigation = 'more';
-          showNavigation = false;
-          document.title = '관리자 | 혼디길';
-          break;
-        case 'home':
-        default:
-          state.page = 'home';
-          pageContent = renderHome();
-          activeNavigation = 'home';
-          document.title = '혼디길 | 제주 걷기와 러닝';
-      }
-      appElement.innerHTML = buildShell(pageContent, activeNavigation, showNavigation);
-
-      if (state.page === 'detail') {
-        window.setTimeout(initCourseMap, 0);
-      }
-      if (state.page === 'progress') {
-        startElapsedTimer();
-      }
-    }
-
-    function renderOnboarding() {
-      return `<main class="onboarding" id="main-content">
-        <section class="onboarding-card" aria-labelledby="onboarding-title">
-          <div class="onboarding-image">
-            <img src="${PHOTO_URLS.FOREST}" alt="나무가 우거진 제주 숲길" referrerpolicy="no-referrer">
-          </div>
-          <div class="onboarding-copy">
-            <div class="brand"><span class="brand-mark" aria-hidden="true"></span><span>혼디길</span></div>
-            <p class="eyebrow">회원가입 없이 바로 시작</p>
-            <h1 id="onboarding-title">혼디길에서 사용할 이름을 정해 주세요</h1>
-            <p class="lead">회원가입 없이 바로 시작할 수 있어요. 닉네임은 완주 기록과 나의 제주방에 표시됩니다.</p>
-            <form id="nickname-form" novalidate>
-              <div class="field">
-                <label for="nickname">닉네임</label>
-                <input class="input" id="nickname" name="nickname" type="text" maxlength="12" autocomplete="nickname" placeholder="닉네임을 입력해 주세요" aria-describedby="nickname-help nickname-error" required>
-                <p class="help" id="nickname-help">공백을 제외하고 2~12자로 입력해 주세요.</p>
-                <p class="form-message" id="nickname-error" role="alert"></p>
-              </div>
-              <button class="btn btn-primary btn-block" type="submit">혼디길 시작하기</button>
-            </form>
-          </div>
-        </section>
-      </main>`;
-    }
-
-    function renderHome() {
-      const user = getUser();
-      const records = getRecords();
-      const latest = records[0];
-      const active = getActiveCourse();
-      const featured = COURSE_DATA[0];
-      const secondaryCourses = [COURSE_DATA[1], COURSE_DATA[2]];
-      return `<div class="page">
-        <section class="hero" aria-labelledby="home-title">
-          <div class="hero-copy">
-            <p class="eyebrow">${escapeHTML(user.nickname)}님, 혼저 옵서예</p>
-            <h1 id="home-title">제주에서 가볍게 걷고 달려 보세요</h1>
-            <p class="lead">초보자도 부담 없는 길을 골라 완주하고, 가까운 제주 로컬 맛집까지 이어서 만나세요.</p>
-            <button type="button" class="btn btn-primary" data-action="navigate" data-page="courses">내게 맞는 코스 찾기</button>
-          </div>
-          <div class="hero-image">
-            <img src="${PHOTO_URLS.COAST}" alt="성산일출봉 주변의 제주 바다 풍경" referrerpolicy="no-referrer">
-          </div>
-        </section>
-
-        ${active ? `<section class="section" aria-labelledby="active-heading">
-          <div class="section-heading"><div><p class="eyebrow">진행 중</p><h2 id="active-heading">걷던 길을 이어가세요</h2></div></div>
-          <div class="card summary-card">
-            <div><h3>${escapeHTML(courseById(active.courseId).name)}</h3><p class="lead">시작 ${formatDate(active.startedAt, true)} · 현재 ${active.currentStep === 'complete' ? '완주 확인' : active.currentStep === 'finish' ? '도착 인증' : active.currentStep === 'photo' ? '사진 인증' : '출발 인증'} 단계</p></div>
-            <button type="button" class="btn btn-primary" data-action="resume-course">진행 이어가기</button>
-          </div>
-        </section>` : ''}
-
-        <section class="section" aria-labelledby="recommended-heading">
-          <div class="section-heading"><div><p class="eyebrow">처음이라면 이 길</p><h2 id="recommended-heading">추천 코스</h2></div><button type="button" class="btn btn-text" data-action="navigate" data-page="courses">전체 보기</button></div>
-          <div class="card-grid three">
-            ${renderCourseCard(featured)}
-            ${secondaryCourses.map(renderCourseCard).join('')}
-          </div>
-        </section>
-
-        <section class="section" aria-labelledby="recent-heading">
-          <div class="section-heading"><div><p class="eyebrow">나의 기록</p><h2 id="recent-heading">최근 완주</h2></div></div>
-          ${latest ? `<div class="card summary-card">
-            <div><span class="summary-number">${latest.distance.toFixed(1)}km</span><h3>${escapeHTML(latest.courseName)}</h3><p class="lead">${formatDate(latest.completedAt, false)} · ${formatDuration(latest.durationMs)}</p></div>
-            <button type="button" class="btn btn-secondary" data-action="navigate" data-page="room">기록 자세히 보기</button>
-          </div>` : `<div class="empty-state"><h3>아직 완주 기록이 없어요</h3><p>첫 코스를 골라 제주에서 나만의 한 걸음을 시작해 보세요.</p></div>`}
-        </section>
-      </div>`;
-    }
-
-    function renderCourseCard(course) {
-      return `<article class="card">
-        <div class="image-wrap">
-          <img src="${course.image}" alt="${escapeHTML(course.imageAlt)}" loading="lazy" referrerpolicy="no-referrer">
-          <span class="image-label">${course.typeLabel} 코스</span>
-        </div>
-        <div class="card-body">
-          <p class="eyebrow">${escapeHTML(course.region)}</p>
-          <h3>${escapeHTML(course.name)}</h3>
-          <div class="chips" aria-label="코스 요약">
-            <span class="chip primary">${course.distance.toFixed(1)}km</span>
-            <span class="chip">${formatCourseDuration(course.durationMin)}</span>
-            <span class="chip">${escapeHTML(course.difficulty)}</span>
-          </div>
-          <p class="course-description">${escapeHTML(course.description)}</p>
-          <button type="button" class="btn btn-secondary btn-block" data-action="view-course" data-course-id="${course.id}">상세보기</button>
-        </div>
-      </article>`;
-    }
-
-    function getFilteredCourses() {
-      return COURSE_DATA.filter(course => {
-        const typeMatch = state.filters.type === 'all' || course.type === state.filters.type;
-        const distanceMatch =
-          state.filters.distance === 'all' ||
-          (state.filters.distance === 'short' && course.distance < 5) ||
-          (state.filters.distance === 'medium' && course.distance >= 5 && course.distance < 8) ||
-          (state.filters.distance === 'long' && course.distance >= 8);
-        const difficultyMatch = state.filters.difficulty === 'all' || course.difficulty === state.filters.difficulty;
-        return typeMatch && distanceMatch && difficultyMatch;
+      prevBtn.addEventListener('click', () => move(-1));
+      nextBtn.addEventListener('click', () => move(1));
+      notesBtn.addEventListener('click', () => toggleNotes());
+      fullscreenBtn.addEventListener('click', toggleFullscreen);
+      window.addEventListener('hashchange', () => {
+        const page = Number.parseInt(location.hash.slice(1), 10);
+        if (Number.isFinite(page)) update(page - 1, page - 1 >= current ? 1 : -1);
       });
-    }
-
-    function selected(value, expected) {
-      return value === expected ? ' selected' : '';
-    }
-
-    function renderCourses() {
-      const courses = getFilteredCourses();
-      return `<div class="page">
-        <header class="page-header">
-          <p class="eyebrow">제주 맞춤 코스</p>
-          <h1>오늘 걷기 좋은 길을 찾아보세요</h1>
-          <p class="lead">걷기와 러닝, 거리와 난이도를 골라 부담 없는 코스를 확인할 수 있어요.</p>
-        </header>
-        <section class="filter-panel" aria-labelledby="filter-heading">
-          <h2 id="filter-heading" style="font-size:20px;margin-bottom:12px">코스 유형</h2>
-          <div class="filter-chips">
-            <button type="button" class="filter-chip" data-action="filter-type" data-value="all" aria-pressed="${state.filters.type === 'all'}">전체</button>
-            <button type="button" class="filter-chip" data-action="filter-type" data-value="walk" aria-pressed="${state.filters.type === 'walk'}">걷기</button>
-            <button type="button" class="filter-chip" data-action="filter-type" data-value="run" aria-pressed="${state.filters.type === 'run'}">러닝</button>
-          </div>
-          <div class="filter-selects">
-            <div class="field">
-              <label for="distance-filter">거리</label>
-              <select class="select" id="distance-filter" data-filter="distance">
-                <option value="all"${selected(state.filters.distance,'all')}>전체 거리</option>
-                <option value="short"${selected(state.filters.distance,'short')}>5km 미만</option>
-                <option value="medium"${selected(state.filters.distance,'medium')}>5km 이상 8km 미만</option>
-                <option value="long"${selected(state.filters.distance,'long')}>8km 이상</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="difficulty-filter">난이도</label>
-              <select class="select" id="difficulty-filter" data-filter="difficulty">
-                <option value="all"${selected(state.filters.difficulty,'all')}>전체 난이도</option>
-                <option value="쉬움"${selected(state.filters.difficulty,'쉬움')}>쉬움</option>
-                <option value="보통"${selected(state.filters.difficulty,'보통')}>보통</option>
-              </select>
-            </div>
-          </div>
-        </section>
-        <div class="section-heading"><h2>검색 결과 <span aria-live="polite">${courses.length}개</span></h2></div>
-        ${courses.length ? `<div class="card-grid three">${courses.map(renderCourseCard).join('')}</div>` :
-          `<div class="empty-state"><h3>조건에 맞는 코스가 없어요</h3><p>거리나 난이도를 넓혀 다시 찾아보세요.</p><button type="button" class="btn btn-secondary" data-action="reset-filters">필터 초기화</button></div>`}
-      </div>`;
-    }
-
-    function renderCourseDetail() {
-      const course = courseById(state.selectedCourseId);
-      const active = getActiveCourse();
-      const isSameActive = active && active.courseId === course.id;
-      return `<div class="page detail-content">
-        <button type="button" class="btn btn-text" data-action="navigate" data-page="courses">코스 목록으로</button>
-        <section class="detail-hero">
-          <div class="image-wrap"><img src="${course.image}" alt="${escapeHTML(course.imageAlt)}" referrerpolicy="no-referrer"><span class="image-label">${course.typeLabel} 코스</span></div>
-        </section>
-        <header class="detail-title">
-          <p class="eyebrow">${escapeHTML(course.region)}</p>
-          <h1>${escapeHTML(course.name)}</h1>
-          <p class="lead">${escapeHTML(course.description)}</p>
-        </header>
-        <dl class="meta-list">
-          <div class="meta-item"><dt>거리</dt><dd>${course.distance.toFixed(1)}km</dd></div>
-          <div class="meta-item"><dt>예상 시간</dt><dd>${formatCourseDuration(course.durationMin)}</dd></div>
-          <div class="meta-item"><dt>난이도</dt><dd>${escapeHTML(course.difficulty)}</dd></div>
-          <div class="meta-item"><dt>유형</dt><dd>${course.typeLabel}</dd></div>
-        </dl>
-        <section class="info-block" aria-labelledby="route-points-heading">
-          <h3 id="route-points-heading">출발지와 도착지</h3>
-          <p><strong>출발</strong> ${escapeHTML(course.startName)}<br><strong>도착</strong> ${escapeHTML(course.endName)}</p>
-        </section>
-        <section class="section" aria-labelledby="map-heading">
-          <div class="section-heading"><div><p class="eyebrow">미리 보는 경로</p><h2 id="map-heading">코스 지도</h2></div></div>
-          <div class="map-shell"><div id="course-map" role="img" aria-label="${escapeHTML(course.name)}의 출발지부터 도착지까지 경로 지도"></div></div>
-          <p class="help">지도와 타일은 인터넷 연결이 필요합니다. 실제 이동 전 현장 안내판도 함께 확인해 주세요.</p>
-        </section>
-        <section class="section info-block">
-          <h3>주의사항</h3><p>${escapeHTML(course.caution)}</p>
-        </section>
-        <section class="info-block">
-          <h3>준비물</h3><ul>${course.supplies.map(item => '<li>' + escapeHTML(item) + '</li>').join('')}</ul>
-        </section>
-        <div class="sticky-action">
-          <button type="button" class="btn btn-primary btn-block" data-action="${isSameActive ? 'resume-course' : 'start-course'}" data-course-id="${course.id}">${isSameActive ? '진행 중인 코스 이어가기' : '이 코스 시작하기'}</button>
-        </div>
-      </div>`;
-    }
-
-    function initCourseMap() {
-      const mapElement = document.getElementById('course-map');
-      if (!mapElement) return;
-      const course = courseById(state.selectedCourseId);
-      if (!window.L) {
-        mapElement.innerHTML = '<div class="map-fallback"><div><strong>지도를 불러오지 못했어요.</strong><p>인터넷 연결을 확인해 주세요. 코스 정보와 시작 기능은 그대로 사용할 수 있습니다.</p></div></div>';
-        return;
-      }
-      try {
-        state.map = window.L.map(mapElement, { scrollWheelZoom: false });
-        window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          maxZoom: 19,
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> 기여자'
-        }).addTo(state.map);
-        const path = window.L.polyline(course.route, { color:'#c84a00', weight:6, opacity:0.95 }).addTo(state.map);
-        window.L.marker(course.start).addTo(state.map).bindTooltip('출발 · ' + course.startName, { permanent:true, direction:'top' });
-        window.L.marker(course.end).addTo(state.map).bindTooltip('도착 · ' + course.endName, { permanent:true, direction:'top' });
-        state.map.fitBounds(path.getBounds(), { padding:[30,30] });
-        window.setTimeout(() => { if (state.map) state.map.invalidateSize(); }, 150);
-      } catch (error) {
-        mapElement.innerHTML = '<div class="map-fallback"><div><strong>지도를 표시할 수 없어요.</strong><p>잠시 후 다시 열거나 인터넷 연결을 확인해 주세요.</p></div></div>';
-      }
-    }
-
-    function progressStatus(active) {
-      if (active.startVerified && active.photoVerified && active.finishVerified) return '모든 인증 완료';
-      if (active.startVerified && active.photoVerified) return '도착 위치 인증';
-      if (active.startVerified) return '완주 사진 인증';
-      return '출발 위치 인증';
-    }
-
-    function renderCourseProgress() {
-      const active = getActiveCourse();
-      if (!active) {
-        return `<div class="page"><div class="empty-state"><h1>진행 중인 코스가 없어요</h1><p>코스를 골라 시작해 주세요.</p><button type="button" class="btn btn-primary" data-action="navigate" data-page="courses">코스 찾기</button></div></div>`;
-      }
-      const course = courseById(active.courseId);
-      const allComplete = active.startVerified && active.photoVerified && active.finishVerified;
-      const testLocationButtons = APP_CONFIG.DEVELOPMENT_MODE && APP_CONFIG.ALLOW_LOCATION_TEST;
-      return `<div class="page detail-content">
-        <section class="progress-hero" aria-labelledby="progress-title">
-          <p class="eyebrow">현재 진행 중</p>
-          <h1 id="progress-title">${escapeHTML(course.name)}</h1>
-          <p>현재 단계: <strong>${progressStatus(active)}</strong></p>
-          <div class="progress-time">
-            <div><span>시작 시간</span><strong>${formatClock(active.startedAt)}</strong></div>
-            <div><span>경과 시간</span><strong id="elapsed-time">${formatDuration(Date.now() - new Date(active.startedAt).getTime())}</strong></div>
-          </div>
-        </section>
-
-        <div class="status-box ${state.gpsTone}" id="gps-status" role="status" aria-live="polite">
-          <strong>GPS 상태</strong><br>${escapeHTML(state.gpsMessage || '위치 인증 버튼을 누르면 GPS 상태가 여기에 표시됩니다.')}
-        </div>
-
-        <section class="section" aria-labelledby="steps-heading">
-          <div class="section-heading"><div><p class="eyebrow">세 단계로 완주</p><h2 id="steps-heading">인증 진행</h2></div></div>
-          <div class="step-list">
-            <article class="step-card ${active.startVerified ? 'complete' : 'current'}">
-              <span class="step-number" aria-hidden="true">${active.startVerified ? '✓' : '1'}</span>
-              <div><h3>출발 위치 인증</h3><p>${active.startVerified ? '출발지 인증이 완료되었습니다.' : course.startName + ' 근처에서 현재 위치를 확인합니다.'}</p>
-              ${active.startVerified ? '<p><strong>상태: 완료</strong></p>' : `<div class="verification-actions">
-                <button type="button" class="btn btn-primary" data-action="request-location" data-target="start">출발 위치 확인하기</button>
-                ${testLocationButtons ? '<button type="button" class="btn btn-secondary" data-action="test-location" data-target="start">개발용 출발 인증</button>' : ''}
-              </div>`}</div>
-            </article>
-
-            <article class="step-card ${active.photoVerified ? 'complete' : active.startVerified ? 'current' : ''}">
-              <span class="step-number" aria-hidden="true">${active.photoVerified ? '✓' : '2'}</span>
-              <div><h3>완주 사진 인증</h3>
-                <p>완주 순간을 확인하기 위한 사진입니다. 원본은 서버에 전송하거나 영구 저장하지 않으며, 얼굴 인식도 하지 않습니다.</p>
-                ${active.startVerified ? `<div class="verification-actions">
-                  <label class="btn btn-primary" for="photo-input">${active.photoVerified ? '다른 사진 선택하기' : '사진 촬영 또는 선택하기'}</label>
-                  <input class="file-input" id="photo-input" type="file" accept="image/*" capture="environment">
-                </div>
-                ${state.photoPreviewUrl ? `<div class="photo-preview"><img src="${state.photoPreviewUrl}" alt="선택한 완주 인증 사진 미리보기"><div class="photo-preview-footer"><strong>사진 인증 완료</strong><button type="button" class="btn btn-text" data-action="remove-photo">사진 삭제</button></div></div>` :
-                  active.photoVerified ? `<div class="status-box"><strong>사진 인증 완료</strong><br>사진 원본은 저장하지 않아 새로고침 후 미리보기는 사라집니다.<div style="margin-top:8px"><button type="button" class="btn btn-text" data-action="remove-photo">사진 인증 취소</button></div></div>` :
-                  '<p class="help">사진을 선택하면 이 화면에서만 미리보기를 확인할 수 있습니다.</p>'}` :
-                  '<p class="help">먼저 출발 위치를 인증해 주세요.</p>'}
-              </div>
-            </article>
-
-            <article class="step-card ${active.finishVerified ? 'complete' : active.startVerified && active.photoVerified ? 'current' : ''}">
-              <span class="step-number" aria-hidden="true">${active.finishVerified ? '✓' : '3'}</span>
-              <div><h3>도착 위치 인증</h3><p>${active.finishVerified ? '도착지 인증이 완료되었습니다.' : course.endName + ' 근처에서 현재 위치를 확인합니다.'}</p>
-              ${active.finishVerified ? '<p><strong>상태: 완료</strong></p>' : `<div class="verification-actions">
-                <button type="button" class="btn btn-primary" data-action="request-location" data-target="finish" ${active.startVerified && active.photoVerified ? '' : 'disabled aria-disabled="true"'}>도착 위치 확인하기</button>
-                ${testLocationButtons ? `<button type="button" class="btn btn-secondary" data-action="test-location" data-target="finish" ${active.startVerified && active.photoVerified ? '' : 'disabled aria-disabled="true"'}>개발용 도착 인증</button>` : ''}
-              </div>`}</div>
-            </article>
-          </div>
-        </section>
-
-        ${APP_CONFIG.DEVELOPMENT_MODE && APP_CONFIG.ALLOW_LOCATION_TEST ? `<section class="section info-block">
-          <h3>개발 모드 전체 흐름 테스트</h3>
-          <p>실제 운영에서는 설정에서 비활성화해야 합니다. 아래 버튼은 출발·사진·도착 인증을 한 번에 완료합니다.</p>
-          <button type="button" class="btn btn-secondary" data-action="test-complete-all">모든 인증 테스트 완료</button>
-        </section>` : ''}
-
-        <div class="section button-row">
-          <button type="button" class="btn btn-danger" data-action="stop-course">코스 중단</button>
-          <button type="button" class="btn btn-primary" data-action="complete-course" ${allComplete ? '' : 'disabled aria-disabled="true"'}>완주하기</button>
-        </div>
-        ${allComplete ? '<p class="status-box"><strong>완주할 준비가 됐어요.</strong><br>완주 버튼을 눌러 기록을 저장하세요.</p>' : '<p class="help">출발 위치, 사진, 도착 위치 인증을 모두 완료해야 완주할 수 있습니다.</p>'}
-      </div>`;
-    }
-
-    function startElapsedTimer() {
-      if (state.elapsedTimer) clearInterval(state.elapsedTimer);
-      const update = () => {
-        const active = getActiveCourse();
-        const target = document.getElementById('elapsed-time');
-        if (!active || !target) return;
-        target.textContent = formatDuration(Date.now() - new Date(active.startedAt).getTime());
-      };
-      update();
-      state.elapsedTimer = window.setInterval(update, 1000);
-    }
-
-    function getLastRecord() {
-      if (state.lastRecord) return state.lastRecord;
-      const lastId = readStored(STORAGE_KEYS.LAST_RECORD, '');
-      return getRecords().find(record => record.id === lastId) || getRecords()[0] || null;
-    }
-
-    function renderCompletionResult() {
-      const record = getLastRecord();
-      if (!record) {
-        return '<div class="page"><div class="empty-state"><h1>표시할 완주 기록이 없어요</h1><p>코스를 완주하면 결과를 확인할 수 있습니다.</p><button type="button" class="btn btn-primary" data-action="navigate" data-page="courses">코스 찾기</button></div></div>';
-      }
-      return `<div class="page detail-content">
-        <section class="result-banner">
-          <span class="result-badge">완주 인증 완료</span>
-          <h1>혼디길 완주를 축하해요</h1>
-          <p class="lead">${escapeHTML(record.courseName)}에서 나만의 제주 한 걸음을 남겼습니다.</p>
-        </section>
-        <section class="section info-block" aria-labelledby="result-summary">
-          <h2 id="result-summary">완주 기록</h2>
-          <dl class="meta-list">
-            <div class="meta-item"><dt>코스</dt><dd>${escapeHTML(record.courseName)}</dd></div>
-            <div class="meta-item"><dt>이동 거리</dt><dd>${Number(record.distance).toFixed(1)}km</dd></div>
-            <div class="meta-item"><dt>소요 시간</dt><dd>${formatDuration(record.durationMs)}</dd></div>
-            <div class="meta-item"><dt>완주 날짜</dt><dd>${formatDate(record.completedAt, false)}</dd></div>
-          </dl>
-          <ul class="check-list">
-            <li><span>출발 위치 인증</span><strong>완료</strong></li>
-            <li><span>도착 위치 인증</span><strong>완료</strong></li>
-            <li><span>사진 인증</span><strong>완료</strong></li>
-          </ul>
-        </section>
-        <div class="section button-row">
-          <button type="button" class="btn btn-primary" data-action="view-restaurants" data-course-id="${record.courseId}">주변 맛집 보기</button>
-          <button type="button" class="btn btn-secondary" data-action="navigate" data-page="room">나의 제주방에서 기록 보기</button>
-        </div>
-      </div>`;
-    }
-
-    function mapLinks(restaurant) {
-      const name = encodeURIComponent(restaurant.name);
-      return {
-        naver: 'https://map.naver.com/p/directions/-/' + restaurant.lng + ',' + restaurant.lat + ',' + name + ',PLACE_POI/-/walk?c=' + restaurant.lng + ',' + restaurant.lat + ',15,0,0,0,dh',
-        kakao: 'https://map.kakao.com/link/to/' + name + ',' + restaurant.lat + ',' + restaurant.lng
-      };
-    }
-
-    function renderRestaurants() {
-      const record = getLastRecord();
-      const courseId = state.selectedCourseId || (record && record.courseId) || COURSE_DATA[0].id;
-      const course = courseById(courseId);
-      const restaurants = restaurantsForCourse(course.id);
-      return `<div class="page">
-        <button type="button" class="btn btn-text" data-action="navigate" data-page="result">완주 결과로</button>
-        <header class="page-header">
-          <p class="eyebrow">${escapeHTML(course.name)} 가까이</p>
-          <h1>제주 로컬 맛집에서 쉬어가세요</h1>
-          <p class="lead">완주 지점 주변의 소규모 식당 샘플입니다. 영업시간은 방문 전에 지도에서 다시 확인해 주세요.</p>
-        </header>
-        <div class="card-grid">
-          ${restaurants.map(restaurant => {
-            const links = mapLinks(restaurant);
-            return `<article class="card restaurant-card"><div class="card-body">
-              <div><p class="eyebrow">${escapeHTML(restaurant.category)} · ${escapeHTML(restaurant.distance)}</p><h2 style="font-size:22px">${escapeHTML(restaurant.name)}</h2></div>
-              <p class="course-description">${escapeHTML(restaurant.description)}</p>
-              <dl class="meta-list">
-                <div class="meta-item"><dt>영업시간</dt><dd>${escapeHTML(restaurant.hours)}</dd></div>
-                <div class="meta-item"><dt>대표 메뉴</dt><dd>${escapeHTML(restaurant.menu)}</dd></div>
-              </dl>
-              <button type="button" class="btn btn-text" data-action="restaurant-click" data-restaurant-id="${restaurant.id}">이 맛집 정보 기록하기</button>
-              <div class="restaurant-actions">
-                <a class="btn btn-secondary" href="${links.naver}" target="_blank" rel="noopener noreferrer" data-action="directions" data-map="naver" data-restaurant-id="${restaurant.id}">네이버지도 길찾기</a>
-                <a class="btn btn-secondary" href="${links.kakao}" target="_blank" rel="noopener noreferrer" data-action="directions" data-map="kakao" data-restaurant-id="${restaurant.id}">카카오맵 길찾기</a>
-              </div>
-            </div></article>`;
-          }).join('')}
-        </div>
-        <div class="section"><button type="button" class="btn btn-secondary" data-action="navigate" data-page="room">나의 제주방으로</button></div>
-      </div>`;
-    }
-
-    function renderRecordItem(record) {
-      return `<article class="record-item">
-        <h3>${escapeHTML(record.courseName)}</h3>
-        <p>${formatDate(record.completedAt, false)} · ${Number(record.distance).toFixed(1)}km · ${formatDuration(record.durationMs)}</p>
-        <p>출발·도착·사진 인증 모두 완료</p>
-      </article>`;
-    }
-
-    function renderMyRoom() {
-      const user = getUser();
-      const records = getRecords();
-      const totalDistance = records.reduce((sum, record) => sum + Number(record.distance || 0), 0);
-      const courseCounts = records.reduce((counts, record) => {
-        counts[record.courseName] = (counts[record.courseName] || 0) + 1;
-        return counts;
-      }, {});
-      return `<div class="page">
-        <header class="profile-card">
-          <p class="eyebrow">나의 제주방</p>
-          <h1>${escapeHTML(user.nickname)}님의 혼디길</h1>
-          <p class="profile-id">익명 사용자 ID ${escapeHTML(maskAnonymousId(user.id))}</p>
-        </header>
-        <section class="section stat-grid" aria-label="완주 통계">
-          <div class="stat-card"><span>완료한 코스</span><strong>${records.length}개</strong></div>
-          <div class="stat-card"><span>누적 거리</span><strong>${totalDistance.toFixed(1)}km</strong></div>
-        </section>
-        <section class="section" aria-labelledby="room-records">
-          <div class="section-heading"><div><p class="eyebrow">차곡차곡 쌓인 길</p><h2 id="room-records">최근 완주 기록</h2></div></div>
-          ${records.length ? '<div class="record-list">' + records.map(renderRecordItem).join('') + '</div>' :
-            '<div class="empty-state"><h3>아직 저장된 완주 기록이 없어요</h3><p>코스를 완주하면 이곳에 기록이 쌓입니다.</p><button type="button" class="btn btn-primary" data-action="navigate" data-page="courses">첫 코스 찾기</button></div>'}
-        </section>
-        ${Object.keys(courseCounts).length ? `<section class="section info-block"><h2 style="font-size:22px">코스별 완주 내역</h2><ul>${Object.entries(courseCounts).map(([name,count]) => '<li>' + escapeHTML(name) + ' · ' + count + '회</li>').join('')}</ul></section>` : ''}
-        <section class="section" aria-labelledby="profile-settings">
-          <div class="section-heading"><div><p class="eyebrow">내 정보 관리</p><h2 id="profile-settings">닉네임과 기록</h2></div></div>
-          <div class="settings-list">
-            <div class="setting-card"><div><h3>닉네임 변경</h3><p class="help">홈과 완주 기록에 표시되는 이름을 바꿉니다.</p></div><button type="button" class="btn btn-secondary" data-action="change-nickname">닉네임 변경하기</button></div>
-            <div class="setting-card"><div><h3>닉네임 삭제</h3><p class="help">완주 기록은 유지하고 닉네임 등록 화면부터 다시 시작합니다.</p></div><button type="button" class="btn btn-secondary" data-action="delete-nickname">닉네임 삭제하기</button></div>
-            <div class="setting-card"><div><h3>내 기록 초기화</h3><p class="help">완주 기록과 진행 중 코스만 지우고 닉네임은 유지합니다.</p></div><button type="button" class="btn btn-secondary" data-action="reset-records">기록 초기화하기</button></div>
-            <div class="setting-card"><div><h3>브라우저 저장 데이터 삭제</h3><p class="help">닉네임, 익명 ID, 기록, 로컬 통계를 모두 삭제합니다.</p></div><button type="button" class="btn btn-danger" data-action="delete-all">저장 데이터 삭제하기</button></div>
-          </div>
-        </section>
-      </div>`;
-    }
-
-    function renderMore() {
-      const queue = readStored(STORAGE_KEYS.QUEUE, []);
-      return `<div class="page">
-        <header class="page-header"><p class="eyebrow">서비스 안내</p><h1>더보기</h1><p class="lead">혼디길의 저장 방식과 테스트 설정을 확인할 수 있습니다.</p></header>
-        <div class="settings-list">
-          <section class="setting-card"><h2 style="font-size:22px">저장 안내</h2><p>화면은 브라우저에 먼저 저장되어 연결이 불안정해도 사용할 수 있습니다. Django 연결 중에는 닉네임, 코스 진행과 완주 기록도 서버에 동기화하며, 회원 계정이나 기기 간 동기화는 제공하지 않습니다.</p><button type="button" class="btn btn-secondary" data-action="navigate" data-page="room">내 데이터 관리</button></section>
-          <section class="setting-card"><h2 style="font-size:22px">위치와 사진</h2><p>위치는 사용자가 인증 버튼을 누를 때만 확인합니다. 사진 원본은 서버나 LocalStorage에 저장하지 않으며 얼굴 인식도 하지 않습니다.</p></section>
-          <section class="setting-card"><h2 style="font-size:22px">현재 실행 설정</h2>
-            <p>개발 모드: <strong>${APP_CONFIG.DEVELOPMENT_MODE ? '사용 중' : '사용 안 함'}</strong><br>위치 테스트: <strong>${APP_CONFIG.ALLOW_LOCATION_TEST ? '허용' : '차단'}</strong><br>데이터 전송: <strong>${state.backendAvailable ? 'Django 백엔드 연결됨' : (APP_CONFIG.APPS_SCRIPT_URL ? 'Apps Script 사용' : 'LocalStorage 우선 사용')}</strong><br>전송 대기: <strong>${Array.isArray(queue) ? queue.length : 0}건</strong></p>
-          </section>
-          ${state.backendAvailable ? '<section class="setting-card"><h2 style="font-size:22px">서비스 관리자</h2><p>Django의 안전한 관리자 계정으로 코스와 운영 데이터를 관리합니다.</p><a class="btn btn-secondary" href="/admin/">Django 관리자 열기</a></section>' : (APP_CONFIG.ADMIN_ENABLED ? '<section class="setting-card"><h2 style="font-size:22px">관리자 데모</h2><p>현재 브라우저에 쌓인 테스트 통계를 확인합니다. 실제 운영 인증 기능은 아닙니다.</p><button type="button" class="btn btn-secondary" data-action="navigate" data-page="admin">관리자 페이지 들어가기</button></section>' : '')}
-          <section class="setting-card"><h2 style="font-size:22px">사진 출처</h2><p>서비스의 제주 숲과 해안 사진은 Unsplash의 ZIN YOON, Andrea Wilkins, Lightscape가 촬영한 무료 사진을 사용했습니다.</p>
-            <div class="button-row"><a class="btn btn-text" href="https://unsplash.com/photos/abEaba1dj7I" target="_blank" rel="noopener noreferrer">숲길 사진</a><a class="btn btn-text" href="https://unsplash.com/photos/db0RccNZq4M" target="_blank" rel="noopener noreferrer">숲 사진</a><a class="btn btn-text" href="https://unsplash.com/photos/JjnCtpzFXo4" target="_blank" rel="noopener noreferrer">성산 사진</a></div>
-          </section>
-        </div>
-      </div>`;
-    }
-
-    function percent(part, total) {
-      if (!total) return '0%';
-      return Math.min(100, Math.max(0, Math.round((part / total) * 100))) + '%';
-    }
-
-    function getAdminMetrics() {
-      const events = getEvents();
-      const rollup = getMetricsRollup();
-      const today = localDateKey(new Date());
-      const starts = Number(rollup.eventCounts.course_started || 0);
-      const completes = Number(rollup.eventCounts.course_completed || 0);
-      const courseUsage = COURSE_DATA.map(course => ({
-        course,
-        starts: Number(rollup.courseStarts[course.id] || 0),
-        completes: Number(rollup.courseCompletes[course.id] || 0)
-      })).filter(item => item.starts || item.completes);
-      return {
-        events,
-        totalUsers: Math.max(Array.isArray(rollup.users) ? rollup.users.length : 0, getUser() ? 1 : 0),
-        todayVisits: Array.isArray(rollup.dailyVisitors[today]) ? rollup.dailyVisitors[today].length : 0,
-        starts,
-        completes,
-        completionRate: percent(completes, starts),
-        locationRate: percent(Number(rollup.locationSuccesses || 0), Number(rollup.locationAttempts || 0)),
-        photoRate: percent(Number(rollup.photoSuccesses || 0), Number(rollup.photoAttempts || 0)),
-        restaurantClicks: Number(rollup.eventCounts.restaurant_clicked || 0),
-        directionsClicks: Number(rollup.eventCounts.directions_clicked || 0),
-        courseUsage
-      };
-    }
-
-    function renderAdmin() {
-      let authenticated = false;
-      try { authenticated = sessionStorage.getItem(SESSION_KEYS.ADMIN) === 'true'; } catch (error) { authenticated = false; }
-      if (!authenticated) {
-        return `<div class="page">
-          <button type="button" class="btn btn-text" data-action="navigate" data-page="more">더보기로</button>
-          <section class="admin-login">
-            <p class="eyebrow">로컬 통계 확인</p><h1>관리자 로그인</h1>
-            <p class="lead">초기 테스트 비밀번호로만 들어갈 수 있는 데모 화면입니다.</p>
-            <div class="admin-warning"><strong>보안 안내</strong><br>HTML 안에 있는 비밀번호는 누구나 확인할 수 있어 안전하지 않습니다. 실제 운영 전 Apps Script 또는 서버 인증으로 반드시 바꿔야 합니다.</div>
-            <form id="admin-login-form" class="section" novalidate>
-              <div class="field"><label for="admin-password">테스트 비밀번호</label><input class="input" id="admin-password" name="password" type="password" inputmode="numeric" autocomplete="current-password" required><p class="form-message" id="admin-error" role="alert"></p></div>
-              <button class="btn btn-primary btn-block" type="submit">관리자 화면 열기</button>
-            </form>
-          </section>
-        </div>`;
-      }
-      const metrics = getAdminMetrics();
-      const statItems = [
-        ['전체 사용자', metrics.totalUsers + '명'],
-        ['오늘 방문자', metrics.todayVisits + '명'],
-        ['코스 시작', metrics.starts + '회'],
-        ['완주', metrics.completes + '회'],
-        ['완주율', metrics.completionRate],
-        ['위치 인증 성공률', metrics.locationRate],
-        ['사진 인증 성공률', metrics.photoRate],
-        ['맛집 클릭', metrics.restaurantClicks + '회'],
-        ['길찾기 클릭', metrics.directionsClicks + '회']
-      ];
-      const recentEvents = metrics.events.slice(-12).reverse();
-      return `<div class="page">
-        <div class="button-row"><button type="button" class="btn btn-text" data-action="navigate" data-page="more">더보기로</button><button type="button" class="btn btn-secondary" data-action="admin-logout">관리자 로그아웃</button></div>
-        <header class="page-header"><p class="eyebrow">LocalStorage 기반 MVP</p><h1>관리자 대시보드</h1><p class="lead">이 브라우저의 누적 통계를 보여 주며, 최근 이용 표는 최대 500개 이벤트를 표시합니다.</p></header>
-        <div class="admin-warning"><strong>운영 전 변경 필요</strong><br>현재 비밀번호와 sessionStorage 세션은 화면 테스트용이며 보안 인증이 아닙니다.</div>
-        <section class="section stat-grid" aria-label="관리자 주요 통계">
-          ${statItems.map(item => '<div class="stat-card"><span>' + item[0] + '</span><strong>' + item[1] + '</strong></div>').join('')}
-        </section>
-        <section class="section" aria-labelledby="course-usage-heading">
-          <div class="section-heading"><h2 id="course-usage-heading">코스별 이용 현황</h2></div>
-          ${metrics.courseUsage.length ? '<div class="record-list">' + metrics.courseUsage.map(item => '<div class="record-item"><h3>' + escapeHTML(item.course.name) + '</h3><p>시작 ' + item.starts + '회 · 완주 ' + item.completes + '회</p></div>').join('') + '</div>' : '<div class="empty-state"><h3>아직 코스 이용 기록이 없어요</h3><p>코스를 시작하면 여기에 집계됩니다.</p></div>'}
-        </section>
-        <section class="section" aria-labelledby="recent-events-heading">
-          <div class="section-heading"><h2 id="recent-events-heading">최근 이용 기록</h2></div>
-          ${recentEvents.length ? `<div class="admin-table-wrap"><table><thead><tr><th>시각</th><th>이벤트</th><th>코스·대상</th><th>결과</th></tr></thead><tbody>
-            ${recentEvents.map(event => `<tr><td>${formatDate(event.occurredAt, true)}</td><td>${escapeHTML(eventLabel(event.eventType))}</td><td>${escapeHTML(event.data && (event.data.courseName || event.data.restaurantName || event.data.target) || '-')}</td><td>${escapeHTML(event.data && event.data.result || '-')}</td></tr>`).join('')}
-          </tbody></table></div>` : '<div class="empty-state"><h3>아직 이용 기록이 없어요</h3></div>'}
-        </section>
-      </div>`;
-    }
-
-    function beginCourse(courseId, replaceExisting) {
-      const course = courseById(courseId);
-      const active = {
-        id: createId('activity'),
-        backendActivityId: '',
-        courseId: course.id,
-        startedAt: new Date().toISOString(),
-        startVerified: false,
-        finishVerified: false,
-        photoVerified: false,
-        photoName: '',
-        currentStep: 'start'
-      };
-      saveActiveCourse(active);
-      state.selectedCourseId = course.id;
-      state.gpsMessage = '';
-      state.gpsTone = '';
-      logEvent('course_started', { courseId:course.id, courseName:course.name, result:'success' });
-      navigate('progress', { courseId:course.id });
-      if (state.backendAvailable) {
-        syncStartedActivity(active.id, course.id, replaceExisting === true)
-          .then(() => render())
-          .catch(error => {
-            if (error && error.status) {
-              const current = getActiveCourse();
-              if (current && current.id === active.id) saveActiveCourse(null);
-              navigate('courses');
-            }
-            reportBackendSyncFailure(error, '백엔드 연결이 끊겨 진행 상태를 브라우저에만 저장했습니다.');
-          });
-      }
-    }
-
-    function resumeCourse() {
-      const active = getActiveCourse();
-      if (!active) {
-        showToast('진행 중인 코스가 없습니다.');
-        navigate('courses');
-        return;
-      }
-      state.selectedCourseId = active.courseId;
-      navigate('progress', { courseId:active.courseId });
-    }
-
-    function requestStartCourse(courseId) {
-      const active = getActiveCourse();
-      state.selectedCourseId = courseId;
-      if (active && active.courseId !== courseId) {
-        openConfirm(
-          '새 코스를 시작할까요?',
-          '현재 진행 중인 코스 기록은 중단됩니다. 완주 기록에는 저장되지 않습니다.',
-          '새 코스 시작하기',
-          'replace-course'
-        );
-        return;
-      }
-      if (active) {
-        resumeCourse();
-        return;
-      }
-      beginCourse(courseId);
-    }
-
-    function openLocationPurpose(targetType) {
-      const active = getActiveCourse();
-      if (!active) return;
-      const course = courseById(active.courseId);
-      const isStart = targetType === 'start';
-      const place = isStart ? course.startName : course.endName;
-      const insecureNotice = (!window.isSecureContext || location.protocol === 'file:')
-        ? '<div class="status-box warning"><strong>HTTPS 안내</strong><br>현재 실행 주소에서는 브라우저가 위치 권한을 제한할 수 있습니다. 배포된 HTTPS 주소나 localhost에서 다시 시도해 주세요.</div>'
-        : '';
-      openModal(
-        '<h2 id="modal-title">' + (isStart ? '출발' : '도착') + ' 위치를 확인할게요</h2>' +
-        '<p>혼디길은 <strong>' + escapeHTML(place) + '</strong> 가까이에 있는지 확인하기 위해 이번 한 번만 현재 위치를 사용합니다.</p>' +
-        '<p>위치 정보는 인증 결과를 기록하는 데 사용합니다. 브라우저의 권한 창에서 허용해야 확인할 수 있습니다.</p>' +
-        insecureNotice +
-        '<div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">취소</button>' +
-        '<button type="button" class="btn btn-primary" data-action="confirm-location" data-target="' + targetType + '">위치 확인 시작</button></div>',
-        '[data-action="close-modal"]'
-      );
-    }
-
-    function distanceInMeters(first, second) {
-      const radius = 6371000;
-      const toRadians = degrees => degrees * Math.PI / 180;
-      const latDelta = toRadians(second[0] - first[0]);
-      const lngDelta = toRadians(second[1] - first[1]);
-      const lat1 = toRadians(first[0]);
-      const lat2 = toRadians(second[0]);
-      const value = Math.sin(latDelta / 2) ** 2 +
-        Math.cos(lat1) * Math.cos(lat2) * Math.sin(lngDelta / 2) ** 2;
-      return radius * 2 * Math.atan2(Math.sqrt(value), Math.sqrt(1 - value));
-    }
-
-    function locationErrorMessage(error) {
-      if (error && error.code === 1) {
-        return '위치 권한이 거부되었습니다. 브라우저 주소창의 자물쇠 또는 사이트 설정에서 위치를 허용한 뒤 다시 시도해 주세요.';
-      }
-      if (error && error.code === 2) {
-        return '현재 위치를 찾지 못했습니다. GPS와 Wi-Fi를 켜고 하늘이 잘 보이는 곳에서 다시 시도해 주세요.';
-      }
-      if (error && error.code === 3) {
-        return '위치 확인 시간이 오래 걸리고 있습니다. 잠시 이동한 뒤 다시 시도해 주세요.';
-      }
-      if (!window.isSecureContext || location.protocol === 'file:') {
-        return '이 브라우저에서는 위치 확인에 HTTPS가 필요합니다. 배포된 HTTPS 주소나 localhost에서 열어 주세요.';
-      }
-      return '위치를 확인할 수 없습니다. 브라우저의 위치 설정을 확인하고 다시 시도해 주세요.';
-    }
-
-    function verifyLocation(targetType) {
-      closeModal();
-      const active = getActiveCourse();
-      if (!active) return;
-      const activityId = active.id;
-      const course = courseById(active.courseId);
-      const target = targetType === 'start' ? course.start : course.end;
-      const eventType = targetType === 'start' ? 'start_verified' : 'finish_verified';
-      const field = targetType === 'start' ? 'startVerified' : 'finishVerified';
-      state.gpsMessage = '현재 위치를 확인하고 있습니다. 잠시만 기다려 주세요.';
-      state.gpsTone = '';
-      render();
-
-      if (!navigator.geolocation) {
-        state.gpsMessage = '이 브라우저는 위치 확인 기능을 지원하지 않습니다. 최신 브라우저에서 다시 시도해 주세요.';
-        state.gpsTone = 'error';
-        logEvent(eventType, { courseId:course.id, courseName:course.name, target:targetType, result:'failure', reason:'unsupported' });
-        render();
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(async position => {
-        const currentActive = getActiveCourse();
-        if (!currentActive || currentActive.id !== activityId) return;
-        const current = [position.coords.latitude, position.coords.longitude];
-        let measuredDistance = distanceInMeters(current, target);
-        const accuracy = Number(position.coords.accuracy || 0);
-        const effectiveRadius = APP_CONFIG.GPS_RADIUS_METERS + Math.min(Math.max(accuracy, 0), 100);
-        let success = measuredDistance <= effectiveRadius;
-        const verificationRequestId = createId('verify');
-        if (state.backendAvailable) {
-          try {
-            const syncedActive = await ensureBackendActivity(currentActive);
-            if (syncedActive && syncedActive.backendActivityId) {
-              const verification = await djangoRequest(
-                'activities/' + encodeURIComponent(syncedActive.backendActivityId) + '/verify-location/',
-                {
-                  method:'POST',
-                  body:{
-                    requestId:verificationRequestId,
-                    target:targetType,
-                    latitude:position.coords.latitude,
-                    longitude:position.coords.longitude,
-                    accuracyM:Math.max(0, accuracy)
-                  }
-                }
-              );
-              success = verification.verified === true;
-              measuredDistance = Number(verification.distanceM || 0);
-            }
-          } catch (error) {
-            if (error && error.status) {
-              state.gpsMessage = error.message || '서버에서 위치 인증을 완료하지 못했습니다.';
-              state.gpsTone = 'error';
-              logEvent(eventType, { courseId:course.id, courseName:course.name, target:targetType, result:'failure', reason:error.code || 'server-rejected' });
-              render();
-              return;
-            }
-            reportBackendSyncFailure(error, '백엔드 연결이 끊겨 위치 인증을 브라우저에서 처리했습니다.');
-          }
-        }
-        const eventData = {
-          courseId:course.id,
-          courseName:course.name,
-          target:targetType,
-          result:success ? 'success' : 'failure',
-          latitude:position.coords.latitude,
-          longitude:position.coords.longitude,
-          accuracyM:Math.round(Math.max(0, accuracy)),
-          location:{
-            latitude:position.coords.latitude,
-            longitude:position.coords.longitude,
-            accuracy:Math.round(Math.max(0, accuracy))
-          },
-          distanceM:Math.round(measuredDistance)
-        };
-        if (success) {
-          const locationField = targetType === 'start' ? 'startLocation' : 'finishLocation';
-          updateActiveCourse({
-            [field]:true,
-            [locationField]:{
-              requestId:verificationRequestId,
-              latitude:position.coords.latitude,
-              longitude:position.coords.longitude,
-              accuracyM:Math.max(0, accuracy)
-            }
-          });
-          state.gpsMessage = (targetType === 'start' ? '출발' : '도착') + ' 위치 인증이 완료되었습니다. 기준 지점에서 약 ' + Math.round(measuredDistance) + 'm 거리입니다.';
-          state.gpsTone = '';
-        } else {
-          state.gpsMessage = '현재 위치는 인증 지점에서 약 ' + Math.round(measuredDistance) + 'm 떨어져 있습니다. ' + placeLabel(targetType, course) + ' 가까이에서 다시 시도해 주세요.';
-          state.gpsTone = 'error';
-        }
-        logEvent(eventType, eventData);
-        render();
-      }, error => {
-        const currentActive = getActiveCourse();
-        if (!currentActive || currentActive.id !== activityId) return;
-        state.gpsMessage = locationErrorMessage(error);
-        state.gpsTone = 'error';
-        logEvent(eventType, { courseId:course.id, courseName:course.name, target:targetType, result:'failure', reason:'geolocation-error-' + (error && error.code || 'unknown') });
-        render();
-      }, {
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 0
+      window.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowRight' || event.key === 'PageDown' || event.key === ' ') { event.preventDefault(); move(1); }
+        else if (event.key === 'ArrowLeft' || event.key === 'PageUp') { event.preventDefault(); move(-1); }
+        else if (event.key === 'Home') { event.preventDefault(); update(0, -1); }
+        else if (event.key === 'End') { event.preventDefault(); update(slides.length - 1, 1); }
+        else if (event.key.toLowerCase() === 'n') toggleNotes();
+        else if (event.key.toLowerCase() === 'f') toggleFullscreen();
+        else if (event.key === 'Escape') toggleNotes(false);
       });
-    }
-
-    function placeLabel(targetType, course) {
-      return targetType === 'start' ? course.startName : course.endName;
-    }
-
-    async function testVerifyLocation(targetType) {
-      if (!APP_CONFIG.DEVELOPMENT_MODE || !APP_CONFIG.ALLOW_LOCATION_TEST) return;
-      const active = getActiveCourse();
-      if (!active) return;
-      const course = courseById(active.courseId);
-      const field = targetType === 'start' ? 'startVerified' : 'finishVerified';
-      const eventType = targetType === 'start' ? 'start_verified' : 'finish_verified';
-      const target = targetType === 'start' ? course.start : course.end;
-      const verificationRequestId = createId('verify');
-      if (state.backendAvailable) {
-        try {
-          const syncedActive = await ensureBackendActivity(active);
-          if (syncedActive && syncedActive.backendActivityId) {
-            const result = await djangoRequest(
-              'activities/' + encodeURIComponent(syncedActive.backendActivityId) + '/verify-location/',
-              { method:'POST', body:{ requestId:verificationRequestId, target:targetType, latitude:target[0], longitude:target[1], accuracyM:1 } }
-            );
-            if (!result || result.verified !== true) throw new Error('development-location-not-verified');
-          }
-        } catch (error) {
-          if (error && error.status) {
-            reportBackendSyncFailure(error);
-            return;
-          }
-          reportBackendSyncFailure(error, '백엔드 연결이 끊겨 개발용 위치 인증을 브라우저에서 처리했습니다.');
-        }
-      }
-      const locationField = targetType === 'start' ? 'startLocation' : 'finishLocation';
-      updateActiveCourse({
-        [field]:true,
-        [locationField]:{ requestId:verificationRequestId, latitude:target[0], longitude:target[1], accuracyM:1 }
+      deck.addEventListener('touchstart', (event) => { touchStartX = event.changedTouches[0].clientX; }, {passive: true});
+      deck.addEventListener('touchend', (event) => {
+        if (touchStartX === null) return;
+        const delta = event.changedTouches[0].clientX - touchStartX;
+        if (Math.abs(delta) > 50) move(delta < 0 ? 1 : -1);
+        touchStartX = null;
+      }, {passive: true});
+      document.addEventListener('fullscreenchange', () => {
+        fullscreenBtn.textContent = document.fullscreenElement ? '×' : '⛶';
+        fullscreenBtn.setAttribute('aria-label', document.fullscreenElement ? '전체 화면 종료' : '전체 화면으로 보기');
       });
-      state.gpsMessage = '개발 모드에서 ' + (targetType === 'start' ? '출발' : '도착') + ' 위치 인증을 완료했습니다.';
-      state.gpsTone = '';
-      logEvent(eventType, { courseId:course.id, courseName:course.name, target:targetType, result:'success', method:'development-test' });
-      render();
-    }
 
-    async function testCompleteAll() {
-      if (!APP_CONFIG.DEVELOPMENT_MODE || !APP_CONFIG.ALLOW_LOCATION_TEST) return;
-      const active = getActiveCourse();
-      if (!active) return;
-      const course = courseById(active.courseId);
-      const startRequestId = createId('verify');
-      const photoRequestId = createId('verify');
-      const finishRequestId = createId('verify');
-      if (state.backendAvailable) {
-        try {
-          const syncedActive = await ensureBackendActivity(active);
-          if (syncedActive && syncedActive.backendActivityId) {
-            const basePath = 'activities/' + encodeURIComponent(syncedActive.backendActivityId) + '/';
-            await djangoRequest(basePath + 'verify-location/', {
-              method:'POST', body:{ requestId:startRequestId, target:'start', latitude:course.start[0], longitude:course.start[1], accuracyM:1 }
-            });
-            await djangoRequest(basePath + 'verify-photo/', {
-              method:'POST', body:{ requestId:photoRequestId, fileType:'image/jpeg', fileSize:1 }
-            });
-            await djangoRequest(basePath + 'verify-location/', {
-              method:'POST', body:{ requestId:finishRequestId, target:'finish', latitude:course.end[0], longitude:course.end[1], accuracyM:1 }
-            });
-          }
-        } catch (error) {
-          if (error && error.status) {
-            reportBackendSyncFailure(error);
-            return;
-          }
-          reportBackendSyncFailure(error, '백엔드 연결이 끊겨 개발용 전체 인증을 브라우저에서 처리했습니다.');
-        }
-      }
-      if (!active.startVerified) logEvent('start_verified', { courseId:course.id, courseName:course.name, target:'start', result:'success', method:'development-test-all' });
-      if (!active.photoVerified) logEvent('photo_verified', { courseId:course.id, courseName:course.name, result:'success', method:'development-test-all' });
-      if (!active.finishVerified) logEvent('finish_verified', { courseId:course.id, courseName:course.name, target:'finish', result:'success', method:'development-test-all' });
-      updateActiveCourse({
-        startVerified:true,
-        photoVerified:true,
-        finishVerified:true,
-        photoName:'개발 모드 테스트',
-        startLocation:{ requestId:startRequestId, latitude:course.start[0], longitude:course.start[1], accuracyM:1 },
-        finishLocation:{ requestId:finishRequestId, latitude:course.end[0], longitude:course.end[1], accuracyM:1 },
-        photoMeta:{ requestId:photoRequestId, fileType:'image/jpeg', fileSize:1 }
-      });
-      state.gpsMessage = '개발 모드에서 모든 인증을 완료했습니다.';
-      state.gpsTone = '';
-      render();
-    }
-
-    async function handlePhotoSelection(input) {
-      const file = input.files && input.files[0];
-      if (!file) {
-        showToast('사진을 선택해 주세요.');
-        return;
-      }
-      if (!String(file.type).startsWith('image/')) {
-        input.value = '';
-        showToast('이미지 파일만 선택할 수 있습니다.');
-        return;
-      }
-      if (file.size < 1) {
-        input.value = '';
-        showToast('내용이 있는 사진 파일을 선택해 주세요.');
-        return;
-      }
-      if (file.size > 10 * 1024 * 1024) {
-        input.value = '';
-        showToast('사진 용량은 10MB 이하로 선택해 주세요.');
-        return;
-      }
-      if (state.photoPreviewUrl) URL.revokeObjectURL(state.photoPreviewUrl);
-      state.photoPreviewUrl = URL.createObjectURL(file);
-      const currentActive = getActiveCourse();
-      const photoRequestId = createId('verify');
-      if (state.backendAvailable && currentActive) {
-        try {
-          const syncedActive = await ensureBackendActivity(currentActive);
-          if (syncedActive && syncedActive.backendActivityId) {
-            await djangoRequest(
-              'activities/' + encodeURIComponent(syncedActive.backendActivityId) + '/verify-photo/',
-              { method:'POST', body:{ requestId:photoRequestId, fileType:file.type, fileSize:file.size } }
-            );
-          }
-        } catch (error) {
-          if (error && error.status) {
-            reportBackendSyncFailure(error);
-            render();
-            return;
-          }
-          reportBackendSyncFailure(error, '백엔드 연결이 끊겨 사진 인증 결과를 브라우저에만 저장했습니다.');
-        }
-      }
-      const active = updateActiveCourse({
-        photoVerified:true,
-        photoName:file.name.slice(0, 80),
-        photoMeta:{ requestId:photoRequestId, fileType:file.type, fileSize:file.size }
-      });
-      if (active) {
-        const course = courseById(active.courseId);
-        logEvent('photo_verified', { courseId:course.id, courseName:course.name, result:'success', fileType:file.type, fileSize:file.size });
-      }
-      render();
-      showToast('사진 인증이 완료되었습니다.');
-    }
-
-    function removePhoto() {
-      if (state.photoPreviewUrl) URL.revokeObjectURL(state.photoPreviewUrl);
-      state.photoPreviewUrl = '';
-      const beforeRemoval = getActiveCourse();
-      if (state.backendAvailable && beforeRemoval && beforeRemoval.backendActivityId) {
-        djangoRequest(
-          'activities/' + encodeURIComponent(beforeRemoval.backendActivityId) + '/verify-photo/',
-          { method:'DELETE' }
-        ).catch(error => reportBackendSyncFailure(error, '백엔드 연결이 끊겨 사진 삭제를 브라우저에만 반영했습니다.'));
-      }
-      const active = updateActiveCourse({ photoVerified:false, finishVerified:false, photoName:'', photoMeta:null, finishLocation:null });
-      if (active) {
-        const course = courseById(active.courseId);
-        logEvent('photo_verified', { courseId:course.id, courseName:course.name, result:'cancelled' });
-      }
-      render();
-      showToast('사진 인증을 취소했습니다.');
-    }
-
-    async function completeCourse() {
-      const active = getActiveCourse();
-      if (!active) {
-        showToast('진행 중인 코스가 없습니다.');
-        return;
-      }
-      if (!(active.startVerified && active.photoVerified && active.finishVerified)) {
-        showToast('출발 위치, 사진, 도착 위치 인증을 모두 완료해 주세요.');
-        return;
-      }
-      const course = courseById(active.courseId);
-      const records = getRecords();
-      let record = null;
-      let completedOnBackend = false;
-      if (state.backendAvailable) {
-        try {
-          const syncedActive = await ensureBackendActivity(active);
-          if (!syncedActive || !syncedActive.backendActivityId) throw new Error('backend-activity-missing');
-          const result = await djangoRequest(
-            'activities/' + encodeURIComponent(syncedActive.backendActivityId) + '/complete/',
-            { method:'POST', body:{} }
-          );
-          record = result && (result.completion || result.record);
-          completedOnBackend = Boolean(record);
-        } catch (error) {
-          if (error && error.status) {
-            reportBackendSyncFailure(error);
-            return;
-          }
-          reportBackendSyncFailure(error, '백엔드 연결이 끊겨 완주 기록을 브라우저에만 저장했습니다.');
-        }
-      }
-      const recordId = record && record.id ? String(record.id) : 'record_' + active.id;
-      record = records.find(item => item.id === recordId) || record;
-      if (!record) {
-        const completedAt = new Date().toISOString();
-        record = {
-          id: recordId,
-          activityId: active.id,
-          courseId: course.id,
-          courseName: course.name,
-          distance: course.distance,
-          startedAt: active.startedAt,
-          completedAt,
-          durationMs: Math.max(1000, new Date(completedAt).getTime() - new Date(active.startedAt).getTime()),
-          startVerified: true,
-          finishVerified: true,
-          photoVerified: true
-        };
-      }
-      if (!records.some(item => item.id === record.id)) records.unshift(record);
-      saveRecords(records);
-      if (!completedOnBackend) {
-        const pending = getPendingCompletions().filter(item => item.localRecordId !== record.id);
-        pending.push({ localRecordId:record.id, activity:Object.assign({}, active) });
-        savePendingCompletions(pending);
-      }
-      logEvent('course_completed', {
-        courseId:course.id, courseName:course.name, result:'success',
-        distanceKm:course.distance, durationMs:record.durationMs
-      });
-      state.lastRecord = record;
-      state.selectedCourseId = course.id;
-      writeStored(STORAGE_KEYS.LAST_RECORD, record.id);
-      saveActiveCourse(null);
-      if (state.photoPreviewUrl) URL.revokeObjectURL(state.photoPreviewUrl);
-      state.photoPreviewUrl = '';
-      state.gpsMessage = '';
-      state.gpsTone = '';
-      navigate('result', { courseId:course.id });
-    }
-
-    function openNicknameChange() {
-      const user = getUser();
-      if (!user) return;
-      openModal(
-        '<h2 id="modal-title">닉네임 변경</h2><p>홈과 나의 제주방에 표시할 이름을 입력해 주세요.</p>' +
-        '<form id="nickname-change-form" novalidate><div class="field"><label for="new-nickname">새 닉네임</label>' +
-        '<input class="input" id="new-nickname" name="nickname" type="text" maxlength="12" value="' + escapeHTML(user.nickname) + '" required>' +
-        '<p class="form-message" id="nickname-change-error" role="alert"></p></div>' +
-        '<div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">취소</button><button type="submit" class="btn btn-primary">변경하기</button></div></form>',
-        '#new-nickname'
-      );
-    }
-
-    function performPendingAction() {
-      const actionName = state.pendingConfirmAction;
-      closeModal();
-      if (actionName === 'replace-course') {
-        saveActiveCourse(null);
-        if (state.photoPreviewUrl) URL.revokeObjectURL(state.photoPreviewUrl);
-        state.photoPreviewUrl = '';
-        beginCourse(state.selectedCourseId, true);
-      } else if (actionName === 'stop-course') {
-        const active = getActiveCourse();
-        if (state.backendAvailable && active) {
-          stopBackendActivity(active).catch(error => reportBackendSyncFailure(error, '백엔드 연결이 끊겨 코스 중단을 브라우저에만 반영했습니다.'));
-        }
-        saveActiveCourse(null);
-        if (state.photoPreviewUrl) URL.revokeObjectURL(state.photoPreviewUrl);
-        state.photoPreviewUrl = '';
-        state.gpsMessage = '';
-        navigate('courses');
-        showToast('진행 중인 코스를 중단했습니다.');
-      } else if (actionName === 'reset-records') {
-        if (state.backendAvailable && state.backendProfile) {
-          djangoRequest('me/data/', { method:'DELETE' })
-            .catch(error => reportBackendSyncFailure(error, '백엔드 연결이 끊겨 기록 초기화를 브라우저에만 반영했습니다.'));
-        }
-        removeStored(STORAGE_KEYS.RECORDS);
-        removeStored(STORAGE_KEYS.ACTIVE);
-        removeStored(STORAGE_KEYS.PENDING_COMPLETIONS);
-        removeStored(STORAGE_KEYS.LAST_RECORD);
-        state.lastRecord = null;
-        if (state.photoPreviewUrl) URL.revokeObjectURL(state.photoPreviewUrl);
-        state.photoPreviewUrl = '';
-        render();
-        showToast('완주 기록과 진행 상태를 초기화했습니다.');
-      } else if (actionName === 'delete-nickname') {
-        const user = getUser();
-        if (state.backendAvailable && state.backendProfile) {
-          djangoRequest('me/nickname/', { method:'DELETE' })
-            .then(result => { if (result && result.user) state.backendProfile = result.user; })
-            .catch(error => reportBackendSyncFailure(error, '백엔드 연결이 끊겨 닉네임 삭제를 브라우저에만 반영했습니다.'));
-        }
-        if (user) {
-          writeStored(STORAGE_KEYS.USER, Object.assign({}, user, { nickname:'' }));
-        }
-        state.page = 'home';
-        cleanupTransientUI();
-        render();
-      } else if (actionName === 'delete-all') {
-        if (state.backendAvailable && state.backendProfile) {
-          djangoRequest('me/', { method:'DELETE' })
-            .catch(error => reportBackendSyncFailure(error, '백엔드 연결이 끊겨 서버 데이터 삭제를 완료하지 못했습니다.'));
-        }
-        Object.values(STORAGE_KEYS).forEach(removeStored);
-        try { sessionStorage.removeItem(SESSION_KEYS.ADMIN); } catch (error) { /* 세션 저장소 제한은 무시합니다. */ }
-        state.page = 'home';
-        state.backendProfile = null;
-        state.lastRecord = null;
-        state.gpsMessage = '';
-        if (state.photoPreviewUrl) URL.revokeObjectURL(state.photoPreviewUrl);
-        state.photoPreviewUrl = '';
-        cleanupTransientUI();
-        render();
-      }
-    }
-
-    async function handleClick(event) {
-      const control = event.target.closest('[data-action]');
-      if (!control) return;
-      const action = control.dataset.action;
-      if (action === 'directions') {
-        const restaurant = RESTAURANT_DATA.find(item => item.id === control.dataset.restaurantId);
-        if (restaurant) {
-          logEvent('directions_clicked', {
-            restaurantId:restaurant.id,
-            restaurantName:restaurant.name,
-            target:control.dataset.map,
-            destinationUrl:control.href,
-            result:'success'
-          });
-        }
-        return;
-      }
-      if (action === 'backdrop-close' && event.target !== control) return;
-      event.preventDefault();
-
-      try {
-        switch (action) {
-          case 'navigate':
-            navigate(control.dataset.page || 'home');
-            break;
-          case 'view-course': {
-            const course = courseById(control.dataset.courseId);
-            state.selectedCourseId = course.id;
-            logEvent('course_viewed', { courseId:course.id, courseName:course.name, result:'success' });
-            navigate('detail', { courseId:course.id });
-            break;
-          }
-          case 'start-course':
-            requestStartCourse(control.dataset.courseId);
-            break;
-          case 'resume-course':
-            resumeCourse();
-            break;
-          case 'filter-type':
-            state.filters.type = control.dataset.value || 'all';
-            render();
-            break;
-          case 'reset-filters':
-            state.filters = { type:'all', distance:'all', difficulty:'all' };
-            render();
-            break;
-          case 'request-location':
-            openLocationPurpose(control.dataset.target);
-            break;
-          case 'confirm-location':
-            verifyLocation(control.dataset.target);
-            break;
-          case 'test-location':
-            await testVerifyLocation(control.dataset.target);
-            break;
-          case 'test-complete-all':
-            await testCompleteAll();
-            break;
-          case 'remove-photo':
-            removePhoto();
-            break;
-          case 'stop-course':
-            openConfirm('코스를 중단할까요?', '현재 인증 진행 상태는 삭제되며 완주 기록에는 남지 않습니다.', '코스 중단하기', 'stop-course');
-            break;
-          case 'complete-course':
-            await completeCourse();
-            break;
-          case 'view-restaurants':
-            state.selectedCourseId = control.dataset.courseId || state.selectedCourseId;
-            navigate('restaurants', { courseId:state.selectedCourseId });
-            break;
-          case 'restaurant-click': {
-            const restaurant = RESTAURANT_DATA.find(item => item.id === control.dataset.restaurantId);
-            if (restaurant) {
-              logEvent('restaurant_clicked', { restaurantId:restaurant.id, restaurantName:restaurant.name, result:'success' });
-              showToast(restaurant.name + ' 관심 기록을 저장했습니다.');
-            }
-            break;
-          }
-          case 'change-nickname':
-            openNicknameChange();
-            break;
-          case 'delete-nickname':
-            openConfirm('닉네임을 삭제할까요?', '완주 기록과 익명 ID는 유지하고 닉네임 등록 화면부터 다시 시작합니다.', '닉네임 삭제', 'delete-nickname');
-            break;
-          case 'reset-records':
-            openConfirm('내 기록을 초기화할까요?', '완주 기록과 진행 중 코스가 삭제됩니다. 닉네임은 유지됩니다.', '기록 초기화', 'reset-records');
-            break;
-          case 'delete-all':
-            openConfirm('브라우저 저장 데이터를 삭제할까요?', '닉네임, 익명 ID, 진행 상태, 완주 기록과 로컬 통계가 모두 삭제됩니다. 되돌릴 수 없습니다.', '모두 삭제', 'delete-all');
-            break;
-          case 'admin-logout':
-            try { sessionStorage.removeItem(SESSION_KEYS.ADMIN); } catch (error) { /* 저장소 제한은 무시합니다. */ }
-            render();
-            showToast('관리자 화면에서 로그아웃했습니다.');
-            break;
-          case 'close-modal':
-          case 'backdrop-close':
-            closeModal();
-            break;
-          case 'confirm-pending':
-            performPendingAction();
-            break;
-        }
-      } catch (error) {
-        showToast('요청을 처리하지 못했습니다. 다시 시도해 주세요.');
-      }
-    }
-
-    function handleSubmit(event) {
-      if (event.target.id === 'nickname-form') {
-        event.preventDefault();
-        const input = event.target.elements.nickname;
-        const errorElement = document.getElementById('nickname-error');
-        const nickname = normalizeNickname(input.value);
-        if (nickname.length < 2) {
-          errorElement.textContent = '닉네임을 2자 이상 입력해 주세요.';
-          input.setAttribute('aria-invalid', 'true');
-          input.focus();
-          return;
-        }
-        const previousUser = readStored(STORAGE_KEYS.USER, null);
-        const isFirstRegistration = !(previousUser && typeof previousUser.id === 'string' && previousUser.id);
-        const user = {
-          id: isFirstRegistration ? createId('anon') : previousUser.id,
-          nickname,
-          createdAt: isFirstRegistration ? new Date().toISOString() : (previousUser.createdAt || new Date().toISOString()),
-          lastVisitedAt: new Date().toISOString()
-        };
-        writeStored(STORAGE_KEYS.USER, user);
-        if (state.backendAvailable) {
-          syncNicknameWithBackend(nickname)
-            .then(() => render())
-            .catch(error => reportBackendSyncFailure(error, '백엔드 연결이 끊겨 닉네임을 브라우저에만 저장했습니다.'));
-        }
-        if (isFirstRegistration) logEvent('user_registered', { result:'success' });
-        logEvent('user_visited', { result:'success', userAgent:navigator.userAgent.slice(0, 240) });
-        state.page = 'home';
-        render();
-        showToast(nickname + '님, 혼디길에 오신 것을 환영해요.');
-        return;
-      }
-
-      if (event.target.id === 'nickname-change-form') {
-        event.preventDefault();
-        const input = event.target.elements.nickname;
-        const nickname = normalizeNickname(input.value);
-        const errorElement = document.getElementById('nickname-change-error');
-        if (nickname.length < 2) {
-          errorElement.textContent = '닉네임을 2자 이상 입력해 주세요.';
-          input.focus();
-          return;
-        }
-        const user = getUser();
-        if (!user) return;
-        writeStored(STORAGE_KEYS.USER, Object.assign({}, user, { nickname }));
-        if (state.backendAvailable) {
-          syncNicknameWithBackend(nickname)
-            .then(() => render())
-            .catch(error => reportBackendSyncFailure(error, '백엔드 연결이 끊겨 변경한 닉네임을 브라우저에만 저장했습니다.'));
-        }
-        closeModal();
-        render();
-        showToast('닉네임을 변경했습니다.');
-        return;
-      }
-
-      if (event.target.id === 'admin-login-form') {
-        event.preventDefault();
-        const input = event.target.elements.password;
-        const errorElement = document.getElementById('admin-error');
-        if (input.value !== '0000') {
-          errorElement.textContent = '비밀번호가 맞지 않습니다.';
-          input.value = '';
-          input.focus();
-          return;
-        }
-        try { sessionStorage.setItem(SESSION_KEYS.ADMIN, 'true'); } catch (error) {
-          errorElement.textContent = '세션 저장을 사용할 수 없습니다. 브라우저 설정을 확인해 주세요.';
-          return;
-        }
-        render();
-        showToast('관리자 화면을 열었습니다.');
-      }
-    }
-
-    async function handleChange(event) {
-      const target = event.target;
-      if (target.matches('[data-filter]')) {
-        state.filters[target.dataset.filter] = target.value;
-        render();
-        return;
-      }
-      if (target.id === 'photo-input') {
-        await handlePhotoSelection(target);
-      }
-    }
-
-    function repairStoredData() {
-      Object.values(STORAGE_KEYS).forEach(key => {
-        try {
-          const value = localStorage.getItem(key);
-          if (value != null) JSON.parse(value);
-        } catch (error) {
-          removeStored(key);
-        }
-      });
-    }
-
-    function initializeApp() {
-      repairStoredData();
-      const user = getUser();
-      if (user) {
-        const updatedUser = Object.assign({}, user, { lastVisitedAt:new Date().toISOString() });
-        writeStored(STORAGE_KEYS.USER, updatedUser);
-        logEvent('user_visited', { result:'success', userAgent:navigator.userAgent.slice(0, 240) });
-        const active = getActiveCourse();
-        if (active) {
-          state.selectedCourseId = active.courseId;
-          state.page = 'progress';
-        }
-        state.lastRecord = getLastRecord();
-      }
-      render();
-      probeDjangoBackend().then(async available => {
-        if (available) {
-          try {
-            await syncDjangoBootstrap();
-            await flushEventQueue();
-          } catch (error) {
-            reportBackendSyncFailure(error, 'Django 백엔드 초기 동기화를 완료하지 못했습니다. 브라우저 저장 방식으로 계속 사용할 수 있습니다.');
-          }
-          render();
-        }
-      });
-    }
-
-    document.addEventListener('click', handleClick);
-    document.addEventListener('submit', handleSubmit);
-    document.addEventListener('change', handleChange);
-    document.addEventListener('keydown', event => {
-      if (event.key === 'Escape' && modalRoot.innerHTML) closeModal();
-    });
-    window.addEventListener('online', () => {
-      probeDjangoBackend().then(async available => {
-        if (!available) return;
-        try {
-          await syncDjangoBootstrap();
-          await flushEventQueue();
-        } catch (error) {
-          reportBackendSyncFailure(error, '온라인 복귀 후 백엔드 동기화를 완료하지 못했습니다.');
-        }
-      });
-    });
-    window.addEventListener('beforeunload', () => {
-      if (state.photoPreviewUrl) URL.revokeObjectURL(state.photoPreviewUrl);
-    });
-
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initializeApp, { once:true });
-    } else {
-      initializeApp();
-    }
-  })();
+      update(current, 1);
+    })();
   </script>
 </body>
 </html>
