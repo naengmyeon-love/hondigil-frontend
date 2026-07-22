@@ -1,4 +1,4 @@
-function decodeRouteShape(encoded){
+export function decodeRouteShape(encoded){
   var index=0,lat=0,lng=0,coords=[],factor=1000000;
   while(index<encoded.length){
     var byte,shift=0,result=0;
@@ -9,13 +9,24 @@ function decodeRouteShape(encoded){
   }
   return coords;
 }
-function geoDistanceKm(a,b){
+export function geoDistanceKm(a,b){
   var rad=Math.PI/180,dLat=(b[0]-a[0])*rad,dLng=(b[1]-a[1])*rad;
   var value=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(a[0]*rad)*Math.cos(b[0]*rad)*Math.sin(dLng/2)*Math.sin(dLng/2);
   return 6371*2*Math.atan2(Math.sqrt(value),Math.sqrt(1-value));
 }
-function routeDistanceKm(coords){var total=0;for(var i=1;i<coords.length;i++)total+=geoDistanceKm(coords[i-1],coords[i]);return total;}
-function routeToDistance(baseCoords,targetKm){
+export function routeDistanceKm(coords){var total=0;for(var i=1;i<coords.length;i++)total+=geoDistanceKm(coords[i-1],coords[i]);return total;}
+export function pointToRouteDistanceKm(coords,point){
+  if(!Array.isArray(coords)||coords.length===0||!Array.isArray(point)||point.length<2)return Infinity;
+  if(coords.length===1)return geoDistanceKm(coords[0],point);
+  var latRad=point[0]*Math.PI/180,kmPerLng=111.32*Math.cos(latRad),kmPerLat=110.574,min=Infinity;
+  for(var i=1;i<coords.length;i++){
+    var a=coords[i-1],b=coords[i],ax=(a[1]-point[1])*kmPerLng,ay=(a[0]-point[0])*kmPerLat,bx=(b[1]-point[1])*kmPerLng,by=(b[0]-point[0])*kmPerLat,dx=bx-ax,dy=by-ay,lengthSquared=dx*dx+dy*dy;
+    var ratio=lengthSquared?Math.max(0,Math.min(1,-(ax*dx+ay*dy)/lengthSquared)):0;
+    min=Math.min(min,Math.hypot(ax+ratio*dx,ay+ratio*dy));
+  }
+  return min;
+}
+export function routeToDistance(baseCoords,targetKm){
   if(!Array.isArray(baseCoords)||baseCoords.length<2||targetKm<=0)return baseCoords||[];
   var result=[baseCoords[0].slice()],travelled=0,index=0,direction=1,guard=0;
   while(travelled<targetKm-0.000001&&guard<20000){
@@ -28,17 +39,4 @@ function routeToDistance(baseCoords,targetKm){
     result.push([from[0]+(to[0]-from[0])*ratio,from[1]+(to[1]-from[1])*ratio]);travelled=targetKm;
   }
   return result;
-}
-function prepareCourseRoutes(){
-  courses.forEach(function(course){
-    var target=Number(course.distance),encoded=routeShapes[course.id],base=encoded?decodeRouteShape(encoded):course.coords;
-    if(!Array.isArray(base)||base.length<2)return;
-    var baseDistance=routeDistanceKm(base);
-    course.turnaround=base[base.length-1].slice();
-    course.coords=routeToDistance(base,target);
-    course.mapDistance=routeDistanceKm(course.coords);
-    course.distance=Math.round(course.mapDistance*10)/10;
-    course.minDistance=Math.round(course.distance*.8*10)/10;
-    course.routeNote=target>baseDistance+.05?'보행로·반환 구간 포함':'OpenStreetMap 보행로 기준';
-  });
 }

@@ -6,10 +6,30 @@
   <meta name="theme-color" content="#fff9ed">
   <meta name="color-scheme" content="light">
   <meta name="description" content="제주를 걷고 달리며 나만의 제주방을 키우는 혼디길 MVP">
+  <meta name="hondigil-api-base" content="https://api.hondigil.com/api/v1">
   <title>혼디길 | 제주 러닝·트래킹</title>
-  <link rel="preconnect" href="https://unpkg.com" crossorigin>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous">
-  <link rel="stylesheet" href="./static/assets/css/styles.css">
+  <link rel="canonical" href="https://hondigil.com/">
+  <link rel="icon" type="image/png" sizes="48x48" href="./static/assets/favicon-48x48.png?v=20260717-2">
+  <link rel="shortcut icon" href="./static/assets/favicon.ico?v=20260717-2">
+  <meta property="og:locale" content="ko_KR">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="혼디길">
+  <meta property="og:title" content="혼디길 | 제주에서 혼디, 같이 걷는 길">
+  <meta property="og:description" content="제주 코스를 걷고 달리며 나만의 제주방을 키워 보세요.">
+  <meta property="og:url" content="https://hondigil.com/">
+  <meta property="og:image" content="https://hondigil.com/static/assets/hondigil-og-1200x630.png?v=20260717-2">
+  <meta property="og:image:secure_url" content="https://hondigil.com/static/assets/hondigil-og-1200x630.png?v=20260717-2">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="혼디길 사이트의 제주 러닝·트래킹 코스 메인 화면">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="혼디길 | 제주에서 혼디, 같이 걷는 길">
+  <meta name="twitter:description" content="제주 코스를 걷고 달리며 나만의 제주방을 키워 보세요.">
+  <meta name="twitter:image" content="https://hondigil.com/static/assets/hondigil-og-1200x630.png?v=20260717-2">
+  <meta name="twitter:image:alt" content="혼디길 사이트의 제주 러닝·트래킹 코스 메인 화면">
+  <link rel="stylesheet" href="./static/vendor/leaflet/leaflet.css?v=1.9.4">
+  <link rel="stylesheet" href="./static/assets/css/styles.css?v=20260721-3">
 </head>
 <body>
   <a class="skip-link" href="#main-content">본문으로 바로가기</a>
@@ -17,9 +37,9 @@
   <button class="sidebar-scrim" data-action="close-sidebar" aria-label="사이드바 닫기"></button>
   <div class="app-shell">
     <aside class="desktop-rail" id="desktopRail" aria-label="주요 메뉴" aria-hidden="true">
-      <a class="brand" href="#/home" data-nav="home"><span class="brand-mark" aria-hidden="true">ㅎ</span><span>혼디길</span></a>
+      <a class="brand" href="#/home" data-nav="home"><span class="brand-mark" aria-hidden="true"><img src="./static/assets/favicon-48x48.png?v=20260717-3" alt=""></span><span>혼디길</span></a>
       <nav class="rail-nav" id="desktopNav"></nav>
-      <div class="rail-note">📍 식당 마커는 OpenStreetMap 등록 좌표에 표시합니다. 영업시간·메뉴는 방문 전 다시 확인해 주세요.</div>
+      <div class="rail-note">📍 주변 장소는 실제 등록 위치에 표시합니다. 운영 정보는 방문 전 다시 확인해 주세요.</div>
     </aside>
     <div>
       <main class="main" id="main-content" tabindex="-1"></main>
@@ -33,7 +53,7 @@
             <button class="site-footer-link" data-legal="safety">안전·운영 안내</button>
             <a class="site-footer-link" href="https://docs.google.com/forms/d/e/1FAIpQLSflTtIYIr5sU8e4uFTFPPi7fEAu3gDB-b3Y84ucuwyXuqHalA/viewform" target="_blank" rel="noopener noreferrer">운영 문의 ↗</a>
           </div>
-          <p class="site-footer-note">코스·식당 정보는 현장 상황과 다를 수 있으므로 이용 전 공식 안내를 확인해 주세요. © 2026 혼디길.</p>
+          <p class="site-footer-note">코스·주변 장소 정보는 현장 상황과 다를 수 있으므로 이용 전 공식 안내를 확인해 주세요. © 2026 혼디길.</p>
         </div>
       </footer>
     </div>
@@ -42,11 +62,6 @@
   <div id="modalRoot"></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="./static/assets/js/data/navigation.js"></script>
-  <script src="./static/assets/js/data/courses.js"></script>
-  <script src="./static/assets/js/data/route-shapes.js"></script>
-  <script src="./static/assets/js/data/restaurants.js"></script>
-  <script src="./static/assets/js/core/geo.js"></script>
-  <script src="./static/assets/js/app.js"></script>
+  <script type="module" src="./static/assets/js/app.js?v=20260721-8"></script>
 </body>
 </html>
